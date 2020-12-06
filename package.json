@@ -1,0 +1,23 @@
+{
+  "type": "module",
+  "scripts": {
+    "babel-node": "babel-node"
+  },
+  "dependencies": {
+    "@babel/core": "^7.12.9",
+    "@babel/node": "^7.12.6",
+    "@babel/preset-env": "^7.12.7",
+    "@babel/preset-typescript": "^7.12.7",
+    "axios": "^0.21.0",
+    "dayjs": "^1.9.6",
+    "koa": "^2.13.0",
+    "koa-bodyparser": "^4.3.0",
+    "koa-router": "^10.0.0",
+    "md5": "^2.3.0",
+    "node-fetch": "^2.6.1",
+    "omit": "^1.0.1",
+    "qs": "^6.9.4",
+    "sleep-promise": "^9.0.0",
+    "xls-to-json": "^2.1.0"
+  }
+}
