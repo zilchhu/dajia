@@ -72,6 +72,7 @@ export default class Order {
     }
     return instance.get(urls.order.arrived, { params })
   }
+
 }
 
 class Refund {

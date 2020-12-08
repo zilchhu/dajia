@@ -31,6 +31,7 @@ instance.interceptors.request.use(
       config.data.sig = sig(config.url, config.data)
       config.data = qs.stringify(config.data)
     }
+    console.log(config)
     return config
   },
   err => Promise.reject(err)

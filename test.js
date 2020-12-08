@@ -9,13 +9,9 @@ import FallbackApp from './fallback/fallback_app.js'
 
 const axls2Json = util.promisify(xls2json)
 
-const app_poi_code = '9470231'
-const app = new App(app_poi_code)
-const fallbackApp = new FallbackApp(app_poi_code)
+// let app_poi_code = '9470231'
 
-let foodList, actList
-
-async function plan(name, price, act_price, box_price, min_order_count) {
+async function plan1(name, price, act_price, box_price, min_order_count) {
   try {
     let food = foodList.find(v => v.name == name)
     if (food) {
@@ -56,7 +52,7 @@ async function plan(name, price, act_price, box_price, min_order_count) {
       const acts = actList.filter(v => v.itemName == name)
       let act = acts.find(v => v.priority != 1200)
 
-      if (price) {
+      if (price || box_price) {
         if (act) {
           let actIds = acts.map(v => v.id)
           console.log('- del act: ', actIds)
@@ -100,7 +96,6 @@ async function plan(name, price, act_price, box_price, min_order_count) {
           if (act_price) {
             let foods = await fallbackApp.food.search(name)
             if (!foods) {
-              
             }
             food = foods.productList.find(v => v.name == name)
             const charge = {
@@ -135,57 +130,121 @@ async function plan(name, price, act_price, box_price, min_order_count) {
             console.log('add act: ', actSave)
           }
         }
+      } else if (actPrice) {
+        if (act) {
+          logAct(act)
+
+          const charge = JSON.parse(act.charge)
+          let actData = {
+            ...act,
+            ...charge,
+            actPrice: act_price
+            // id: null
+          }
+          console.log('- save act: ', actData)
+          const actSave = await fallbackApp.act.save(actData)
+          console.log('save act: ', actSave)
+        } else {
+          let foods = await fallbackApp.food.search(name)
+          if (!foods) {
+            throw new Error('failed at search')
+          }
+          food = foods.productList.find(v => v.name == name)
+          const charge = {
+            originPrice: price,
+            actPrice: act_price,
+            mtCharge: 0,
+            agentCharge: 0
+          }
+          const act = {
+            spuId: food.id,
+            wmSkuId: food.wmProductSkus[0].id,
+            itemName: name,
+            orderLimit: -1,
+
+            orderPayType: 2,
+            todaySaleNum: -1,
+            originId: 0,
+            sortIndex: 0,
+            settingType: '1',
+            chargeType: '0',
+            wmUserType: 0,
+            poiUserType: '0'
+          }
+          let actData = {
+            ...act,
+            ...charge,
+            actPrice: act_price,
+            id: null
+          }
+          console.log('- add act: ', actData)
+          const actSave = await fallbackApp.act.save(actData)
+          console.log('add act: ', actSave)
+        }
       }
-    } else {
-      console.log(foodList)
     }
   } catch (error) {
     console.error(error)
   }
 }
 
-async function plans() {
-  foodList = await app.food.list()
-  actList = await fallbackApp.act.list()
-  // let planList = await axls2Json({
-  //     input: `plan/plan\门店价格方案-美团甜品-坪山甜品.xlsx`,
-  //     sheet: '喜三德（坪山店）',
-  //     output: `plan/plan\门店价格方案-美团甜品-坪山甜品.xlsx`
-  // })
-  // console.log(actList)
-  plan('招牌烧仙草【墙裂推荐】', 17, 10, null, null)
-  return
+async function plan2(name, price, act_price, box_price, min_order_count) {}
 
-  // let planList = JSON.parse(fs.readFileSync('plan/门店价格方案-美团甜品-至尊甜品.json'))
+async function plansByPoi(plan) {
+  try {
+    const app_poi_code = plan.shopId
+    const plans = plan.plans
+    const app = new App(app_poi_code)
+    const fallbackApp = new FallbackApp(app_poi_code)
+    const foodList = await app.food.list()
+    const actList = await fallbackApp.act.list()
+    for (let p of plans) {
+      try {
+        const name = p.商品
+        const price = p.改后原价.length > 0 ? parseFloat(p.改后原价) : null
+        const act_price = p.折扣价.length > 0 ? parseFloat(p.折扣价) : null
+        const box_price = p.改后餐盒费.length > 0 ? parseFloat(p.改后餐盒费) : null
+        const min_order_count = p.起购数.length > 0 ? parseInt(p.起购数) : null
 
-  for (let food of foodList) {
-    let p = planList.find(plan => plan.产品名字.trim() == food.name)
-
-    if (p) {
-      let price = p.修改后原价.length > 0 ? parseFloat(p.修改后原价) : null
-      let act_price = p.修改后折扣价.length > 0 ? parseFloat(p.修改后折扣价) : null
-      let box_price = p.修改后餐盒费.length > 0 ? parseFloat(p.修改后餐盒费) : null
-      let min_order_count = p.修改后最小起送量.length > 0 ? parseInt(p.修改后最小起送量) : null
-
-      if (price || act_price || box_price || min_order_count) {
-        console.log()
-        console.log(food.name)
-        console.log()
-        plan(food.name, price, act_price, box_price, min_order_count)
-        await sleep(5000)
+        await plan1(name, price, act_price, box_price, min_order_count)
+      } catch (error) {
+        console.error(error)
       }
     }
+  } catch (error) {
+    console.error(error)
   }
 }
 
-async function test() {
-  const foodList = await app.food.list(0, 1)
-  console.log(foodList)
+async function plans2() {
+  let e = await axls2Json({
+    input: `plan/-- 美团单折扣商品起送查询2.xlsx`,
+    sheet: '-- 美团单折扣商品起送查询2',
+    output: `plan/-- 美团单折扣商品起送查询2.json`
+  })
+  let shopIds = Array.from(new Set(e.map(v => v.wmpoiid)))
+
+  let plans = shopIds.map(id => ({
+    shopId: id,
+    plans: e.filter(v => v.wmpoiid == id)
+  }))
+
+  let poiIds = new App().poi.getids()
+
+  for (let plan of plans) {
+    if (poiIds.includes(plan.shopId)) {
+      await plansByPoi(plan)
+    }
+  }
+
+  // await plansByPoi(app_poi_code)
 }
+
+plans2()
 
 // test()
 
-plans()
+// plans()
 
 // test()
 

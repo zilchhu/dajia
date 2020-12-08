@@ -33,7 +33,7 @@ instance.interceptors.response.use(
   res => {
     if (res.data.code === 0) {
       // console.log(0)
-      return res.data.data
+      return res.data.data == "" || res.data.data == null ? res.data : res.data.data
     } else {
       // console.log(1)
       return Promise.reject(res.data)

@@ -1,6 +1,2 @@
-GET     http://8.135.44.223/test
+GET  http://localhost:8000/poi/8221674/foods
 content-type: application/json
-
-{
-  "a": "1111"
-}
