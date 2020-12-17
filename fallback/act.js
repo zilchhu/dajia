@@ -76,13 +76,62 @@ export default class Act {
     return this.save_(poiPolicy)
   }
 
+  async create(wmSkuId, itemName, originPrice, actPrice, orderLimit) {
+    try {
+      let poiPolicy = {
+        online_pay: 0,
+        foods: [
+          {
+            foodKey: 1,
+            id: 0,
+            wmPoiId: this.wmPoiId,
+            wmActPolicyId: '1001',
+            actInfo: {
+              discount: 'NaN',
+              origin_price: originPrice,
+              act_price: actPrice
+            },
+            period: '00:00-23:59',
+            wmSkuId,
+            weeksTime: '1,2,3,4,5,6,7',
+            startTime: dayjs().startOf('day').unix(),
+            endTime: dayjs().startOf('day').add(365, 'day').unix(),
+            orderPayType: 2,
+            orderLimit,
+            limitTimeSale: '-1',
+            itemName,
+            sortIndex: 0,
+            settingType: '1',
+            chargeType: '0',
+            wmUserType: 0,
+            poiUserType: '0',
+            WmActPriceVo: {
+              originPrice,
+              actPrice,
+              mtCharge: '0',
+              agentCharge: 0,
+              poiCharge: originPrice - actPrice
+            },
+            autoDelayDays: 30,
+            spec: '',
+            priority: 0
+          }
+        ]
+      }
+      const actSave_Res = await this.save_(poiPolicy)
+      return Promise.resolve(actSave_Res)
+    } catch (err) {
+      return Promise.reject(err)
+    }
+  }
+
   async find(name) {
     try {
       let listRes = await this.list()
-      if (!listRes || !listRes.list) return Promise.reject({err: 'find failed'})
+      if (!listRes) return Promise.reject({ err: 'act find failed' })
 
       let act = listRes.find(v => v.itemName == name)
-      if (!act) return Promise.reject({err: 'not find'})
+      if (!act) return Promise.reject({ err: 'act not find' })
       return Promise.resolve(act)
     } catch (err) {
       return Promise.reject(err)
@@ -108,9 +157,9 @@ class Reduction {
     let data = {
       wmPoiId: this.wmPoiId,
       wmActPoiId,
+      isAgree: 1,
       weeksTime: '1,2,3,4,5,6,7',
       period: '00:00-23:59',
-      isAgree: 1,
       type: 2,
       valid: 1,
       isSettle: 1,
@@ -139,9 +188,9 @@ class Reduction {
   async find() {
     try {
       const listRes = await this.list()
-      if (!listRes || !listRes.list) return Promise.reject({err: 'find failed'})
+      if (!listRes || !listRes.list) return Promise.reject({ err: 'find failed' })
       const reduction = listRes.list.find(v => v.status == 1)
-      if (!reduction) return Promise.reject({err: 'not find'})
+      if (!reduction) return Promise.reject({ err: 'not find' })
       return Promise.resolve(reduction)
     } catch (err) {
       return Promise.reject(err)
@@ -180,7 +229,7 @@ class Tradein {
   async find(name) {
     try {
       let listRes = await this.list()
-      if (!listRes || !listRes.list) return Promise.reject({err: 'find failed'})
+      if (!listRes || !listRes.list) return Promise.reject({ err: 'find failed' })
 
       listRes = listRes.list.map(v => ({
         ...v,
@@ -188,7 +237,7 @@ class Tradein {
       }))
 
       let tradein = listRes.find(v => v.policy.itemName == name)
-      if (!tradein) return Promise.reject({err: 'not find'})
+      if (!tradein) return Promise.reject({ err: 'not find' })
       return Promise.resolve(tradein)
     } catch (err) {
       return Promise.reject(err)

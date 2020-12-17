@@ -18,10 +18,12 @@ const urls = {
   },
   food: {
     search: '/reuse/product/food/r/searchByName',
+    list: '/reuse/product/food/r/spuList',
     save: '/reuse/product/food/w/save',
     updatePrice: '/reuse/product/food/w/updatePrice',
     batchUpdateSkus: '/reuse/product/food/w/batchUpdateSku',
-    batchUpdateBoxPrice: '/reuse/product/food/w/batchUpdateSkuBoxPrice'
+    batchUpdateBoxPrice: '/reuse/product/food/w/batchUpdateSkuBoxPrice',
+    updateImg: '/reuse/product/food/w/saveMultiImage'
   },
   poi: {
     list: '/v2/shop/businessStatus/r/poiListSearch'

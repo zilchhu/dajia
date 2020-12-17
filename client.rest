@@ -1,2 +1,56 @@
-GET  http://localhost:8000/poi/8221674/foods
+GET  http://8.135.44.223/test
+content-type: application/json
+
+
+###
+
+
+GET http://localhost:8000/mongo/food
+content-type: application/json
+
+###
+
+GET http://localhost:9002/yt
+content-type: application/json
+
+###
+
+GET http://localhost:9002/jx
+content-type: application/json
+
+###
+
+GET http://localhost:9002/all
+content-type: application/json
+
+###
+
+GET http://localhost:9004/table?day_from_today=2&shop_id=2066637616&interval=7
+content-type: application/json
+
+###
+
+GET http://localhost:9004/rules
+content-type: application/json
+
+###
+
+POST http://localhost:9004/plan
+content-type: application/json
+
+{
+  "oid": 76325,
+  "name": "123",
+  "q": "1231",
+  "a": "123131"
+}
+
+###
+
+GET http://localhost:9004/plans
+content-type: application/json
+
+###
+
+GET http://localhost:9004/plan/2038543739
 content-type: application/json
