@@ -96,7 +96,7 @@ async function getTableFromMysql(day_from_today = 1, shop_id) {
   let sql = `
   WITH a1 AS (
     SELECT id, real_shop, shop_id, shop_name, platform, 
-      (settlea - third_send) AS income, 
+      (settlea - third_send) AS income, third_send,
       price AS cost, cost_ratio,
       consume, 
       promotion_rate AS consume_ratio, 
@@ -152,7 +152,7 @@ async function getTableFromMysql(day_from_today = 1, shop_id) {
     FROM test_analyse_a_
   )
   SELECT id, city, person,
-    a1.real_shop, a1.shop_id, a1.shop_name, platform,
+    a1.real_shop, a1.shop_id, a1.shop_name, platform, third_send,
     income, income_avg, income_sum,
     a1.cost, cost_avg, cost_sum, cost_ratio, cost_sum_ratio,
     consume, consume_avg, consume_sum, consume_ratio, consume_sum_ratio,

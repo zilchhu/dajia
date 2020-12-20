@@ -7,6 +7,17 @@ import util from 'util'
 import fs from 'fs'
 const axls2Json = util.promisify(xls2json)
 import sleep from 'sleep-promise'
+import knex from 'knex'
+import { timingSafeEqual } from 'crypto'
+const knx = knex({
+  client: 'mysql',
+  connection: {
+    host: '192.168.3.112',
+    user: 'root',
+    password: '123456',
+    database: 'naicai'
+  }
+})
 
 async function test_reduction() {
   try {
@@ -29,85 +40,77 @@ async function test_reduction() {
 
     let policyDetail = [
       {
-        discounts: [
-          { code: 1, discount: 6, poi_charge: 6, agent_charge: 0, type: 'default', mt_charge: 0 }
-        ],
-        price: 15
+        discounts: [{ code: 1, discount: 14, poi_charge: 14, agent_charge: 0, type: 'default', mt_charge: 0 }],
+        price: 16
       },
       {
-        discounts: [
-          { code: 1, discount: 12, poi_charge: 12, agent_charge: 0, type: 'default', mt_charge: 0 }
-        ],
-        price: 30
+        discounts: [{ code: 1, discount: 21, poi_charge: 21, agent_charge: 0, type: 'default', mt_charge: 0 }],
+        price: 32
       },
       {
-        discounts: [
-          { code: 1, discount: 16, poi_charge: 16, agent_charge: 0, type: 'default', mt_charge: 0 }
-        ],
-        price: 45
+        discounts: [{ code: 1, discount: 32, poi_charge: 32, agent_charge: 0, type: 'default', mt_charge: 0 }],
+        price: 48
       },
       {
-        discounts: [
-          { code: 1, discount: 20, poi_charge: 20, agent_charge: 0, type: 'default', mt_charge: 0 }
-        ],
-        price: 60
+        discounts: [{ code: 1, discount: 44, poi_charge: 44, agent_charge: 0, type: 'default', mt_charge: 0 }],
+        price: 88
       },
       {
-        discounts: [
-          { code: 1, discount: 30, poi_charge: 30, agent_charge: 0, type: 'default', mt_charge: 0 }
-        ],
-        price: 100
+        discounts: [{ code: 1, discount: 58, poi_charge: 58, agent_charge: 0, type: 'default', mt_charge: 0 }],
+        price: 158
       }
     ]
 
-    let e = await axls2Json({
-      input: `plan/12月8号批量改贡茶价格.xlsx`,
-      sheet: 'Sheet4',
-      output: `plan/12月8号批量改贡茶价格.xlsx.json`
-    })
+    // let e = await axls2Json({
+    //   input: `plan/12月8号批量改贡茶价格.xlsx`,
+    //   sheet: 'Sheet4',
+    //   output: `plan/12月8号批量改贡茶价格.xlsx.json`
+    // })
     // let shopIds = Array.from(new Set(e.map(v => v.id)))
-    let shopIds = `9543728
-    10156945
-    9411129
-    10083564
-    10014983
-    9596488
-    10427603
-    9224233
-    10045394
-    9861088
-    7740255
-    7735904
-    10456106
-    7779873
-    8911549
-    8221674
-    7632277
-    9100878
-    9411146
-    9249572
-    9355348
-    10307635
-    9576423
-    6950373
-    7968147
-    7351446
-    9842782
-    9014461
-    8051354
-    9236042
-    7673028
-    8751302
-    6434760
-    8890748
-    8670629`
+    let shopIds = `10177204
+    10084390
+    9569351
+    9452709
+    10328119
+    9401067
+    10289760
+    7882136
+    9206400
+    9191424
+    8975165
+    9771558
+    9325142
+    9976196
+    9820232
+    10231556`
       .split('\n')
       .map(v => v.trim())
+    let e = JSON.parse(fs.readFileSync('plan/12月8号批量改贡茶价格.xlsx.json'))
+
+    let e_name = Array.from(new Set(e.map(v => v.菜名)))
+    e = e_name.map(name => e.find(v => v.菜名 == name))
+
     for (let id of shopIds) {
       try {
         console.log(id)
         const saveReductionRes = await saveReduction(id, null, null, policyDetail)
         console.log(saveReductionRes)
+
+        for (let p of e) {
+          const name = p.菜名
+          const price = 14.8
+
+          console.log(id, name, price)
+          try {
+            const updateFoodPriceRes = await updateFoodPrice(id, name, price)
+            console.log(updateFoodPriceRes)
+            // await sleep(8000)
+          } catch (err) {
+            console.error(err)
+            log({ shop: { id, name, price }, err })
+          }
+        }
+
         console.log()
       } catch (err) {
         console.error(err)
@@ -126,10 +129,7 @@ async function updateFoodPrice(id, name, price) {
 
   try {
     const foodWillUpdatePrice = await fallbackApp.food.find(name)
-    const foodUpdatePriceRes = await fallbackApp.food.updatePrice(
-      foodWillUpdatePrice.wmProductSkus[0].id,
-      price
-    )
+    const foodUpdatePriceRes = await fallbackApp.food.updatePrice(foodWillUpdatePrice.wmProductSkus[0].id, price)
     const foodUpdatedPriceRes = await fallbackApp.food.find(name)
     return {
       ...foodUpdatePriceRes,
@@ -169,8 +169,7 @@ async function batchUpdateFoodSkus(id, name, skus) {
           weight: sku.weight || food.wmProductSkus[i].weight,
           price: sku.price || food.wmProductSkus[i].price,
           stock: sku.stock || food.wmProductSkus[i].stock,
-          wmProductLadderBoxPrice:
-            sku.wmProductLadderBoxPrice || food.wmProductSkus[i].wmProductLadderBoxPrice
+          wmProductLadderBoxPrice: sku.wmProductLadderBoxPrice || food.wmProductSkus[i].wmProductLadderBoxPrice
         }
       })
     else
@@ -180,8 +179,7 @@ async function batchUpdateFoodSkus(id, name, skus) {
           weight: sku.weight || food.wmProductSkus[0].weight,
           price: sku.price || food.wmProductSkus[0].price,
           stock: sku.stock || food.wmProductSkus[0].stock,
-          wmProductLadderBoxPrice:
-            sku.wmProductLadderBoxPrice || food.wmProductSkus[0].wmProductLadderBoxPrice
+          wmProductLadderBoxPrice: sku.wmProductLadderBoxPrice || food.wmProductSkus[0].wmProductLadderBoxPrice
         }
       })
     console.log(food.wmProductSkus.map(v => v.id))
@@ -212,12 +210,7 @@ async function saveReduction(id, startTime, endTime, policyDetail) {
         ...reduction.policy,
         policy_detail: policyDetail
       }
-      const saveReductionRes = await fallbackApp.act.reduction.save(
-        reduction.id,
-        startTime,
-        endTime,
-        poiPolicy
-      )
+      const saveReductionRes = await fallbackApp.act.reduction.save(reduction.id, startTime, endTime, poiPolicy)
       return saveReductionRes
     } else {
       // const delReductionRes = await fallbackApp.act.reduction.delete()
@@ -232,12 +225,7 @@ async function saveReduction(id, startTime, endTime, policyDetail) {
         online_pay: 1,
         policy_detail: policyDetail
       }
-      const saveReductionRes = await fallbackApp.act.reduction.save(
-        null,
-        startTime,
-        endTime,
-        poiPolicy
-      )
+      const saveReductionRes = await fallbackApp.act.reduction.save(null, startTime, endTime, poiPolicy)
       return saveReductionRes
     }
     // console.log(poiPolicy)
@@ -280,13 +268,7 @@ async function createAct(id, name, actPrice, orderLimit = -1) {
     const wmSkuId = foodWillCreateAct.wmProductSkus[0].id
     const originPrice = foodWillCreateAct.wmProductSkus[0].price
 
-    const actCreateRes = await fallbackApp.act.create(
-      wmSkuId,
-      name,
-      originPrice,
-      actPrice,
-      orderLimit
-    )
+    const actCreateRes = await fallbackApp.act.create(wmSkuId, name, originPrice, actPrice, orderLimit)
     const foodCreatedActRes = await fallbackApp.act.find(name)
     return {
       ...actCreateRes.map(actC => actC.result),
@@ -300,14 +282,49 @@ async function createAct(id, name, actPrice, orderLimit = -1) {
   }
 }
 
+async function updateAct(id, name, actPrice) {
+  const fallbackApp = new FallbackApp(id)
+
+  try {
+    const foodWillUpdateAct = await fallbackApp.food.find(name)
+    const actWillUpdate = await fallbackApp.act.find(name)
+
+    const spuId = foodWillUpdateAct.id
+    const wmSkuId = foodWillUpdateAct.wmProductSkus[0].id
+    const originPrice = foodWillUpdateAct.wmProductSkus[0].price
+    const actId = actWillUpdate.id
+    const orderLimit = actWillUpdate.orderLimit
+
+    const actUpdateRes = await fallbackApp.act.updateActPrice(
+      spuId,
+      wmSkuId,
+      name,
+      actId,
+      originPrice,
+      actPrice,
+      orderLimit
+    )
+    const foodUpdatedActRes = await fallbackApp.act.find(name)
+    return {
+      ...actUpdateRes.map(act => act.result),
+      foodUpdatedAct: {
+        ...JSON.parse(foodUpdatedActRes.actInfo),
+        orderLimit: foodUpdatedActRes.orderLimit
+      }
+    }
+  } catch (err) {
+    return Promise.reject(err)
+  }
+}
+
 async function test_price() {
-  let e = await axls2Json({
-    input: `-- 美团单折扣商品起送查询2(2).xlsx`,
-    sheet: 'Sheet1',
-    output: `-- 美团单折扣商品起送查询2(2).xlsx.json`
-  })
-  // let e = JSON.parse(fs.readFileSync('log/log2.json'))
-  // let shopIds = Array.from(new Set(e.map(v => v.id)))
+  // let e = await axls2Json({
+  //   input: `-- 美团单折扣商品起送查询2(2).xlsx`,
+  //   sheet: 'Sheet1',
+  //   output: `-- 美团单折扣商品起送查询2(2).xlsx.json`
+  // })
+  let e = JSON.parse(fs.readFileSync('plan/12月8号批量改贡茶价格.xlsx.json'))
+  let shopIds = Array.from(new Set(e.map(v => v.id)))
   let cont = true
   for (let shop of e) {
     try {
@@ -379,8 +396,11 @@ async function updateImg(id) {
 
   try {
     const food = await fallbackApp.food.find('饺子、冬至、汤圆')
-    const foodUpdateImgRes = await fallbackApp.food.updateImg(food.id, 'http://p1.meituan.net/wmproduct/382db61cf2707f5b69698051a2a94756401785.png')
-    return Promise.resolve({foodUpdateImgRes, foodId: food.id, foodName: food.name})
+    const foodUpdateImgRes = await fallbackApp.food.updateImg(
+      food.id,
+      'http://p1.meituan.net/wmproduct/382db61cf2707f5b69698051a2a94756401785.png'
+    )
+    return Promise.resolve({ foodUpdateImgRes, foodId: food.id, foodName: food.name })
   } catch (err) {
     return Promise.reject(err)
   }
@@ -408,12 +428,12 @@ async function test_testFood() {
   }
 }
 
-async function test() {
+async function test_updateImg() {
   const fallbackApp = new FallbackApp()
 
   try {
     let poiList = await fallbackApp.poi.list()
-    poiList = poiList.filter(v=>v.poiName.includes('贡茶'))
+    poiList = poiList.filter(v => v.poiName.includes('贡茶'))
     for (let shop of poiList) {
       console.log(shop.id, shop.poiName)
       try {
@@ -430,4 +450,81 @@ async function test() {
   }
 }
 
-test()
+async function updateFoodStock(id, name, stock = 10000) {
+  const fallbackApp = await new FallbackApp(id)
+
+  try {
+    const food = await fallbackApp.food.find(name)
+    let skuIds = food.wmProductSkus.map(v => v.id)
+    const foodUpdateStockRes = await fallbackApp.food.batchUpdateStock(skuIds)
+    return Promise.resolve({ foodUpdateStockRes, skuIds })
+  } catch (err) {
+    return Promise.reject(err)
+  }
+}
+
+async function test_rename() {
+  try {
+    const poiList = await new FallbackApp().poi.list()
+
+    let cnt = poiList.length
+
+    for (let poi of poiList) {
+      const { id, poiName } = poi
+      const fallbackApp = new FallbackApp(id)
+
+      console.log(id, poiName, cnt)
+
+      let foods = await knx('foxx_food_manage')
+        .select()
+        .whereRaw('date = curdate()')
+        .andWhere({ wmpoiid: id })
+
+      foods = foods.filter(f => f.name.includes('0元吃'))
+      for (let food of foods) {
+        try {
+          let spuId = food.productId
+          let spuName = food.name.replace('0元吃', '0元购')
+          const foodUpdateNameRes = await fallbackApp.food.updateName(spuId, spuName)
+          console.log({ foodUpdateNameRes, poiName, spuName })
+          // await sleep(8000)
+        } catch (err) {
+          console.error(err)
+          log({ shop: { id, poiName }, err })
+        }
+      }
+
+      cnt -= 1
+    }
+  } catch (err) {
+    console.error(err)
+  }
+}
+
+async function test() {
+  try {
+    // 
+    let e = JSON.parse(fs.readFileSync('log/log.json'))
+
+    for (let shop of e) {
+      const id = shop.meta.id
+      const name = shop.meta.name
+      const actPrice = parseFloat(shop.meta.actPrice)
+      try {
+        console.log(id, name, actPrice)
+        const updateActRes = await updateAct(id, name, actPrice)
+        console.log(updateActRes)
+        // await sleep(8000)
+      } catch (err) {
+        console.error(err)
+        log({ meta: { id, name, actPrice }, err })
+      }
+    }
+  } catch (err) {
+    console.error(err)
+  }
+}
+
+// test()
+// test()
+// test_reduction()

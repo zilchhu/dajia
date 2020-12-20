@@ -211,6 +211,34 @@ export default class Food {
     }
     return instance.post(urls.food.updateImg, data)
   }
+
+  async batchUpdateStock(skuIds, stock = 10000) {
+    let data = {
+      wmPoiId: this.wmPoiId,
+      skuIds: skuIds.join(','),
+      stock,
+      maxStock: 10000,
+      autoRefresh: 1,
+      v2: 1,
+      viewStyle: 0,
+      opTab: 0,
+      tagCat: 1
+    }
+    return instance.post(urls.food.batchUpdateStock, data)
+  }
+
+  async updateName(spuId, spuName) {
+    let data = {
+      v2: 1,
+      opTab: 0,
+      viewStyle: 0,
+      tagCat: 1,
+      wmPoiId: this.wmPoiId,
+      spuName,
+      spuId
+    }
+    return instance.post(urls.food.updateName, data)
+  }
 }
 
 let skuT = {

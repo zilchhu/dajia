@@ -47,8 +47,7 @@ export default class Act {
             actPrice: actData.actPrice,
             mtCharge: actData.mtCharge,
             agentCharge: actData.agentCharge,
-            poiCharge:
-              actData.originPrice - actData.actPrice - actData.mtCharge - actData.agentCharge
+            poiCharge: actData.originPrice - actData.actPrice - actData.mtCharge - actData.agentCharge
           },
 
           wmPoiId: this.wmPoiId,
@@ -94,8 +93,13 @@ export default class Act {
             period: '00:00-23:59',
             wmSkuId,
             weeksTime: '1,2,3,4,5,6,7',
-            startTime: dayjs().startOf('day').unix(),
-            endTime: dayjs().startOf('day').add(365, 'day').unix(),
+            startTime: dayjs()
+              .startOf('day')
+              .unix(),
+            endTime: dayjs()
+              .startOf('day')
+              .add(365, 'day')
+              .unix(),
             orderPayType: 2,
             orderLimit,
             limitTimeSale: '-1',
@@ -113,6 +117,53 @@ export default class Act {
               poiCharge: originPrice - actPrice
             },
             autoDelayDays: 30,
+            spec: '',
+            priority: 0
+          }
+        ]
+      }
+      const actSave_Res = await this.save_(poiPolicy)
+      return Promise.resolve(actSave_Res)
+    } catch (err) {
+      return Promise.reject(err)
+    }
+  }
+
+  async updateActPrice(spuId, wmSkuId, itemName, id, originPrice, actPrice, orderLimit) {
+    try {
+      let poiPolicy = {
+        online_pay: 0,
+        foods: [
+          {
+            foodKey: 78,
+            id,
+            wmPoiId: this.wmPoiId,
+            wmActPolicyId: 1001,
+            actInfo: { discount: 'NaN', origin_price: originPrice, act_price: actPrice },
+            period: '00:00-23:59',
+            wmSkuId,
+            weeksTime: '1,2,3,4,5,6,7',
+            startTime: dayjs()
+              .startOf('day')
+              .unix(),
+            endTime: dayjs()
+              .startOf('day')
+              .add(365, 'day')
+              .unix(),
+            orderPayType: 2,
+            orderLimit,
+            limitTimeSale: '-1',
+            itemName,
+            todaySaleNum: -1,
+            originId: 0,
+            sortIndex: 0,
+            settingType: '1',
+            chargeType: '0',
+            wmUserType: 0,
+            poiUserType: '0',
+            WmActPriceVo: { originPrice, actPrice, mtCharge: '0', agentCharge: 0, poiCharge: originPrice - actPrice },
+            autoDelayDays: 30,
+            spuId,
             spec: '',
             priority: 0
           }
@@ -261,33 +312,23 @@ let poiPolicyT = {
   activityUuid: 'f6d6ba68-cd3b-4e27-aec6-ec8d00ae6aa1',
   policy_detail: [
     {
-      discounts: [
-        { code: 1, discount: 9, poi_charge: 9, agent_charge: 0, type: 'default', mt_charge: 0 }
-      ],
+      discounts: [{ code: 1, discount: 9, poi_charge: 9, agent_charge: 0, type: 'default', mt_charge: 0 }],
       price: 15
     },
     {
-      discounts: [
-        { code: 1, discount: 16, poi_charge: 16, agent_charge: 0, type: 'default', mt_charge: 0 }
-      ],
+      discounts: [{ code: 1, discount: 16, poi_charge: 16, agent_charge: 0, type: 'default', mt_charge: 0 }],
       price: 28
     },
     {
-      discounts: [
-        { code: 1, discount: 21, poi_charge: 21, agent_charge: 0, type: 'default', mt_charge: 0 }
-      ],
+      discounts: [{ code: 1, discount: 21, poi_charge: 21, agent_charge: 0, type: 'default', mt_charge: 0 }],
       price: 42
     },
     {
-      discounts: [
-        { code: 1, discount: 25, poi_charge: 25, agent_charge: 0, type: 'default', mt_charge: 0 }
-      ],
+      discounts: [{ code: 1, discount: 25, poi_charge: 25, agent_charge: 0, type: 'default', mt_charge: 0 }],
       price: 60
     },
     {
-      discounts: [
-        { code: 1, discount: 45, poi_charge: 45, agent_charge: 0, type: 'default', mt_charge: 0 }
-      ],
+      discounts: [{ code: 1, discount: 45, poi_charge: 45, agent_charge: 0, type: 'default', mt_charge: 0 }],
       price: 100
     }
   ]
