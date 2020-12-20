@@ -1,5 +1,5 @@
 import App from './index.js'
-import FallbackApp from './fallback/fallback_app.js'
+import FallbackApp, { loop, wrap } from './fallback/fallback_app.js'
 import log from './log/log.js'
 import dayjs from 'dayjs'
 import xls2json from 'xls-to-json'
@@ -8,7 +8,6 @@ import fs from 'fs'
 const axls2Json = util.promisify(xls2json)
 import sleep from 'sleep-promise'
 import knex from 'knex'
-import { timingSafeEqual } from 'crypto'
 const knx = knex({
   client: 'mysql',
   connection: {
@@ -502,29 +501,12 @@ async function test_rename() {
 }
 
 async function test() {
-  try {
-    // 
-    let e = JSON.parse(fs.readFileSync('log/log.json'))
+  let dataSource = JSON.parse(fs.readFileSync('log/log.json'))
+  dataSource = dataSource.map(v => Object.values(v.meta))
 
-    for (let shop of e) {
-      const id = shop.meta.id
-      const name = shop.meta.name
-      const actPrice = parseFloat(shop.meta.actPrice)
-      try {
-        console.log(id, name, actPrice)
-        const updateActRes = await updateAct(id, name, actPrice)
-        console.log(updateActRes)
-        // await sleep(8000)
-      } catch (err) {
-        console.error(err)
-        log({ meta: { id, name, actPrice }, err })
-      }
-    }
-  } catch (err) {
-    console.error(err)
-  }
+  await loop(dataSource, updateAct)
 }
 
-// test()
+test()
 // test()
 // test_reduction()
