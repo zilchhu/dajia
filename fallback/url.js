@@ -25,7 +25,9 @@ const urls = {
     batchUpdateBoxPrice: '/reuse/product/food/w/batchUpdateSkuBoxPrice',
     updateImg: '/reuse/product/food/w/saveMultiImage',
     batchUpdateStock: 'reuse/product/food/w/batchUpdateSkuStock',
-    updateName: 'reuse/product/food/w/updateSpuName'
+    updateName: 'reuse/product/food/w/updateSpuName',
+    updateFoodCatSeq: 'reuse/product/food/w/changeTagSequence',
+    updateFoodCatName: '/reuse/product/food/w/saveTagInfo'
   },
   poi: {
     list: '/v2/shop/businessStatus/r/poiListSearch'

@@ -2,6 +2,7 @@ import Koa from 'koa'
 import Router from 'koa-router'
 import bodyParser from 'koa-bodyparser'
 import cors from 'koa2-cors'
+import fs from 'fs'
 
 import knex from 'knex'
 const knx = knex({
@@ -26,21 +27,33 @@ koa.use(
   })
 )
 
-router.get('/table', async ctx => {
+router.get('/tableByDate/:day', async ctx => {
   try {
-    let { day_from_today, shop_id, interval } = JSON.parse(JSON.stringify(ctx.query))
-    if (!interval) {
-      const data = await getTableFromMysql(day_from_today, shop_id)
-      ctx.body = { err: null, data }
-    } else {
-      day_from_today = parseInt(day_from_today)
-      interval = parseInt(interval)
-      const data = await getHistoryTableFromMysql(day_from_today, shop_id, interval)
-      ctx.body = { err: null, data }
+    let { day } = ctx.params
+    if (!day) {
+      ctx.body = { err: 'invalid params' }
+      return
     }
+    const data = await getTableByDate(day)
+    ctx.body = { data }
   } catch (err) {
     console.error(err)
-    ctx.body = { err, data: null }
+    ctx.body = { err }
+  }
+})
+
+router.get('/tableByShop/:shopId', async ctx => {
+  try {
+    let { shopId } = ctx.params
+    if (!shopId) {
+      ctx.body = { err: 'invalid params' }
+      return
+    }
+    const data = await getTableByShop(shopId)
+    ctx.body = { data }
+  } catch (err) {
+    console.error(err)
+    ctx.body = { err }
   }
 })
 
@@ -75,7 +88,6 @@ router.get('/plans', async ctx => {
   }
 })
 
-
 router.get('/plan/:shop_id', async ctx => {
   try {
     const { shop_id } = ctx.params
@@ -91,12 +103,11 @@ koa.use(router.routes())
 
 koa.listen(9004, () => console.log('running at 9004'))
 
-async function getTableFromMysql(day_from_today = 1, shop_id) {
-  let where_shop = shop_id ? `WHERE shop_id = ${shop_id}` : ''
+async function insertTableFromMysql(day_from_today = 1) {
   let sql = `
   WITH a1 AS (
     SELECT id, real_shop, shop_id, shop_name, platform, 
-      (settlea - third_send) AS income, third_send,
+      (settlea - IFNULL(third_send, 0)) AS income, third_send,
       price AS cost, cost_ratio,
       consume, 
       promotion_rate AS consume_ratio, 
@@ -168,18 +179,65 @@ async function getTableFromMysql(day_from_today = 1, shop_id) {
   LEFT JOIN c1 USING (shop_id)
   LEFT JOIN d1 ON a1.id = d1.oid
   
-  ${where_shop}
   ORDER BY a1.real_shop `
 
   try {
     console.log(...arguments)
-    await knx.raw(`SET @last_day = CURDATE() - ${day_from_today}`)
+    await knx.raw(`SET @last_day = DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL ${day_from_today} DAY),'%Y%m%d');`)
     const [data, _] = await knx.raw(sql)
-    return Promise.resolve(data)
+    const res = await knx('test_analyse_t_').insert(data)
+    return Promise.resolve(res)
   } catch (err) {
     return Promise.reject(err)
   }
 }
+
+async function insertTable(day_from_today) {
+  try {
+    const [search, _] = await knx.raw(
+      `select * from test_analyse_t_ where date = DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL ${day_from_today} DAY),'%Y%m%d');`
+    )
+    if (search.length > 0) return Promise.reject('have been added')
+    const res = await insertTableFromMysql(day_from_today)
+    return Promise.resolve(res)
+  } catch (err) {
+    return Promise.reject(err)
+  }
+}
+
+async function getTableByDate(day_from_today) {
+  try {
+    let sql = `SELECT * FROM test_analyse_t_ WHERE date = DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL ${day_from_today} DAY),'%Y%m%d')`
+    const [data, _] = await knx.raw(sql)
+    return Promise.resolve(formatTable(data))
+  } catch (err) {
+    return Promise.reject(err)
+  }
+}
+
+async function getTableByShop(shop_id) {
+  try {
+    let sql = `SELECT * FROM test_analyse_t_ WHERE shop_id = ${shop_id}`
+    const [data, _] = await knx.raw(sql)
+    return Promise.resolve(formatTable(data))
+  } catch (err) {
+    return Promise.reject(err)
+  }
+}
+
+async function insertTableAll() {
+  for (let day = 1; day <= 94; day++) {
+    try {
+      console.log(day)
+      const res = await insertTable(day)
+      console.log(res)
+    } catch (err) {
+      console.error(err)
+    }
+  }
+}
+
+// insertTableAll()
 
 async function getHistoryTableFromMysql(day_from_today, shop_id, interval = 7) {
   let histories = []
@@ -239,4 +297,52 @@ async function getPlans(shop_id) {
   } catch (err) {
     return Promise.reject(err)
   }
+}
+
+function percent(num) {
+  if (typeof num === 'string') num = parseFloat(num)
+  return `${(num * 100).toFixed(2)}%`
+}
+
+function fixed2(num) {
+  if (typeof num === 'string') num = parseFloat(num)
+  return num.toFixed(2)
+}
+
+function empty(str) {
+  if (str == null) return ''
+  else return str
+}
+
+function formatTable(data) {
+  return data.map(v => ({
+    ...v,
+    city: empty(v.city),
+    person: empty(v.person),
+    real_shop: empty(v.real_shop),
+    shop_id: empty(v.shop_id),
+    shop_name: empty(v.shop_name),
+    platform: empty(v.platform),
+    income: fixed2(v.income),
+    income_avg: fixed2(v.income_avg),
+    income_sum: fixed2(v.income_sum),
+    cost: fixed2(v.cost),
+    cost_avg: fixed2(v.cost_avg),
+    cost_sum: fixed2(v.cost_sum),
+    cost_ratio: percent(v.cost_ratio),
+    cost_sum_ratio: percent(v.cost_sum_ratio),
+    consume: fixed2(v.consume),
+    consume_avg: fixed2(v.consume_avg),
+    consume_sum: fixed2(v.consume_sum),
+    consume_ratio: percent(v.consume_ratio),
+    consume_sum_ratio: percent(v.consume_sum_ratio),
+    settlea_30: percent(v.settlea_30),
+    settlea_1: percent(v.settlea_1),
+    settlea_7: percent(v.settlea_7),
+    settlea_7_3: percent(v.settlea_7_3),
+    income_score: fixed2(v.income_score),
+    cost_score: fixed2(v.cost_score),
+    consume_score: fixed2(v.consume_score),
+    score: fixed2(v.score)
+  }))
 }

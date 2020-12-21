@@ -3,7 +3,9 @@ const urls = {
     search: 'nevermore.goods/invoke/?method=FoodService.getItemForSearch',
     updateAttr: 'nevermore.goods/invoke/?method=FoodService.updateGoodsAttr',
     updateStock: 'nevermore.goods/invoke/?method=FoodService.updateFoodsStock',
-    batchRemove: 'nevermore.goods/invoke/?method=FoodService.batchRemoveFoods'
+    batchRemove: 'nevermore.goods/invoke/?method=FoodService.batchRemoveFoods',
+    updateFoodCatSeq: 'nevermore.goods/invoke/?method=FoodService.setGroupPosition',
+    listFoodCat: 'nevermore.goods/invoke/?method=FoodService.queryCategoryWithFoodFilter'
   },
   act: {
     invalid: 'marketing/invoke/?method=ActivityNcpService.invalidActivity',

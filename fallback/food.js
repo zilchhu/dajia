@@ -70,9 +70,7 @@ export default class Food {
       await sleep(3000)
       const excels = await this.listDowns_()
       const excel = excels.data.find(
-        v =>
-          dayjs.unix(v.utime).month() == dayjs().month() &&
-          dayjs.unix(v.utime).date() == dayjs().date()
+        v => dayjs.unix(v.utime).month() == dayjs().month() && dayjs.unix(v.utime).date() == dayjs().date()
       )
       if (excel) {
         await download(excel.output, 'data')
@@ -115,8 +113,7 @@ export default class Food {
   async listFoods(tagId) {
     try {
       const list2_Res = await this.list2_({ tagId, pageSize: 50 })
-      if (!list2_Res || !list2_Res.productList)
-        return Promise.reject({ err: 'product list failed' })
+      if (!list2_Res || !list2_Res.productList) return Promise.reject({ err: 'product list failed' })
       return Promise.resolve(list2_Res.productList)
     } catch (err) {
       return Promise.reject(err)
@@ -127,7 +124,7 @@ export default class Food {
     try {
       const tags = await this.listTags()
       const tag = tags.find(v => v.name.includes(name))
-      if (!tag) return Promise.reject({ err: 'tag not find' })
+      if (!tag) return Promise.reject({ err: 'tag1 not find' })
       return Promise.resolve(tag)
     } catch (err) {
       return Promise.reject(err)
@@ -239,6 +236,41 @@ export default class Food {
     }
     return instance.post(urls.food.updateName, data)
   }
+
+  async updateFoodCatSeq(tagId, targetSeq) {
+    let data = {
+      wmPoiId: this.wmPoiId,
+      tagId,
+      targetSeq
+    }
+    return instance.post(urls.food.updateFoodCatSeq, data)
+  }
+
+  async updateFoodCatName_(tag, tagName) {
+    let data = {
+      wmPoiId: this.wmPoiId,
+      tagInfo: JSON.stringify({
+        id: tag.id,
+        name: tag.name.replace('甜糯汤圆', tagName),
+        description: tag.description,
+        top_flag: tag.topFlag,
+        tag_type: tag.tagType,
+        time_zone: tag.timeZone,
+        sequence: tag.sequence
+      })
+    }
+    return instance.post(urls.food.updateFoodCatName, data)
+  }
+
+  async updateFoodCatName(tagName, newTagName) {
+    try {
+      const tag = await this.searchTag(tagName)
+      const tagUpdatedRes = await this.updateFoodCatName(tag, newTagName)
+      return Promise.resolve(tagUpdatedRes)
+    } catch (err) {
+      return Promise.reject(err)
+    }
+  }
 }
 
 let skuT = {
@@ -285,10 +317,8 @@ let foodT = [
         wm_food_spu_id: '',
         wmProductPics: [
           {
-            pic_large_url:
-              'http://p1.meituan.net/wmproduct/a1164ddc4d5d4263975e7471f773695149977.png',
-            pic_small_url:
-              'http://p1.meituan.net/wmproduct/a1164ddc4d5d4263975e7471f773695149977.png',
+            pic_large_url: 'http://p1.meituan.net/wmproduct/a1164ddc4d5d4263975e7471f773695149977.png',
+            pic_small_url: 'http://p1.meituan.net/wmproduct/a1164ddc4d5d4263975e7471f773695149977.png',
             sequence: 1,
             is_quality_low: false,
             quality_score: 1

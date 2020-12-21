@@ -1,5 +1,5 @@
 import App from './index.js'
-import FallbackApp, { loop, wrap } from './fallback/fallback_app.js'
+import FallbackApp, { loop, wrap, readJson } from './fallback/fallback_app.js'
 import log from './log/log.js'
 import dayjs from 'dayjs'
 import xls2json from 'xls-to-json'
@@ -462,6 +462,19 @@ async function updateFoodStock(id, name, stock = 10000) {
   }
 }
 
+async function updateFoodName(id, tagName, spuId, foodName, spuName) {
+  const fallbackApp = new FallbackApp(id)
+
+  try {
+    console.log(id, tagName, spuId, foodName, spuName)
+    if (foodName.includes('冬至快乐')) return Promise.reject({ err: 'food name has been updated', info: foodName })
+    const foodUpdateNameRes = await fallbackApp.food.updateName(spuId, `${foodName}${spuName}`)
+    return Promise.resolve({ ...foodUpdateNameRes, foodName })
+  } catch (err) {
+    return Promise.reject(err)
+  }
+}
+
 async function test_rename() {
   try {
     const poiList = await new FallbackApp().poi.list()
@@ -500,11 +513,105 @@ async function test_rename() {
   }
 }
 
-async function test() {
-  let dataSource = JSON.parse(fs.readFileSync('log/log.json'))
+async function test_actPrice() {
+  let dataSource = readJson('log/log.json')
   dataSource = dataSource.map(v => Object.values(v.meta))
 
-  await loop(dataSource, updateAct)
+  await loop(updateAct, dataSource)
+}
+
+async function updateTagSeq(id, name, seq = 1) {
+  const fallbackApp = new FallbackApp(id)
+
+  try {
+    const tagWillUpdate = await fallbackApp.food.searchTag(name)
+    const tagUpdateSeqRes = await fallbackApp.food.updateFoodCatSeq(tagWillUpdate.id, seq)
+    const tagUpdated = await fallbackApp.food.searchTag(name)
+    return Promise.resolve({ ...tagUpdateSeqRes, tagUpdated: { seq: tagUpdated.sequence } })
+  } catch (err) {
+    return Promise.reject(err)
+  }
+}
+
+async function test_sortTag() {
+  const fallbackApp = new FallbackApp()
+  try {
+    let dataSource = await fallbackApp.poi.list()
+    dataSource = dataSource.map(v => [v.id, '甜糯汤圆'])
+
+    await loop(updateTagSeq, dataSource)
+  } catch (error) {
+    console.error(error)
+  }
+}
+
+async function test_name() {
+  let fallbackApp = new FallbackApp()
+  try {
+    let pois = await fallbackApp.poi.list()
+    let cnt = pois.length
+    for (let poi of pois) {
+      console.log(cnt)
+      if (
+        !readJson('log/log.json')
+          .map(v => v.poi)
+          .includes(poi.poiName)
+      ) {
+        cnt -= 1
+        continue
+      }
+      try {
+        fallbackApp = new FallbackApp(poi.id)
+        const tag = await fallbackApp.food.searchTag('甜糯汤圆')
+        const foods = await fallbackApp.food.listFoods(tag.id)
+        for (let food of foods) {
+          try {
+            const updateFoodNameRes = await updateFoodName(poi.id, '甜糯汤圆', food.id, food.name, '（冬至快乐）')
+            console.log(updateFoodNameRes)
+          } catch (err) {
+            console.error(err)
+            log({ err, poi: poi.poiName })
+          }
+        }
+      } catch (err) {
+        console.error(err)
+        log({ err, poi: poi.poiName })
+      }
+      cnt -= 1
+    }
+  } catch (error) {
+    console.error(error)
+  }
+}
+
+async function updateFoodCatName(id, tagName, newTagName) {
+  try {
+    const fallbackApp = new FallbackApp(id)
+    const tag = await fallbackApp.food.searchTag(tagName)
+    const tag1 = await fallbackApp.food.updateFoodCatName_(tag, newTagName)
+    return Promise.resolve(tag1)
+  } catch (err) {
+    return Promise.reject(err)
+  }
+}
+
+async function test() {
+  try {
+    const fallbackApp = new FallbackApp()
+    let poiList = await fallbackApp.poi.list()
+    for (let poi of poiList) {
+      try {
+        if (poi.id != 10177204) continue
+        const res = await updateFoodCatName(poi.id, '甜糯汤圆', '冬至汤圆')
+        console.log(res)
+      } catch (err) {
+        console.error(err)
+        log({ shop: { id: poi.id, name: poi.name }, err })
+      }
+    }
+  } catch (error) {
+    console.error(error)
+  }
 }
 
 test()
