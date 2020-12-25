@@ -48,5 +48,5 @@ content-type: application/json
 
 ###
 
-GET http://localhost:9005/user/2038543739
+GET http://localhost:9005/user/刘铭
 content-type: application/json

@@ -86,7 +86,7 @@ router.post('/plan', async ctx => {
 
 koa.use(router.routes())
 
-koa.listen(9004, () => console.log('running at 9004'))
+// koa.listen(9004, () => console.log('running at 9004'))
 
 async function insertTableFromMysql(day_from_today = 1) {
   let sql = `
@@ -197,8 +197,9 @@ async function updateTable(id, a) {
 }
 
 async function updateTableAll() {
-  let sql = `SELECT * FROM test_analyse_t_ WHERE date = DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL 1 DAY),'%Y%m%d')`
-  let [data, _] = await knx.raw(sql)
+  const data = await knx('foxx_operating_data').select().where({
+    date: 20201224
+  })
   let cnt = data.length
   for (let rec of data) {
     console.log(cnt)
@@ -215,7 +216,7 @@ async function updateTableAll() {
   }
 }
 
-// updateTableAll()
+updateTableAll()
 
 async function getTableByDate(day_from_today) {
   try {
@@ -253,6 +254,7 @@ async function insertTableAll() {
     }
   }
 }
+
 
 // insertTableAll()
 
