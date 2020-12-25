@@ -1,0 +1,26 @@
+[spec]
+person 
+  improved count shop / responsible for count shop / unimroved in responsible
+  act_time(per 30 min)
+  act_detail for shop / unimproved problems for shop
+
+
+[mock]
+宋启明
+| 优化记录 30/42 | 待优化门店 23/36 |  
+            
+：高推广30个，低收入0个，高成本1个
+优化了42个问题，30家门店
+3分钟前 ;; divider/border
+  古御贡茶•手抓饼•小吃（白石厦店） | 低收入，高成本 ;; size: small, color: gray
+  高推广  1.6元一个进店，点金1.4-0.1  ;; size: normal, color: black; font: bold
+
+  古御贡茶•手抓饼•小吃（罗湖草埔店）| 低收入，高成本 
+  高推广  花的太快，占比高；1.5-0.3；铂金-0.05，
+
+
+全部 23/36  低收入 10 
+古御贡茶•手抓饼•小吃（白石厦店）
+低收入  
+高成本  
+

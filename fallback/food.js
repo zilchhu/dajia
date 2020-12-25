@@ -34,6 +34,15 @@ export default class Food {
     }
   }
 
+  async searchFood(name) {
+    try {
+      const res = await this.search_(name)
+      return Promise.resolve(res.productList)
+    } catch (error) {
+      return Promise.reject(error)
+    }
+  }
+
   async find(name) {
     try {
       const searchRes = await this.search_(name)
@@ -251,7 +260,7 @@ export default class Food {
       wmPoiId: this.wmPoiId,
       tagInfo: JSON.stringify({
         id: tag.id,
-        name: tag.name.replace('甜糯汤圆', tagName),
+        name: tag.name.replace('冬至汤圆', tagName),
         description: tag.description,
         top_flag: tag.topFlag,
         tag_type: tag.tagType,
@@ -270,6 +279,30 @@ export default class Food {
     } catch (err) {
       return Promise.reject(err)
     }
+  }
+
+  async batchUpdateTag(tagId, spuIds) {
+    let data = {
+      pTab: 0,
+      viewStyle: 0,
+      tagId,
+      spuIds: spuIds.join(','),
+      v2: 1,
+      wmPoiId: this.wmPoiId
+    }
+    return instance.post(urls.food.batchUpdateTag, data)
+  }
+
+  async batchDeleteFoods(skuIds) {
+    let data = {
+      opTab: 0,
+      tagCat: 1,
+      wmPoiId: this.wmPoiId,
+      skuIds: skuIds.join(','),
+      viewStyle: 0,
+      v2: 1
+    }
+    return instance.post(urls.food.batchDelete, data)
   }
 }
 

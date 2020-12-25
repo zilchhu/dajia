@@ -467,9 +467,10 @@ async function updateFoodName(id, tagName, spuId, foodName, spuName) {
 
   try {
     console.log(id, tagName, spuId, foodName, spuName)
-    if (foodName.includes('冬至快乐')) return Promise.reject({ err: 'food name has been updated', info: foodName })
-    const foodUpdateNameRes = await fallbackApp.food.updateName(spuId, `${foodName}${spuName}`)
-    return Promise.resolve({ ...foodUpdateNameRes, foodName })
+    if (foodName.includes('冬至快乐')) {
+      const foodUpdateNameRes = await fallbackApp.food.updateName(spuId, `${spuName}`)
+      return Promise.resolve({ ...foodUpdateNameRes, foodName })
+    }
   } catch (err) {
     return Promise.reject(err)
   }
@@ -520,12 +521,14 @@ async function test_actPrice() {
   await loop(updateAct, dataSource)
 }
 
-async function updateTagSeq(id, name, seq = 1) {
+async function updateTagSeq(id, name) {
   const fallbackApp = new FallbackApp(id)
 
   try {
-    const tagWillUpdate = await fallbackApp.food.searchTag(name)
-    const tagUpdateSeqRes = await fallbackApp.food.updateFoodCatSeq(tagWillUpdate.id, seq)
+    const tags = await fallbackApp.food.listTags()
+    const tagWillUpdate = tags.find(v => v.name.includes(name))
+    if (!tagWillUpdate) return Promise.reject({ err: 'tag1 not find' })
+    const tagUpdateSeqRes = await fallbackApp.food.updateFoodCatSeq(tagWillUpdate.id, tags.length)
     const tagUpdated = await fallbackApp.food.searchTag(name)
     return Promise.resolve({ ...tagUpdateSeqRes, tagUpdated: { seq: tagUpdated.sequence } })
   } catch (err) {
@@ -552,21 +555,19 @@ async function test_name() {
     let cnt = pois.length
     for (let poi of pois) {
       console.log(cnt)
-      if (
-        !readJson('log/log.json')
-          .map(v => v.poi)
-          .includes(poi.poiName)
-      ) {
-        cnt -= 1
-        continue
-      }
       try {
         fallbackApp = new FallbackApp(poi.id)
         const tag = await fallbackApp.food.searchTag('甜糯汤圆')
         const foods = await fallbackApp.food.listFoods(tag.id)
         for (let food of foods) {
           try {
-            const updateFoodNameRes = await updateFoodName(poi.id, '甜糯汤圆', food.id, food.name, '（冬至快乐）')
+            const updateFoodNameRes = await updateFoodName(
+              poi.id,
+              '甜糯汤圆',
+              food.id,
+              food.name,
+              food.name.replace('（冬至快乐）', '')
+            )
             console.log(updateFoodNameRes)
           } catch (err) {
             console.error(err)
@@ -595,14 +596,13 @@ async function updateFoodCatName(id, tagName, newTagName) {
   }
 }
 
-async function test() {
+async function test_catName() {
   try {
     const fallbackApp = new FallbackApp()
     let poiList = await fallbackApp.poi.list()
     for (let poi of poiList) {
       try {
-        if (poi.id != 10177204) continue
-        const res = await updateFoodCatName(poi.id, '甜糯汤圆', '冬至汤圆')
+        const res = await updateFoodCatName(poi.id, '冬至汤圆', '甜糯汤圆')
         console.log(res)
       } catch (err) {
         console.error(err)
@@ -614,6 +614,99 @@ async function test() {
   }
 }
 
+async function moveFood(id, spuId) {
+  const fallbackApp = new FallbackApp(id)
+
+  try {
+    const tags = await fallbackApp.food.listTags()
+    const tag = tags.find(v => /.*店铺公告|门店公告|不要下单|别点了.*/.test(v.name))
+    if (!tag) return Promise.reject({ err: 'tag not found' })
+    const res = await fallbackApp.food.batchUpdateTag(tag.id, [spuId])
+    return res
+  } catch (err) {
+    return Promise.reject(err)
+  }
+}
+
+async function test_move() {
+  try {
+    let [data, _] = await knx.raw(`SELECT * FROM foxx_food_manage f 
+    LEFT JOIN foxx_spareas_info sp USING (wmpoiid)
+    WHERE f.date = CURDATE() AND  f.name LIKE '%热狗%' 
+    AND DATE(sp.insert_date) = CURDATE() AND sp.minPrice >= 15`)
+    data = data.map(v => [v.wmpoiid, v.productId])
+    await loop(moveFood, data, false)
+  } catch (error) {
+    console.error(error)
+  }
+}
+
+async function delFoods(id) {
+  const fallbackApp = new FallbackApp(id)
+
+  try {
+    const heyteas = await fallbackApp.food.searchFood('喜茶')
+    if (heyteas.length > 0) {
+      const skuIds = heyteas.map(v => v.wmProductSkus.map(k => k.id).join(','))
+      const res = await fallbackApp.food.batchDeleteFoods(skuIds)
+      return Promise.resolve({ res, deletedFoods: heyteas.map(v => v.name) })
+    }
+    return Promise.resolve({ warn: 'no search' })
+  } catch (err) {
+    return Promise.reject(err)
+  }
+}
+
+async function test_delFoods() {
+  try {
+    let fallbackApp = new FallbackApp()
+    let data = await fallbackApp.poi.list()
+    data = data.map(v => [v.id])
+    await loop(delFoods, data, false)
+  } catch (error) {
+    console.log(error)
+  }
+}
+
+async function renameFood(id, spuId, oldName) {
+  const fallbackApp = new FallbackApp(id)
+
+  try {
+    const newName = oldName.replace('（两杯，两杯）', '【两杯，注意是两杯哦】')
+    const res = await fallbackApp.food.updateName(spuId, newName)
+    return Promise.resolve({ res, newName })
+  } catch (err) {
+    return Promise.reject(err)
+  }
+}
+
+async function test_rename2() {
+  try {
+    let [data, _] = await knx.raw(
+      `SELECT * FROM foxx_food_manage f WHERE date = CURDATE() AND name LIKE '%两杯，两杯%'`
+    )
+    data = data.map(v => [v.wmpoiid, v.productId, v.name])
+    await loop(renameFood, data, false)
+  } catch (error) {
+    console.error(error)
+  }
+}
+
+async function test() {
+  try {
+    const fallbackApp = new FallbackApp()
+    let data = await fallbackApp.poi.list()
+    data = data.map(v => ({
+      id: v.id,
+      name: v.poiName,
+      city: v.city
+    }))
+    const res = await knx('mt_shops_').insert(data)
+    console.log(res)
+  } catch (error) {
+    console.error(error)
+  }
+}
+// test_sortTag()
 test()
-// test()
 // test_reduction()

@@ -3,6 +3,7 @@ import Router from 'koa-router'
 import bodyParser from 'koa-bodyparser'
 import cors from 'koa2-cors'
 import fs from 'fs'
+import bcrypt from 'bcrypt'
 
 import knex from 'knex'
 const knx = knex({
@@ -19,6 +20,7 @@ const koa = new Koa()
 const router = new Router()
 
 koa.use(cors())
+
 koa.use(
   bodyParser({
     onerror: function(err, ctx) {
@@ -69,29 +71,12 @@ router.get('/rules', async ctx => {
 
 router.post('/plan', async ctx => {
   try {
-    const { oid, name, q, a } = ctx.request.body
-    const data = await postPlan(oid, name, q, a)
-    ctx.body = { err: null, data }
-  } catch (err) {
-    console.error(err)
-    ctx.body = { err, data: null }
-  }
-})
-
-router.get('/plans', async ctx => {
-  try {
-    const data = await getPlans()
-    ctx.body = { err: null, data }
-  } catch (err) {
-    console.error(err)
-    ctx.body = { err, data: null }
-  }
-})
-
-router.get('/plan/:shop_id', async ctx => {
-  try {
-    const { shop_id } = ctx.params
-    const data = await getPlans(shop_id)
+    const { id, a } = ctx.request.body
+    if (!id || !a) {
+      ctx.body = { err: 'invalid params' }
+      return
+    }
+    const data = await updateTable(id, a)
     ctx.body = { err: null, data }
   } catch (err) {
     console.error(err)
@@ -107,7 +92,7 @@ async function insertTableFromMysql(day_from_today = 1) {
   let sql = `
   WITH a1 AS (
     SELECT id, real_shop, shop_id, shop_name, platform, 
-      (settlea - IFNULL(third_send, 0)) AS income, third_send,
+      (settlea - IFNULL(third_send, 0)) AS income, third_send, orders,
       price AS cost, cost_ratio,
       consume, 
       promotion_rate AS consume_ratio, 
@@ -157,27 +142,21 @@ async function insertTableFromMysql(day_from_today = 1) {
   c1 AS (
     SELECT real_shop_name, shop_id, city, person
     FROM foxx_real_shop_info
-  ),
-  d1 AS (
-    SELECT id AS op_id, oid, name AS op_name, q, a, created_at AS op_time
-    FROM test_analyse_a_
   )
   SELECT id, city, person,
-    a1.real_shop, a1.shop_id, a1.shop_name, platform, third_send,
+    a1.real_shop, a1.shop_id, a1.shop_name, platform, third_send, orders,
     income, income_avg, income_sum,
     a1.cost, cost_avg, cost_sum, cost_ratio, cost_sum_ratio,
     consume, consume_avg, consume_sum, consume_ratio, consume_sum_ratio,
     settlea_30, settlea_1, settlea_7, settlea_7_3, 
     income_score, consume_score, cost_score,
     score,
-    a1.date,
-    op_id, op_name, q, a, op_time
+    a1.date
     
   FROM a1 LEFT JOIN a2 USING(shop_id)
   LEFT JOIN a4 USING (shop_id)
   LEFT JOIN b2 USING (shop_id)
   LEFT JOIN c1 USING (shop_id)
-  LEFT JOIN d1 ON a1.id = d1.oid
   
   ORDER BY a1.real_shop `
 
@@ -185,6 +164,7 @@ async function insertTableFromMysql(day_from_today = 1) {
     console.log(...arguments)
     await knx.raw(`SET @last_day = DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL ${day_from_today} DAY),'%Y%m%d');`)
     const [data, _] = await knx.raw(sql)
+    if (data.length == 0) return Promise.reject('no data')
     const res = await knx('test_analyse_t_').insert(data)
     return Promise.resolve(res)
   } catch (err) {
@@ -205,10 +185,47 @@ async function insertTable(day_from_today) {
   }
 }
 
+async function updateTable(id, a) {
+  try {
+    const res = await knx('test_analyse_t_')
+      .where('id', id)
+      .update({ a })
+    return Promise.resolve(res)
+  } catch (err) {
+    return Promise.reject(err)
+  }
+}
+
+async function updateTableAll() {
+  let sql = `SELECT * FROM test_analyse_t_ WHERE date = DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL 1 DAY),'%Y%m%d')`
+  let [data, _] = await knx.raw(sql)
+  let cnt = data.length
+  for (let rec of data) {
+    console.log(cnt)
+    try {
+      let res = await knx('test_analyse_t_')
+        .where('id', rec.id)
+        .update({ orders: rec.orders })
+      console.log(rec.id, res)
+    } catch (error) {
+      console.error(error)
+      fs.appendFileSync('log.error', rec.id + '\n')
+    }
+    cnt -= 1
+  }
+}
+
+// updateTableAll()
+
 async function getTableByDate(day_from_today) {
   try {
     let sql = `SELECT * FROM test_analyse_t_ WHERE date = DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL ${day_from_today} DAY),'%Y%m%d')`
-    const [data, _] = await knx.raw(sql)
+    let [data, _] = await knx.raw(sql)
+    if (data.length == 0) {
+      await insertTable(day_from_today)
+      let [data, _] = await knx.raw(sql)
+      return Promise.resolve(formatTable(data))
+    }
     return Promise.resolve(formatTable(data))
   } catch (err) {
     return Promise.reject(err)
@@ -217,7 +234,7 @@ async function getTableByDate(day_from_today) {
 
 async function getTableByShop(shop_id) {
   try {
-    let sql = `SELECT * FROM test_analyse_t_ WHERE shop_id = ${shop_id}`
+    let sql = `SELECT * FROM test_analyse_t_ WHERE shop_id = ${shop_id} AND date < DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL 1 DAY),'%Y%m%d') ORDER BY date DESC`
     const [data, _] = await knx.raw(sql)
     return Promise.resolve(formatTable(data))
   } catch (err) {

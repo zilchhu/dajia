@@ -8,24 +8,15 @@ content-type: application/json
 GET http://localhost:8000/mongo/food
 content-type: application/json
 
+
 ###
 
-GET http://localhost:9002/yt
+GET http://localhost:9004/tableByDate/1
 content-type: application/json
 
 ###
 
-GET http://localhost:9002/jx
-content-type: application/json
-
-###
-
-GET http://localhost:9002/all
-content-type: application/json
-
-###
-
-GET http://localhost:9004/table?day_from_today=2&shop_id=2066637616&interval=7
+GET http://localhost:9004/tableByShop/168048393
 content-type: application/json
 
 ###
@@ -53,4 +44,9 @@ content-type: application/json
 ###
 
 GET http://localhost:9004/plan/2038543739
+content-type: application/json
+
+###
+
+GET http://localhost:9005/user/2038543739
 content-type: application/json

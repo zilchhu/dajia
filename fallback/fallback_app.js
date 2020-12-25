@@ -6,6 +6,7 @@ import log from '../log/log.js'
 import fs from 'fs'
 import util from 'util'
 import xls2Json from 'xls-to-json'
+import sleep from 'sleep-promise'
 const axls2Json = util.promisify(xls2Json)
 
 export default class FallbackApp {
@@ -27,12 +28,13 @@ export async function wrap(f, meta) {
   }
 }
 
-export async function loop(f, dataSource) {
+export async function loop(f, dataSource, slow) {
   try {
     let count = dataSource.length
     for (let data of dataSource) {
       console.log(count)
       await wrap(f, data)
+      if(slow) await sleep(4000)
       count -= 1
     }
   } catch (err) {
