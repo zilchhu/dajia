@@ -81,16 +81,19 @@ async function shop(id) {}
 async function user(name) {
   try {
     const data = await base(1)
-    let res = new M(data)
-      .bind(distinct_persons)
-      .bind(split_person)
-      .bind(object_person)
+    let res = new M(data).bind(distinct_persons)
 
-    if (name == 'all') {
+    if (name == ':all_names') {
+      return Promise.resolve(res.val.persons)
+    }
+
+    res = res.bind(split_person).bind(object_person)
+    if (name == ':all') {
       return Promise.resolve(res.val)
     }
-    res = res.bind(filter_person).val
-    return Promise.resolve(res)
+
+    res = res.bind(filter_person)
+    return Promise.resolve(res.val)
   } catch (e) {
     return Promise.reject(e)
   }
@@ -181,7 +184,7 @@ async function base(d) {
       .bind(parse_a)
       .bind(split_shop)
       .bind(split_shop2)
-      .bind(parse_time).val
+      .bind(format).val
     return Promise.resolve(res)
   } catch (e) {
     return Promise.reject(e)
@@ -239,7 +242,7 @@ async function base(d) {
     })
   }
 
-  function parse_time(xs) {
+  function format(xs) {
     function parse(a) {
       let time = ''
       if (a.time.trim().length > 0) {
@@ -263,16 +266,19 @@ async function base(d) {
     })
 
     return new M({
-      shops,
-      shop_success: xs.shop_success,
+      shops: formatShop(shops),
+      shop_success: formatShop(xs.shop_success),
       shop_failure: {
-        shop_unimproved: xs.shop_failure.shop_unimproved,
-        shop_improved,
-        shop_improving
+        shop_unimproved: formatShop(xs.shop_failure.shop_unimproved),
+        shop_improved: formatShop(shop_improved),
+        shop_improving: formatShop(shop_improving)
       }
     })
   }
+
 }
+
+
 
 async function insertTableFromMysql(day_from_today = 1) {
   let sql = `
@@ -368,5 +374,54 @@ async function insertTable(day_from_today) {
     return Promise.resolve(res)
   } catch (err) {
     return Promise.reject(err)
+  }
+}
+
+function formatShop(data) {
+  return data.map(v => ({
+    ...v,
+    city: empty(v.city),
+    person: empty(v.person),
+    real_shop: empty(v.real_shop),
+    shop_id: empty(v.shop_id),
+    shop_name: empty(v.shop_name),
+    platform: empty(v.platform),
+    income: fixed2(v.income),
+    income_avg: fixed2(v.income_avg),
+    income_sum: fixed2(v.income_sum),
+    cost: fixed2(v.cost),
+    cost_avg: fixed2(v.cost_avg),
+    cost_sum: fixed2(v.cost_sum),
+    cost_ratio: percent(v.cost_ratio),
+    cost_sum_ratio: percent(v.cost_sum_ratio),
+    consume: fixed2(v.consume),
+    consume_avg: fixed2(v.consume_avg),
+    consume_sum: fixed2(v.consume_sum),
+    consume_ratio: percent(v.consume_ratio),
+    consume_sum_ratio: percent(v.consume_sum_ratio),
+    settlea_30: percent(v.settlea_30),
+    settlea_1: percent(v.settlea_1),
+    settlea_7: percent(v.settlea_7),
+    settlea_7_3: percent(v.settlea_7_3),
+    income_score: fixed2(v.income_score),
+    cost_score: fixed2(v.cost_score),
+    consume_score: fixed2(v.consume_score),
+    score: fixed2(v.score),
+    a: v.a == null ? [] : v.a
+  }))
+
+  function empty(str) {
+    if (str == null) return '-'
+    else return str
+  }
+
+  function percent(num) {
+    if (typeof num === 'string') num = parseFloat(num)
+    return `${(num * 100).toFixed(2)}%`
+  }
+  
+  function fixed2(num) {
+    if (typeof num === 'string') num = parseFloat(num)
+    return num.toFixed(2)
   }
 }
