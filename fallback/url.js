@@ -29,7 +29,9 @@ const urls = {
     updateFoodCatSeq: 'reuse/product/food/w/changeTagSequence',
     updateFoodCatName: '/reuse/product/food/w/saveTagInfo',
     batchUpdateTag: 'reuse/product/food/w/batchUpdateTag',
-    batchDelete: 'reuse/product/food/w/batchDelete'
+    batchDelete: 'reuse/product/food/w/batchDelete',
+    highBoxPrice: '/reuse/product/food/r/highBoxPriceProductCount',
+    syncFood: '/reuse/product/sync_food/w/submit'
   },
   poi: {
     list: '/v2/shop/businessStatus/r/poiListSearch'

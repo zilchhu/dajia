@@ -10,6 +10,8 @@ const axls2Json = util.promisify(xls2Json)
 export default class Food {
   constructor(wmPoiId) {
     this.wmPoiId = wmPoiId
+    this.csrfToken =
+      '8vjN4GQ0dy+3r/2egPwt3f/06vLCiESYIGdh0yymkl9AQN4PbtrSO4FeWG9/du3Q8kk+qjovX8grmkmLjVMQh/EZj7zftJ+dcMxvBAfAMMmwznxmYQ76etl+dHSPcK8AXDaIBEReBkPk7sD0EaEk0Q=='
   }
 
   async search_(name) {
@@ -121,7 +123,7 @@ export default class Food {
 
   async listFoods(tagId) {
     try {
-      const list2_Res = await this.list2_({ tagId, pageSize: 50 })
+      const list2_Res = await this.list2_({ tagId, pageSize: 500 })
       if (!list2_Res || !list2_Res.productList) return Promise.reject({ err: 'product list failed' })
       return Promise.resolve(list2_Res.productList)
     } catch (err) {
@@ -303,6 +305,92 @@ export default class Food {
       v2: 1
     }
     return instance.post(urls.food.batchDelete, data)
+  }
+
+  async getHighBoxPrice() {
+    let params = {
+      wmPoiId: this.wmPoiId
+    }
+    return instance.get(urls.food.highBoxPrice, { params })
+  }
+
+  async syncTest(tagId) {
+    let data = {
+      type: 1,
+      foodSyncParam: JSON.stringify({
+        sourcePoiId: 9470231,
+        targetPois: [this.wmPoiId],
+        syncType: '2',
+        syncAll: 0,
+        opType: '1',
+        tag: [{ tagId, syncAll: true, spu: [] }]
+      }),
+      csrfToken: this.csrfToken
+    }
+    return instance.post(urls.food.syncFood, data)
+  }
+
+  async syncTags() {
+    let data = {
+      type: 1,
+      foodSyncParam: JSON.stringify({
+        sourcePoiId: 9383519,
+        targetPois: [this.wmPoiId],
+        syncType: '3',
+        syncAll: 0,
+        opType: '1',
+        tag: [
+          { tagId: 191265115, syncAll: true, spu: [] },
+          { tagId: 191265120, syncAll: true, spu: [] },
+          { tagId: 191265149, syncAll: true, spu: [] },
+          { tagId: 191265163, syncAll: true, spu: [] },
+          { tagId: 191715364, syncAll: true, spu: [] },
+          { tagId: 189975212, syncAll: true, spu: [] },
+          { tagId: 189975256, syncAll: true, spu: [] },
+          { tagId: 193964658, syncAll: true, spu: [] }
+        ]
+      }),
+      csrfToken: this.csrfToken
+    }
+    return instance.post(urls.food.syncFood, data)
+  }
+
+  async setHighBoxPrice(tagI, sell) {
+    try {
+      const tagids = [194000423, 194000957, 194001334, 194001667, 194002074]
+      const highBoxPriceR = await this.getHighBoxPrice()
+
+      let canSave = highBoxPriceR.skuInSellOverall > highBoxPriceR.highBoxPriceCount
+
+      console.log('highBoxPrice', '...')
+
+      if (!canSave) {
+        console.error({
+          onSell: highBoxPriceR.skuInSellOverall,
+          all: highBoxPriceR.highBoxPriceCount,
+          wmPoiId: this.wmPoiId
+        })
+        if (tagI > 4) {
+          console.error('sync maxed', tagI)
+          if (sell) {
+            console.log('waiting 30m', '...')
+            await sleep(30 * 60 * 1000)
+            await this.setHighBoxPrice(tagI, false)
+          } else {
+            await this.syncTags()
+          }
+
+          return Promise.reject({err: 'sync maxed'})
+        }
+        await this.syncTest(tagids[tagI])
+        await sleep(2 * 60 * 1000)
+        return this.setHighBoxPrice(tagI + 1, true)
+      } else {
+        return Promise.resolve({ ok: true })
+      }
+    } catch (err) {
+      return Promise.reject(err)
+    }
   }
 }
 

@@ -197,9 +197,11 @@ async function updateTable(id, a) {
 }
 
 async function updateTableAll() {
-  const data = await knx('foxx_operating_data').select().where({
-    date: 20201224
-  })
+  const data = await knx('foxx_operating_data')
+    .select()
+    .where({
+      date: 20201224
+    })
   let cnt = data.length
   for (let rec of data) {
     console.log(cnt)
@@ -216,7 +218,37 @@ async function updateTableAll() {
   }
 }
 
-updateTableAll()
+async function updateTableAll2() {
+  try {
+    const data = await knx('test_analyse_t_')
+      .select()
+      .whereNotNull('a')
+      .orderBy('date')
+    let cnt = data.length
+    for (let rec of data) {
+      console.log(cnt)
+      try {
+        let a = JSON.parse(rec.a).map(v => {
+          let time = v.time.trim()
+          if (v.time.trim().length > 0 && v.time.startsWith('12')) time = `2020/${v.time}`
+          return {
+            ...v,
+            time
+          }
+        })
+        const res = await updateTable(rec.id, JSON.stringify(a))
+        console.log({ a, res })
+      } catch (err) {
+        console.error(err)
+      }
+      cnt -= 1
+    }
+  } catch (error) {
+    console.error(error)
+  }
+}
+
+updateTableAll2()
 
 async function getTableByDate(day_from_today) {
   try {
@@ -254,7 +286,6 @@ async function insertTableAll() {
     }
   }
 }
-
 
 // insertTableAll()
 

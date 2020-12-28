@@ -1,5 +1,5 @@
 import App from './index.js'
-import FallbackApp, { loop, wrap, readJson } from './fallback/fallback_app.js'
+import FallbackApp, { loop, wrap, readJson, readXls } from './fallback/fallback_app.js'
 import log from './log/log.js'
 import dayjs from 'dayjs'
 import xls2json from 'xls-to-json'
@@ -251,9 +251,13 @@ async function delAct(id, name) {
     const actListRes = await fallbackApp.act.list()
     const actListWillDel = actListRes.filter(act => act.itemName == name)
     const actIds = actListWillDel.map(act => act.id)
-    if (actIds.length == 0) return
+    if (actIds.length == 0) return { noAct: true }
     const actDelRes = await fallbackApp.act.delete(actIds)
-    return actDelRes
+    return Promise.resolve({
+      actDelRes,
+      actPrice: JSON.parse(actListWillDel[0].actInfo).act_price,
+      orderLimit: actListWillDel[0].orderLimit
+    })
   } catch (err) {
     return Promise.reject(err)
   }
@@ -269,13 +273,13 @@ async function createAct(id, name, actPrice, orderLimit = -1) {
 
     const actCreateRes = await fallbackApp.act.create(wmSkuId, name, originPrice, actPrice, orderLimit)
     const foodCreatedActRes = await fallbackApp.act.find(name)
-    return {
+    return Promise.resolve({
       ...actCreateRes.map(actC => actC.result),
       foodCreatedAct: {
         ...JSON.parse(foodCreatedActRes.actInfo),
         orderLimit: foodCreatedActRes.orderLimit
       }
-    }
+    })
   } catch (err) {
     return Promise.reject(err)
   }
@@ -645,13 +649,23 @@ async function delFoods(id) {
   const fallbackApp = new FallbackApp(id)
 
   try {
-    const heyteas = await fallbackApp.food.searchFood('喜茶')
-    if (heyteas.length > 0) {
-      const skuIds = heyteas.map(v => v.wmProductSkus.map(k => k.id).join(','))
-      const res = await fallbackApp.food.batchDeleteFoods(skuIds)
-      return Promise.resolve({ res, deletedFoods: heyteas.map(v => v.name) })
+    let tags = await fallbackApp.food.listTags()
+    tags = tags.filter(v => v.name.includes('店铺公告'))
+    let results = []
+    for (let tag of tags) {
+      try {
+        if (tag.name == '店铺公告') continue
+        const tests = await fallbackApp.food.listFoods(tag.id)
+        if (tests.length > 0) {
+          const skuIds = tests.map(v => v.wmProductSkus.map(k => k.id).join(','))
+          const res = await fallbackApp.food.batchDeleteFoods(skuIds)
+          results.push(res)
+        }
+      } catch (err) {
+        return Promise.reject({ err })
+      }
     }
-    return Promise.resolve({ warn: 'no search' })
+    return Promise.resolve(results)
   } catch (err) {
     return Promise.reject(err)
   }
@@ -692,7 +706,7 @@ async function test_rename2() {
   }
 }
 
-async function test() {
+async function test_pois() {
   try {
     const fallbackApp = new FallbackApp()
     let data = await fallbackApp.poi.list()
@@ -703,6 +717,50 @@ async function test() {
     }))
     const res = await knx('mt_shops_').insert(data)
     console.log(res)
+  } catch (error) {
+    console.error(error)
+  }
+}
+
+async function updateFoodSku(id, name, price, boxPrice) {
+  const fallbackApp = new FallbackApp(id)
+
+  try {
+    let skus = [
+      {
+        price,
+        wmProductLadderBoxPrice: { ladder_num: 1, ladder_price: boxPrice, status: 1 }
+      }
+    ]
+    const { ok } = await fallbackApp.food.setHighBoxPrice(0, true)
+    if (ok) {
+      const delActRes = await delAct(id, name)
+
+      const updateSkusRes = await batchUpdateFoodSkus(id, name, skus)
+
+      if (delActRes.noAct) {
+        // const testsRes = await delFoods(id)
+        return Promise.resolve({ delActRes, updateSkusRes })
+      }
+
+      const createActRes = await createAct(id, name, delActRes.actPrice, delActRes.orderLimit)
+
+      // const testsRes = await delFoods(id)
+      return Promise.resolve({ delActRes, updateSkusRes, createActRes })
+    } else return Promise.reject({ err: 'sync failed' })
+  } catch (err) {
+    return Promise.reject(err)
+  }
+}
+
+async function test() {
+  // 贡茶已经改到25
+  try {
+    let dataSource = await readJson('plan/贡茶餐盒费.xls.json')
+    // dataSource = dataSource.map(v => [v.wmpoiid, v.name, 13.8, 1])
+    // await loop(updateFoodSku, dataSource, true)
+    dataSource = Array.from(new Set(dataSource.map(v => v.wmpoiid))).map(v => [v])
+    await loop(delFoods, dataSource)
   } catch (error) {
     console.error(error)
   }

@@ -48,5 +48,5 @@ content-type: application/json
 
 ###
 
-GET http://localhost:9005/user/刘铭
+GET http://localhost:9005/user_acts/小伍/0
 content-type: application/json

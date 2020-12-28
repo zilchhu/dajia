@@ -51,14 +51,29 @@ router.get('/date/:date', async ctx => {})
 // all days
 router.get('/shop/:shopid', async ctx => {})
 // 1 day
-router.get('/user/:username', async ctx => {
+router.get('/user/:username/:date', async ctx => {
   try {
-    let { username } = ctx.params
-    if (username == '') {
+    let { username, date } = ctx.params
+    if (username == '' || !date) {
       ctx.body = { e: 'invalid params' }
       return
     }
-    const res = await user(username)
+    const res = await user(username, date)
+    ctx.body = { res }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
+
+router.get('/user_acts/:username/:date', async ctx => {
+  try {
+    let { username, date } = ctx.params
+    if (username == '' || !date) {
+      ctx.body = { e: 'invalid params' }
+      return
+    }
+    const res = await user_acts(username, date)
     ctx.body = { res }
   } catch (e) {
     console.log(e)
@@ -78,9 +93,9 @@ async function date(d) {}
 
 async function shop(id) {}
 
-async function user(name) {
+async function user(name, d) {
   try {
-    const data = await base(1)
+    const data = await base(d)
     let res = new M(data).bind(distinct_persons)
 
     if (name == ':all_names') {
@@ -99,9 +114,6 @@ async function user(name) {
   }
 
   function distinct_persons(xs) {
-    function distinct(ls, k) {
-      return Array.from(new Set(ls.map(v => v[k])))
-    }
     function ls_persons() {
       let shops_persons = distinct(xs.shops, 'person')
       let shop_improved_persons_a = flatten(xs.shop_failure.shop_improved.map(x => distinct(x.a, 'name')))
@@ -119,7 +131,9 @@ async function user(name) {
 
   function split_person(xs) {
     function order(ps) {
-      let as = flatten(ps.map(x => x.a.filter(a => a.time.trim().length > 0).map(a => ({ ...a, ...omit(x, ['a']) }))))
+      let as = flatten(
+        ps.map(x => x.a.filter(a => a.time.trim().length > 0).map(a => ({ ...a, as: x.a, ...omit(x, ['a']) })))
+      )
         .sort((a, b) => {
           if (dayjs(a.time_parsed).isBefore(dayjs(b.time_parsed))) {
             return -1
@@ -160,12 +174,45 @@ async function user(name) {
           responsibles: per.responsibles,
           success: per.success,
           failure: { ...per.failure },
-          activities: per.activities
+          activities: per.activities,
+          counts: {
+            responsibles: count(per.responsibles),
+            success: count(per.success),
+            failure: {
+              unimproved: count(per.failure.unimproved),
+              improved: count(per.failure.improved),
+              improving: count(per.failure.improving)
+            },
+            activities: count_activities(per.activities)
+          }
         }
       }
     }, {})
 
     return new M(ys)
+
+    function count(shops) {
+      let count_shop = shops.length
+      let count_shop_a = shops.filter(x => x.a.length > 0).length
+      let count_q = shops.reduce((sum, x) => {
+        return sum + x.qs.length
+      }, 0)
+      let count_a = shops.reduce((sum, x) => {
+        return sum + x.a.filter(a => a.a.trim().length > 0).length
+      }, 0)
+      return {
+        count_a,
+        count_q,
+        count_shop,
+        count_shop_a
+      }
+    }
+
+    function count_activities(activities) {
+      let count_a = activities.length
+      let count_shop = distinct(activities, 'shop_id').length
+      return { count_a, count_shop }
+    }
   }
 
   function filter_person(xs) {
@@ -173,11 +220,170 @@ async function user(name) {
   }
 }
 
+//////////////
+////////////////
+//////////////////
+
+async function user_acts(name, d) {
+  try {
+    let data = await knx('test_analyse_t_')
+      .select()
+      .whereNotNull('a')
+
+    let res = new M(data)
+      .bind(parse_a)
+      .bind(extend_qs)
+      .bind(format)
+      .bind(distinct_persons)
+      .bind(split_person)
+      .bind(object_person)
+    if (name == ':all') {
+      return Promise.resolve(res.val)
+    }
+
+    res = res.bind(filter_person)
+    return Promise.resolve(res.val)
+  } catch (e) {
+    return Promise.reject(e)
+  }
+
+  function parse_a(xs) {
+    let ys = xs.map(v => ({ ...v, a: JSON.parse(v.a) }))
+    return new M(ys)
+  }
+
+  function extend_qs(xs) {
+    function ls_against(x) {
+      let is_low_income = x.income < (x.platform == '美团' ? 1500 : 1000) || x.income_avg < 1500
+      let is_high_consume = x.consume_ratio > 0.05
+      let is_high_cost = x.cost_ratio > 0.5
+      let is_slump = x.settlea_30 < 0.7
+      let ps = []
+      if (is_low_income) ps.push({ type: '低收入', value: x.income, threshold: x.platform == '美团' ? 1500 : 1000 })
+      if (is_high_consume) ps.push({ type: '高推广', value: x.consume_ratio, threshold: 0.05 })
+      if (is_high_cost) ps.push({ type: '高成本', value: x.cost_ratio, threshold: 0.5 })
+      if (is_slump) ps.push({ type: '严重超跌', value: x.settlea_30, threshold: 0.7 })
+      return ps
+    }
+
+    let ys = xs.map(x => ({
+      ...x,
+      qs: ls_against(x)
+    }))
+
+    return new M(ys)
+  }
+
+  function format(xs) {
+    function parse(a) {
+      let time = ''
+      if (a.time.trim().length > 0) {
+        // if(a.time.length < )
+        time = dayjs(a.time, 'YYYY/MM/DD HH:mm:ss')
+      }
+
+      return {
+        ...a,
+        time_parsed: time
+      }
+    }
+
+    let ys = xs.map(x => ({ ...x, a: x.a.map(parse) }))
+
+    return new M({
+      shops_a: formatShop(ys)
+    })
+  }
+
+  function distinct_persons(xs) {
+    function ls_persons() {
+      let persons = flatten(xs.shops_a.map(x => distinct(x.a, 'name')))
+      return Array.from(new Set(persons))
+    }
+
+    let persons = ls_persons()
+
+    return new M({
+      ...xs,
+      persons
+    })
+  }
+
+  function split_person(xs) {
+    function order(ps) {
+      let as = flatten(
+        ps.map(x =>
+          x.a
+            .filter(
+              a =>
+                a.time.trim().length > 0 &&
+                dayjs(a.time_parsed).isAfter(
+                  dayjs()
+                    .startOf('day')
+                    .subtract(d, 'day')
+                )
+            )
+            .map(a => ({ ...a, as: x.a, ...omit(x, ['a']) }))
+        )
+      )
+        .sort((a, b) => {
+          if (dayjs(a.time, 'YYYY/MM/DD HH:mm:ss').isBefore(dayjs(b.time, 'YYYY/MM/DD HH:mm:ss'))) {
+            return -1
+          } else return 1
+        })
+        .reverse()
+      return as
+    }
+
+    let ys = xs.persons
+      .map(per => ({
+        person: per,
+        participated: xs.shops_a.filter(x => x.a.some(a => a.name == per))
+      }))
+      .map(per => ({
+        person: per.person,
+        activities: order(per.participated)
+      }))
+
+    return new M(ys)
+  }
+
+  function object_person(xs) {
+    let ys = xs.reduce((res, per) => {
+      return {
+        ...res,
+        [per.person]: {
+          activities: per.activities,
+          counts: {
+            activities: count_activities(per.activities)
+          }
+        }
+      }
+    }, {})
+
+    return new M(ys)
+
+    function count_activities(activities) {
+      let count_a = activities.length
+      let count_shop = distinct(activities, 'shop_id').length
+      return { count_a, count_shop }
+    }
+  }
+
+  function filter_person(xs) {
+    return new M(xs[name])
+  }
+}
+
+///
+/////
+///////
+
 async function base(d) {
   try {
     let [data, _] = await knx.raw(date_sql(d))
     if (data.length == 0) {
-      await insertTable(day_from_today)
+      await insertTable(d)
     }
 
     const res = new M(data)
@@ -211,10 +417,10 @@ async function base(d) {
 
     let ys = xs.map(x => ({
       ...x,
-      q: ls_against(x)
+      qs: ls_against(x)
     }))
-    let shop_success = ys.filter(x => x.q.length == 0)
-    let shop_failure = ys.filter(x => x.q.length > 0)
+    let shop_success = ys.filter(x => x.qs.length == 0)
+    let shop_failure = ys.filter(x => x.qs.length > 0)
 
     return new M({
       shops: ys,
@@ -246,7 +452,8 @@ async function base(d) {
     function parse(a) {
       let time = ''
       if (a.time.trim().length > 0) {
-        time = dayjs(`2020/${a.time}`, 'YYYY/MM/DD HH:mm:ss')
+        // if(a.time.length < )
+        time = dayjs(a.time, 'YYYY/MM/DD HH:mm:ss')
       }
 
       return {
@@ -275,10 +482,7 @@ async function base(d) {
       }
     })
   }
-
 }
-
-
 
 async function insertTableFromMysql(day_from_today = 1) {
   let sql = `
@@ -419,9 +623,13 @@ function formatShop(data) {
     if (typeof num === 'string') num = parseFloat(num)
     return `${(num * 100).toFixed(2)}%`
   }
-  
+
   function fixed2(num) {
     if (typeof num === 'string') num = parseFloat(num)
     return num.toFixed(2)
   }
+}
+
+function distinct(ls, k) {
+  return Array.from(new Set(ls.map(v => v[k])))
 }
