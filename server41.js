@@ -49,7 +49,20 @@ koa.use(
 
 router.get('/date/:date', async ctx => {})
 // all days
-router.get('/shop/:shopid', async ctx => {})
+router.get('/shop/:shopid', async ctx => {
+  try {
+    let { shopid } = ctx.params
+    if (!shopid) {
+      ctx.body = { e: 'invalid params' }
+      return
+    }
+    const res = await shop(shopid)
+    ctx.body = { res }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
 // 1 day
 router.get('/user/:username/:date', async ctx => {
   try {
@@ -87,11 +100,92 @@ koa.listen(9005, () => console.log('running at 9005'))
 
 const date_sql = d =>
   `SELECT * FROM test_analyse_t_ WHERE date = DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL ${d} DAY),'%Y%m%d')`
-const shop_sql = id => `SELECT * FROM test_analyse_t_ WHERE shop_id = ${id} ORDER BY date DESC`
 
 async function date(d) {}
 
-async function shop(id) {}
+//////////////////
+/////////////////////
+//////////////////////////
+
+async function shop(id) {
+  try {
+    let data = await knx('test_analyse_t_')
+      .select()
+      .whereNotNull('a')
+      .andWhere({ shop_id: id })
+
+    let res = new M(data)
+      .bind(parse_a)
+      .bind(extend_qs)
+      .bind(format)
+      .bind(extract_a)
+
+    return Promise.resolve(res.val)
+  } catch (err) {
+    return Promise.reject(err)
+  }
+
+  function parse_a(xs) {
+    let ys = xs.map(v => ({ ...v, a: JSON.parse(v.a) }))
+    return new M(ys)
+  }
+
+  function extend_qs(xs) {
+    function ls_against(x) {
+      let is_low_income = x.income < (x.platform == '美团' ? 1500 : 1000) || x.income_avg < 1500
+      let is_high_consume = x.consume_ratio > 0.05
+      let is_high_cost = x.cost_ratio > 0.5
+      let is_slump = x.settlea_30 < 0.7
+      let ps = []
+      if (is_low_income) ps.push({ type: '低收入', value: x.income, threshold: x.platform == '美团' ? 1500 : 1000 })
+      if (is_high_consume) ps.push({ type: '高推广', value: x.consume_ratio, threshold: 0.05 })
+      if (is_high_cost) ps.push({ type: '高成本', value: x.cost_ratio, threshold: 0.5 })
+      if (is_slump) ps.push({ type: '严重超跌', value: x.settlea_30, threshold: 0.7 })
+      return ps
+    }
+
+    let ys = xs.map(x => ({
+      ...x,
+      qs: ls_against(x)
+    }))
+
+    return new M(ys)
+  }
+
+  function format(xs) {
+    let ys = xs.map(x => ({
+      ...x,
+      a: x.a.map(a => ({
+        ...a,
+        time_parsed: a.time.trim().length > 0 ? dayjs(a.time.trim(), 'YYYY/MM/DD HH:mm:ss') : ''
+      }))
+    }))
+
+    return new M(formatShop(ys))
+  }
+
+  function extract_a(xs) {
+    function order(ps) {
+      let as = flatten(
+        ps.map(x => x.a.filter(a => a.time.trim().length > 0).map(a => ({ ...a, as: x.a, ...omit(x, ['a']) })))
+      )
+        .sort((a, b) => {
+          if (dayjs(a.time, 'YYYY/MM/DD HH:mm:ss').isBefore(dayjs(b.time, 'YYYY/MM/DD HH:mm:ss'))) {
+            return -1
+          } else return 1
+        })
+        .reverse()
+      return as
+    }
+
+    let ys = order(xs)
+    return new M(ys)
+  }
+}
+
+/////////////////
+///////////////////
+//////////////////////////
 
 async function user(name, d) {
   try {
@@ -314,15 +408,7 @@ async function user_acts(name, d) {
       let as = flatten(
         ps.map(x =>
           x.a
-            .filter(
-              a =>
-                a.time.trim().length > 0 &&
-                dayjs(a.time_parsed).isAfter(
-                  dayjs()
-                    .startOf('day')
-                    .subtract(d, 'day')
-                )
-            )
+            .filter(a => a.time.trim().length > 0 && same(a.time_parsed, d))
             .map(a => ({ ...a, as: x.a, ...omit(x, ['a']) }))
         )
       )
@@ -333,6 +419,21 @@ async function user_acts(name, d) {
         })
         .reverse()
       return as
+
+      function same(time_parsed, d) {
+        return dayjs()
+          .startOf('day')
+          .subtract(d, 'day')
+          .isSame(dayjs(time_parsed).startOf('day'), 'day')
+      }
+
+      function after(time_parsed, d) {
+        return dayjs(time_parsed).isAfter(
+          dayjs()
+            .startOf('day')
+            .subtract(d, 'day')
+        )
+      }
     }
 
     let ys = xs.persons
@@ -633,3 +734,4 @@ function formatShop(data) {
 function distinct(ls, k) {
   return Array.from(new Set(ls.map(v => v[k])))
 }
+
