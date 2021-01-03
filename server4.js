@@ -86,7 +86,7 @@ router.post('/plan', async ctx => {
 
 koa.use(router.routes())
 
-// koa.listen(9004, () => console.log('running at 9004'))
+koa.listen(9004, () => console.log('running at 9004'))
 
 async function insertTableFromMysql(day_from_today = 1) {
   let sql = `
@@ -163,8 +163,10 @@ async function insertTableFromMysql(day_from_today = 1) {
   try {
     console.log(...arguments)
     await knx.raw(`SET @last_day = DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL ${day_from_today} DAY),'%Y%m%d');`)
-    const [data, _] = await knx.raw(sql)
+    let [data, _] = await knx.raw(sql)
     if (data.length == 0) return Promise.reject('no data')
+    let dataIds = Array.from(new Set(data.map(v => v.id)))
+    data = dataIds.map(id => data.find(k => k.id == id))
     const res = await knx('test_analyse_t_').insert(data)
     return Promise.resolve(res)
   } catch (err) {
@@ -200,7 +202,7 @@ async function updateTableAll() {
   const data = await knx('foxx_operating_data')
     .select()
     .where({
-      date: 20201224
+      date: 20201229
     })
   let cnt = data.length
   for (let rec of data) {
@@ -208,7 +210,7 @@ async function updateTableAll() {
     try {
       let res = await knx('test_analyse_t_')
         .where('id', rec.id)
-        .update({ orders: rec.orders })
+        .update({ city: rec.city, person: city.person })
       console.log(rec.id, res)
     } catch (error) {
       console.error(error)
@@ -248,7 +250,7 @@ async function updateTableAll2() {
   }
 }
 
-updateTableAll2()
+// updateTableAll()
 
 async function getTableByDate(day_from_today) {
   try {

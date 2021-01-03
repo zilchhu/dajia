@@ -63,6 +63,21 @@ router.get('/shop/:shopid', async ctx => {
     ctx.body = { e }
   }
 })
+
+router.get('/shop_history/:shopid', async ctx => {
+  try {
+    let { shopid } = ctx.params
+    if (!shopid) {
+      ctx.body = { e: 'invalid params' }
+      return
+    }
+    const res = await shop_history(shopid)
+    ctx.body = { res }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
 // 1 day
 router.get('/user/:username/:date', async ctx => {
   try {
@@ -87,6 +102,21 @@ router.get('/user_acts/:username/:date', async ctx => {
       return
     }
     const res = await user_acts(username, date)
+    ctx.body = { res }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
+
+router.post('/plans', async ctx => {
+  try {
+    let { ids, a } = ctx.request.body
+    if (!ids || !a) {
+      ctx.body = { e: 'invalid params' }
+      return
+    }
+    const res = await plans(ids, a)
     ctx.body = { res }
   } catch (e) {
     console.log(e)
@@ -180,6 +210,67 @@ async function shop(id) {
 
     let ys = order(xs)
     return new M(ys)
+  }
+}
+
+/////////////////
+///////////////////
+//////////////////////////
+
+async function shop_history(id) {
+  try {
+    let data = await knx('test_analyse_t_')
+      .select()
+      .where({ shop_id: id })
+      .orderBy('date', 'desc')
+
+    let res = new M(data)
+      .bind(parse_a)
+      .bind(extend_qs)
+      .bind(format)
+
+    return Promise.resolve(res.val)
+  } catch (err) {
+    return Promise.reject(err)
+  }
+
+  function parse_a(xs) {
+    let ys = xs.map(v => ({ ...v, a: v.a ? JSON.parse(v.a) : [] }))
+    return new M(ys)
+  }
+
+  function extend_qs(xs) {
+    function ls_against(x) {
+      let is_low_income = x.income < (x.platform == '美团' ? 1500 : 1000) || x.income_avg < 1500
+      let is_high_consume = x.consume_ratio > 0.05
+      let is_high_cost = x.cost_ratio > 0.5
+      let is_slump = x.settlea_30 < 0.7
+      let ps = []
+      if (is_low_income) ps.push({ type: '低收入', value: x.income, threshold: x.platform == '美团' ? 1500 : 1000 })
+      if (is_high_consume) ps.push({ type: '高推广', value: x.consume_ratio, threshold: 0.05 })
+      if (is_high_cost) ps.push({ type: '高成本', value: x.cost_ratio, threshold: 0.5 })
+      if (is_slump) ps.push({ type: '严重超跌', value: x.settlea_30, threshold: 0.7 })
+      return ps
+    }
+
+    let ys = xs.map(x => ({
+      ...x,
+      qs: ls_against(x)
+    }))
+
+    return new M(ys)
+  }
+
+  function format(xs) {
+    let ys = xs.map(x => ({
+      ...x,
+      a: x.a.map(a => ({
+        ...a,
+        time_parsed: a.time.trim().length > 0 ? dayjs(a.time.trim(), 'YYYY/MM/DD HH:mm:ss') : ''
+      }))
+    }))
+
+    return new M(formatShop(ys))
   }
 }
 
@@ -480,6 +571,115 @@ async function user_acts(name, d) {
 /////
 ///////
 
+async function plans(ids, a) {
+  try {
+    let data = await knx('test_analyse_t_')
+      .select()
+      .whereIn('id', ids)
+
+    let res = new M(data)
+      .bind(parse_a)
+      .bind(extend_qs)
+      .bind(format)
+      .bind(edit_a).val
+
+    let fails = []
+    let succs = []
+    for (let r of res) {
+      try {
+        let update_res = await knx('test_analyse_t_')
+          .where('id', r.id)
+          .update({ a: JSON.stringify(r.a) })
+        succs.push(update_res)
+      } catch (e) {
+        console.log(e)
+        fails.push(r.shop_id)
+      }
+    }
+
+    if(fails.length > 0) return Promise.reject(fails)
+    return Promise.resolve(succs)
+  } catch (e) {
+    return Promise.reject(e)
+  }
+
+  function parse_a(xs) {
+    let ys = xs.map(v => ({ ...v, a: JSON.parse(v.a) }))
+    return new M(ys)
+  }
+
+  function extend_qs(xs) {
+    function ls_against(x) {
+      let is_low_income = x.income < (x.platform == '美团' ? 1500 : 1000) || x.income_avg < 1500
+      let is_high_consume = x.consume_ratio > 0.05
+      let is_high_cost = x.cost_ratio > 0.5
+      let is_slump = x.settlea_30 < 0.7
+      let ps = []
+      if (is_low_income) ps.push({ type: '低收入', value: x.income, threshold: x.platform == '美团' ? 1500 : 1000 })
+      if (is_high_consume) ps.push({ type: '高推广', value: x.consume_ratio, threshold: 0.05 })
+      if (is_high_cost) ps.push({ type: '高成本', value: x.cost_ratio, threshold: 0.5 })
+      if (is_slump) ps.push({ type: '严重超跌', value: x.settlea_30, threshold: 0.7 })
+      return ps
+    }
+
+    let ys = xs.map(x => ({
+      ...x,
+      qs: ls_against(x)
+    }))
+
+    return new M(ys)
+  }
+
+  function format(xs) {
+    function parse(a) {
+      let time = ''
+      if (a.time.trim().length > 0) {
+        // if(a.time.length < )
+        time = dayjs(a.time, 'YYYY/MM/DD HH:mm:ss')
+      }
+
+      return {
+        ...a,
+        time_parsed: time
+      }
+    }
+
+    let ys = xs.map(x => ({ ...x, a: x.a ? x.a.map(parse) : x.a }))
+
+    return new M(formatShop(ys))
+  }
+
+  function edit_a(xs) {
+    a = JSON.parse(a)
+    let ys = xs.map(x => {
+      if (x.a.length == 0) {
+        return {
+          ...x,
+          a: x.qs.map(q => ({
+            a: a.find(k => k.q == q.type).a || '',
+            name: a.find(k => k.q == q.type).name || xs.person,
+            operation: a.find(k => k.q == q.type).operation || 'save_all',
+            q: q.type,
+            time: a.find(k => k.q == q.type).time || ''
+          }))
+        }
+      } else {
+        return {
+          ...x,
+          a: x.a.map(v => ({
+            a: a.find(k => k.q == v.q).a || v.a,
+            name: a.find(k => k.q == v.q).name || v.name,
+            operation: a.find(k => k.q == v.q).operation || v.operation,
+            q: v.q,
+            time: a.find(k => k.q == v.q).time || v.time
+          }))
+        }
+      }
+    })
+    return new M(ys)
+  }
+}
+
 async function base(d) {
   try {
     let [data, _] = await knx.raw(date_sql(d))
@@ -734,4 +934,3 @@ function formatShop(data) {
 function distinct(ls, k) {
   return Array.from(new Set(ls.map(v => v[k])))
 }
-

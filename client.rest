@@ -38,8 +38,14 @@ content-type: application/json
 
 ###
 
-GET http://localhost:9004/plans
+POST http://localhost:9005/plans
 content-type: application/json
+
+{
+  "shopids": ["2034961279","8811093","9596488", "2056477563"],
+  "date": "20210102",
+  "a": " 123"
+}
 
 ###
 
@@ -48,5 +54,15 @@ content-type: application/json
 
 ###
 
-GET http://localhost:9005/user_acts/小伍/0
+GET http://localhost:9005/user_acts/小伍/1
+content-type: application/json
+
+###
+
+GET http://localhost:9005/shop/501093144
+content-type: application/json
+
+###
+
+GET http://localhost:9005/shop_history/501093144
 content-type: application/json
