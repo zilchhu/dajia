@@ -144,12 +144,15 @@ async function updateFoodBoxPrice(id, name, boxPrice) {
   const fallbackApp = new FallbackApp(id)
 
   try {
-    const food = await fallbackApp.food.find(name)
-    const updateBoxPriceRes = await fallbackApp.food.batchUpdateBoxPrice(
-      food.wmProductSkus.map(v => v.id),
-      boxPrice
-    )
-    return updateBoxPriceRes
+    const { ok } = await fallbackApp.food.setHighBoxPrice(0, true)
+    if (ok) {
+      const food = await fallbackApp.food.find(name)
+      const updateBoxPriceRes = await fallbackApp.food.batchUpdateBoxPrice(
+        food.wmProductSkus.map(v => v.id),
+        boxPrice
+      )
+      return Promise.resolve(updateBoxPriceRes)
+    } else return Promise.reject({ err: 'sync failed' })
   } catch (err) {
     return Promise.reject(err)
   }
@@ -715,7 +718,7 @@ async function test_delFoods() {
     // let fallbackApp = new FallbackApp()
     // let data = await fallbackApp.poi.list()
     // data = data.map(v => [v.id])
-    await loop(delFoods, [[9003389]], false)
+    await loop(delFoods, [[7918815]], false)
   } catch (error) {
     console.log(error)
   }
@@ -735,9 +738,7 @@ async function renameFood(id, spuId, oldName) {
 
 async function test_rename2() {
   try {
-    let [data, _] = await knx.raw(
-      `SELECT * FROM foxx_food_manage f WHERE date = CURDATE()`
-    )
+    let [data, _] = await knx.raw(`SELECT * FROM foxx_food_manage f WHERE date = CURDATE()`)
     data = data.map(v => [v.wmpoiid, v.productId, v.name])
     await loop(renameFood, data, false)
   } catch (error) {
@@ -805,7 +806,7 @@ async function test_plan() {
   }
 }
 
-async function test() {
+async function test_updateActTime() {
   try {
     // let data = await knx('test_mt_acts_').select()
     // data = data.map(v => [v.wmPoiId, v.act_str]).slice(14000, 16000)
@@ -816,5 +817,26 @@ async function test() {
   }
 }
 
-test_rename2()
-// test_delFoods()
+async function test_updateAct() {
+  try {
+    let data = await readXls('plan/美团修改折扣价.xls', 'Sheet1')
+    data = data.map(v => [v.id, v.品名, 7.9])
+    await loop(updateAct, data, false)
+  } catch (error) {
+    console.error(error)
+  }
+}
+
+async function test() {
+  try {
+    let data = await readXls('plan/美团批量修改.xlsx', '美团0.01增加餐盒费')
+    data = data.map(v => [v.门店id, v.产品名, 1.5])
+    await loop(updateFoodBoxPrice, data, true)
+  } catch (error) {
+    console.error(error)
+  }
+}
+
+// test()
+// test_updateAct()
+test_delFoods()

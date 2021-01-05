@@ -165,9 +165,7 @@ async function insertTableFromMysql(day_from_today = 1) {
     await knx.raw(`SET @last_day = DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL ${day_from_today} DAY),'%Y%m%d');`)
     let [data, _] = await knx.raw(sql)
     if (data.length == 0) return Promise.reject('no data')
-    let dataIds = Array.from(new Set(data.map(v => v.id)))
-    data = dataIds.map(id => data.find(k => k.id == id))
-    const res = await knx('test_analyse_t_').insert(data)
+    const res = await knx('test_analyse_t_').insert(data).onConflict('id').merge()
     return Promise.resolve(res)
   } catch (err) {
     return Promise.reject(err)

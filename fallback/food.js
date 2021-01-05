@@ -357,7 +357,7 @@ export default class Food {
 
   async setHighBoxPrice(tagI, sell) {
     try {
-      const tagids = [194000423, 194000957, 194001334, 194001667, 194002074]
+      const tagids = [194000423, 194002074, 194001667, 194000957, 194001334, 207343554]
       const highBoxPriceR = await this.getHighBoxPrice()
 
       let canSave = highBoxPriceR.skuInSellOverall > highBoxPriceR.highBoxPriceCount
@@ -370,17 +370,17 @@ export default class Food {
           all: highBoxPriceR.highBoxPriceCount,
           wmPoiId: this.wmPoiId
         })
-        if (tagI > 4) {
+        if (tagI > 5) {
           console.error('sync maxed', tagI)
           if (sell) {
-            console.log('waiting 30m', '...')
-            await sleep(30 * 60 * 1000)
+            console.log('waiting 10m', '...')
+            await sleep(10 * 60 * 1000)
             await this.setHighBoxPrice(tagI, false)
           } else {
             await this.syncTags()
           }
 
-          return Promise.reject({err: 'sync maxed'})
+          return Promise.reject({ err: 'sync maxed' })
         }
         await this.syncTest(tagids[tagI])
         await sleep(2 * 60 * 1000)

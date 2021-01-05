@@ -24,6 +24,7 @@ const knx = knex({
   }
 })
 
+
 class M {
   constructor(val) {
     this.val = val
@@ -597,7 +598,7 @@ async function plans(ids, a) {
       }
     }
 
-    if(fails.length > 0) return Promise.reject(fails)
+    if (fails.length > 0) return Promise.reject(fails)
     return Promise.resolve(succs)
   } catch (e) {
     return Promise.reject(e)
