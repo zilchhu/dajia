@@ -44,7 +44,11 @@ content-type: application/json
 {
   "shopids": ["2034961279","8811093","9596488", "2056477563"],
   "date": "20210102",
-  "a": " 123"
+  "a":  [{"q": "低收入",
+          "name": "小伍",
+          "a": "满减昨天批量修改成16-10了，先观察",
+          "operation": "save",
+          "time": "2021/01/03 10:48:34"}]
 }
 
 ###
@@ -66,3 +70,20 @@ content-type: application/json
 
 GET http://localhost:9005/shop_history/501093144
 content-type: application/json
+
+###
+
+GET https://waimaie.meituan.com/reuse/product/food/r/editView?wmPoiId=9470231&spuId=3452480010&from=new&productNew=1
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9
+Accept-Encoding: gzip, deflate, br
+Accept-Language: zh-CN,zh;q=0.9
+Connection: keep-alive
+Cookie: __mta=143481098.1605524446091.1609839301044.1609981359849.13; _lxsdk_cuid=173796b978082-0920d6b94f4f16-b7a1334-144000-173796b97817c; _ga=GA1.2.1511021963.1597473654; _lxsdk=173796b978082-0920d6b94f4f16-b7a1334-144000-173796b97817c; _hc.v=c9793375-e9a8-7952-72a7-e404fd7ad70a.1602157773; uuid=16db610009dfc3c606c8.1602213490.1.0.0; device_uuid=!39ecd268-5a7e-4541-8aa6-33fc60963ac7; uuid_update=true; acctId=23262521; brandId=-1; city_id=0; isChain=1; existBrandPoi=true; ignore_set_router_proxy=true; region_id=; region_version=0; newCategory=false; cityId=440300; provinceId=440000; city_location_id=0; location_id=0; pushToken=0BCjlFCGNeTf0_xqoT71TuF12Ymx2cPcm0s49sjFsfrg*; bsid=YPF3VhNk_02OZorGYQ3Ihe1UGL7lwaTZH7AgAOT3UNaP-1A9ayCWM7SCaNOjvyWbHc76ugchn69-zAYIRJpksQ; token=06QT4N7pcCZf6cEcARzenRtMCGbUR-laXvgjt5Tf73Nw*; wmPoiId=9470147; logistics_support=1; wpush_server_url=wss://wpush.meituan.com; shopCategory=food; set_info=%7B%22wmPoiId%22%3A9470147%2C%22ignoreSetRouterProxy%22%3Atrue%7D; setPrivacyTime=1_20210107; logan_session_token=bbunmqlvwbvszl682dvw; logan_custom_report=; JSESSIONID=1dnirl7zcz4hy1oo65dcfm4vr4; _lxsdk_s=176db85bc69-5bc-813-07f%7C23262521%7C900
+Host: waimaie.meituan.com
+sec-ch-ua: "Google Chrome";v="87", " Not;A Brand";v="99", "Chromium";v="87"
+sec-ch-ua-mobile: ?0
+Sec-Fetch-Dest: document
+Sec-Fetch-Mode: navigate
+Sec-Fetch-Site: none
+Upgrade-Insecure-Requests: 1
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36

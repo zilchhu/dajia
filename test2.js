@@ -164,6 +164,8 @@ async function batchUpdateFoodSkus(id, name, skus) {
   try {
     const food = await fallbackApp.food.find(name)
 
+    await fallbackApp.food.updateMin(food.id)
+
     if (food.wmProductSkus.length >= skus.length)
       skus = skus.map((sku, i) => {
         return {
@@ -418,19 +420,23 @@ async function test_act() {
   }
 }
 
-async function createTest(id) {
+async function createTest(id, ti) {
   const fallbackApp = new FallbackApp(id)
 
   try {
     // 店铺公告 门店公告 不要下单 别点了
-    const tag = await fallbackApp.food.searchTag('别点了')
-    const foods = await fallbackApp.food.listFoods(tag.id)
-    if (!foods.find(v => v.name == '饺子、冬至、汤圆')) {
-      const createTestFoodRes = await fallbackApp.food.createTestFood(tag.id, tag.name)
-      return Promise.resolve({ createTestFoodRes, tagName: tag.name })
-    } else {
-      return Promise.resolve('have been created')
+    const tag = await fallbackApp.food.searchTag(`店铺公告${ti}`)
+    let c = []
+    for (let i = 0; i < 500; i++) {
+      try {
+        let r = await fallbackApp.food.createTestFood(tag.id, tag.name, `测试${i}`)
+        console.log(i)
+        c.push(r)
+      } catch (error) {
+        console.error(error)
+      }
     }
+    return Promise.resolve(c)
   } catch (err) {
     return Promise.reject(err)
   }
@@ -456,18 +462,8 @@ async function test_testFood() {
 
   try {
     // const poiList = await fallbackApp.poi.list()
-    const poiList = JSON.parse(fs.readFileSync('log/log.json')).map(v => v.shop)
-    for (let shop of poiList) {
-      console.log(shop.id, shop.name)
-      try {
-        const createTestFoodRes = await createTest(shop.id)
-        console.log(createTestFoodRes)
-        // await sleep(6000)
-      } catch (err) {
-        console.error(err)
-        log({ shop: { id: shop.id, name: shop.name }, err })
-      }
-    }
+    let data = [3, 4, 5, 6, 7].map(v => [9470231, v])
+    await loop(createTest, data, false)
   } catch (err) {
     console.error(err)
   }
@@ -696,6 +692,7 @@ async function delFoods(id) {
     let results = []
     for (let tag of tags) {
       try {
+        if (id == 9470231) continue
         if (!/店铺公告\d+/.test(tag.name)) continue
         const tests = await fallbackApp.food.listFoods(tag.id)
         if (tests.length > 0) {
@@ -715,20 +712,19 @@ async function delFoods(id) {
 
 async function test_delFoods() {
   try {
-    // let fallbackApp = new FallbackApp()
-    // let data = await fallbackApp.poi.list()
-    // data = data.map(v => [v.id])
-    await loop(delFoods, [[7918815]], false)
+    let fallbackApp = new FallbackApp()
+    let data = await fallbackApp.poi.list()
+    data = data.map(v => [v.id])
+    await loop(delFoods, data, false)
   } catch (error) {
     console.log(error)
   }
 }
 
-async function renameFood(id, spuId, oldName) {
+async function renameFood(id, spuId, oldName, newName) {
   const fallbackApp = new FallbackApp(id)
 
   try {
-    const newName = oldName.replace('（', '(').replace('）', ')')
     const res = await fallbackApp.food.updateName(spuId, newName)
     return Promise.resolve({ res, newName })
   } catch (err) {
@@ -738,8 +734,8 @@ async function renameFood(id, spuId, oldName) {
 
 async function test_rename2() {
   try {
-    let [data, _] = await knx.raw(`SELECT * FROM foxx_food_manage f WHERE date = CURDATE()`)
-    data = data.map(v => [v.wmpoiid, v.productId, v.name])
+    let data = await readJson('log/log.json')
+    data = data.filter(v => v.err.message == 'read ECONNRESET').map(v => v.meta)
     await loop(renameFood, data, false)
   } catch (error) {
     console.error(error)
@@ -769,7 +765,7 @@ async function updateFoodSku(id, name, price, boxPrice) {
     let skus = [
       {
         price,
-        wmProductLadderBoxPrice: { ladder_num: 1, ladder_price: boxPrice, status: 1 }
+        wmProductLadderBoxPrice: { ladder_num: 2, ladder_price: boxPrice, status: 1 }
       }
     ]
     const { ok } = await fallbackApp.food.setHighBoxPrice(0, true)
@@ -794,13 +790,12 @@ async function updateFoodSku(id, name, price, boxPrice) {
 }
 
 async function test_plan() {
-  // 贡茶已经改到25
   try {
-    let dataSource = await readJson('plan/贡茶餐盒费.xls.json')
-    // dataSource = dataSource.map(v => [v.wmpoiid, v.name, 13.8, 1])
-    // await loop(updateFoodSku, dataSource, true)
-    dataSource = Array.from(new Set(dataSource.map(v => v.wmpoiid))).map(v => [v])
-    await loop(delFoods, dataSource)
+    let dataSource = await readXls('plan/美团批量修改.xlsx', '修改原价')
+    dataSource = dataSource.map(v => [v.门店id, v.产品名, 6.9, 0.5]).slice(dataSource.length - 956)
+    await loop(updateFoodSku, dataSource, false)
+    // dataSource = Array.from(new Set(dataSource.map(v => v.wmpoiid))).map(v => [v])
+    // await loop(delFoods, dataSource)
   } catch (error) {
     console.error(error)
   }
@@ -819,7 +814,7 @@ async function test_updateActTime() {
 
 async function test_updateAct() {
   try {
-    let data = await readXls('plan/美团修改折扣价.xls', 'Sheet1')
+    let data = await readXls('plan/工作簿2.xlsx', '改折扣价7.9')
     data = data.map(v => [v.id, v.品名, 7.9])
     await loop(updateAct, data, false)
   } catch (error) {
@@ -827,6 +822,7 @@ async function test_updateAct() {
   }
 }
 
+// 231
 async function test() {
   try {
     let data = await readXls('plan/美团批量修改.xlsx', '美团0.01增加餐盒费')
@@ -837,6 +833,8 @@ async function test() {
   }
 }
 
-// test()
-// test_updateAct()
-test_delFoods()
+// test_plan()
+// test_updateAct()1
+// test_delFoods()
+// test_testFood()
+test_rename2()

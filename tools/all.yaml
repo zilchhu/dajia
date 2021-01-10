@@ -1,0 +1,724 @@
+# "actName": "集点返券",
+#                 "beginTime": parseInt(new Date(format(beginTime, 'YYYY/MM/DD 00:00:00')) / 1000),
+#                 "endTime": parseInt(new Date(format(endTime, 'YYYY/MM/DD 23:59:59')) / 1000),
+#                 "actSkus": actSkus,
+#                 "countDetail": {
+#                     "customType": customType, //新老客设置外卖用户类型：0不限制,1新用户,2老用户
+#                     "productPriceMax": taskMaxSkuPrice * 100, //价格区间最高价格。
+#                     "productPriceMin": taskMinSkuPrice * 100,  //价格区间最低价格
+#                     "sendCondition": taskCount,
+#                     // 发券类型：0=满减券（按门店），1=商品券满减券,2=商品折扣券（包含0折兑换券）
+#                     "sendCouponType": this.sendCouponType(),
+#                     "taskProductType": taskSkuType,// 按商品数的商品类型（taskType=1时有效）0=价格区间，1:sku
+#                     "taskType": taskType,    //集点类型：0=按订单数，1=按商品数，(2=分享，3=收藏，4=...技术预埋)
+#                     "taskValidDays": taskValidDays //任务有效期（单位天）
+#                 },
+#                 "couponSkus": couponSkus,
+#                 "coupons": [
+#                     {
+#                         "day": couponValidDays, //有效期 天
+#                         "discount": skuCouponDiscountType !== 1 ? skuCouponDiscount * 1000 : undefined,  //折扣 8000=8折
+#                         "isGetToShop": 1,//到店自取
+#                         "limitPrice": 0, //门槛
+#                         "price": (fdCouponPrice || skuCouponPrice) * 100,//减多少金额【满减型,单位分】
+#                         "useCouponTimeType": 1
+#                     }
+#                 ],
+
+# //方便处理这里聚合两种类型数据
+# const mateData = {
+#     "activityId": 0,
+#     "type": 92,
+#     "latitudeType" : 1,//  1 满减券,门店维度 2 商品维度  3 UPC维度活动
+#     "wmPoiIds": [],
+#     "commodityPoiMapingViewVos": [
+#         // {
+#         //     "wmPoiId": '',
+#         //     "wmPioName": '',
+#         //     "skuId": '',
+#         //     "itemName": '',
+#         //     "skuPicture": '',
+#         //     "skuPrice":'',
+#         //     "select":false,//批量时标记是否选中
+#         // }
+#     ],
+#     "commodityCouponDetailViewVos": [
+#         {
+#             "disCount": 5,
+#             "costBearType": "1", // 成本承担方式：1.按比例；2.按金额设置1
+#             "day": 7, // 优惠券有效期
+#             "sill": "", // 门槛
+#             "price": 4, //优惠券金额
+#             "couponType": 0 // 0满减型 1商品券
+#         }
+#     ]
+# }
+
+#  orderPrice: 0,//门槛
+#                 orderLimitItems: -1,//写死-1 （外卖门店）
+#                 userType: 0,
+#                 // list: ["633927_133176956_77"],
+#                 dayLimit: -1,
+#                 orderLimit: "1",
+#                 mtCharge: "",
+#                 actItemPrice: "",//换购价
+# `${item.groupData[j].wm_poi_id}_${item.groupData[j].id}_${item.groupData[j].price}
+
+rules:
+  老板推荐: # &店内海报
+    甜品:
+      - [招牌芋圆 店长推荐, 招牌芋圆]
+      - [招牌烧仙草 超多料在里面, 招牌烧仙草]
+      - [芋圆椰奶烧仙草 不点后悔终身, 芋圆椰奶烧仙草]
+      - 绿豆沙/红豆沙
+      - [豪华台湾手抓饼 三拼, 台湾手抓饼 三拼, 豪华台湾手抓饼]
+      - 正宗重庆酸辣粉
+      - 日式章鱼小丸子
+      - 柠檬鸡爪
+      - 火山石
+      - 火腿烤冷面
+    贡茶:
+      - [波霸珍珠奶茶 免费升级, 波霸珍珠奶茶]
+      - [招牌烧仙草 墙裂推荐, 招牌烧仙草]
+      - 草莓脏脏茶
+      - [豪华台湾手抓饼 三拼, 台湾手抓饼 三拼, 豪华台湾手抓饼]
+      - 正宗重庆酸辣粉
+      - 日式章鱼小丸子
+      - 柠檬鸡爪
+      - 火山石
+      - 火腿烤冷面
+      - 长沙臭豆腐
+
+  超值换购:
+    - 香芋地瓜丸
+    - 骨肉相连
+    - 咖喱鱼丸
+    - 南瓜饼
+
+  满减活动:
+    奶茶:
+      - [25, 20]
+      - [45, 28]
+      - [60, 33]
+      - [100, 48]
+      - [150, 58]
+    甜品:
+      - [15, 8]
+      - [28, 16]
+      - [42, 21]
+      - [60, 25]
+      - [100, 45]
+    原价扣点:
+      - [10, 1]
+      - [18, 2]
+      - [28, 3]
+      - [38, 4]
+      - [58, 5]
+
+requests:
+  mt:
+    ### 活动
+    下单返券/create:
+      url: https://waimaieapp.meituan.com/reuse/activity/marketing/e/v2/campaign/shopActivity/w/create
+      body:
+        wmActPoiId:
+        type: 0 # 店内发券5 点外发券4 下单返券0
+        wmPoiId: 9470231
+        isAgree: 1
+        beginTime: 2021-01-04
+        endTime: 2022-01-03
+        validityDay: 15
+        limitPrice: 4 # 使用门槛 元
+        couponPrice: 2
+        totalCount: 9999
+        fullPrice: 4 # 返券条件
+        activeName: 下单返券
+      requires:
+        - wmPoiId
+        - beginTime # date
+        - endTime # date
+
+    店内领券/create:
+      url: https://waimaieapp.meituan.com/reuse/activity/marketing/w/common/create
+      body:
+        wmActPoiId:
+        type: 5
+        wmPoiId: 9470231
+        isAgree: 1
+        beginTime: 1609689600
+        endTime: 1641225599
+        weeksTime: 1,2,3,4,5,6,7
+        period: 00:00-23:59
+        # 用户类型 1 新客 3 老客 2 新老客
+        couponInfo:
+          [
+            {
+              'limitPrice': '39',
+              'price': '2',
+              'stock': '9999',
+              'valityDays': '7',
+              'customType': 2,
+              'limitCount': 0,
+              'limitDayCount': 0,
+            },
+          ]
+        couponType:
+      jsonfy: [couponInfo]
+      requires:
+        - wmPoiId
+        - beginTime
+        - endTime
+
+    收藏有礼/create:
+      url: https://waimaieapp.meituan.com/reuse/activity/marketing/commodity/createCommodityActivity
+      body:
+        data:
+          {
+            'activityId': 0,
+            'activityName': '收藏有礼',
+            'type': 92,
+            'latitudeType': 1,
+            'wmPoiIds': [9470231],
+            'commodityCouponDetailViewVos':
+              [
+                {
+                  'couponName': '收藏有礼',
+                  'costBearType': '1',
+                  'useCouponTimeType': '1',
+                  'day': 7,
+                  'sill': 39,
+                  'price': 2,
+                  'couponType': 0,
+                },
+              ],
+          }
+        createType: 1
+      jsonfy: [data]
+      requires:
+        - data/wmPoiIds # arr
+
+    代金券包/create:
+      url: https://waimaieapp.meituan.com/reuse/activity/marketing/common/create
+      body:
+        data:
+          {
+            'basic':
+              {
+                'id': 0,
+                'name': '¥3 无门槛代金券',
+                'url': 'http://s3plus.sankuai.com/v1/mss_20dd03d0738a4521bf1048c04f6b2980/promotion-save-results/2021%2F01%2F04%2Fd4f44f5d-164c-457c-91ae-61725d09f6e2.png',
+                'startTime': 1609689600,
+                'endTime': 1612281599,
+                'type': 126,
+                'wmPoiIds': [9470231],
+              },
+            'policy':
+              {
+                'commodityCouponDetailViewVos':
+                  [
+                    {
+                      'couponName': '¥3 无门槛代金券',
+                      'discount': '',
+                      'costChargeType': '1',
+                      'mtCharge': '0',
+                      'agentCharge': '0',
+                      'useCouponTimeType': '1',
+                      'dayValid': 30,
+                      'useBeginTime': '',
+                      'useEndTime': '',
+                      'isGetToShop': 2,
+                      'mutexAttr': '',
+                      'limitPrice': '0',
+                      'price': 3,
+                      'couponType': 0,
+                    },
+                  ],
+                'couponPackage':
+                  {
+                    'couponPackageNum': 9999,
+                    'couponNum': 3,
+                    'salePrice': 4,
+                    'isSeckill': '0',
+                    'seckillScenes': [],
+                    'price': 9,
+                  },
+                'saleRule': { 'singleLimitBuyNum': 3, 'singlePeriodLimitBuyNum': 3 },
+                'settleRule': { 'maidProportion': 0, 'settlePoi': 9470231 },
+              },
+          }
+      jsonfy: [data]
+      requires:
+        - data/basic/startTime
+        - data/basic/endTime # +30
+        - data/basic/wmPoiIds # arr
+        - data/policy/settleRule/settlePoi
+
+    集点返券/create:
+      url: https://waimaieapp.meituan.com/reuse/activity/marketing/commodity/saveCountPointActivityCoupon
+      body:
+        data:
+          {
+            'actName': '集点返券',
+            'beginTime': 1609689600,
+            'endTime': 1617465599,
+            'actSkus': [],
+            'countDetail':
+              {
+                'customType': 0,
+                'productPriceMax': 0,
+                'productPriceMin': 0,
+                'sendCondition': 3,
+                'sendCouponType': 0,
+                'taskProductType': 1,
+                'taskType': 0,
+                'taskValidDays': '30',
+              },
+            'couponSkus': [],
+            'coupons':
+              [{ 'day': '30', 'discount': 0, 'isGetToShop': 1, 'limitPrice': 0, 'price': 300, 'useCouponTimeType': 1 }],
+          }
+        wmPoiIds: 9470231
+      jsonfy: [data]
+      requires:
+        - data/beginTime
+        - data/endTime # +90
+        - wmPoiIds # str
+
+    减配送费/create:
+      url: https://waimaieapp.meituan.com/reuse/activity/setting/w/save
+      body:
+        wmActPoiId:
+        type: 25
+        wmPoiId: 9470231
+        valid: 1
+        isSettle: 1
+        autoDelayDays: 30
+        poiPolicy:
+          {
+            'online_pay': 1,
+            'wm_act_policy_detail_id': 0,
+            'days_of_week': '1,2,3,4,5,6,7',
+            'policy_detail':
+              [
+                {
+                  'discount': '6.1',
+                  'shipping_charge': '0',
+                  'mt_charge': '0',
+                  'poi_charge': '6.1',
+                  'agent_charge': '0',
+                },
+              ],
+            'period': '00:00-23:59',
+            'policy_type': 0,
+          }
+        isAgree: 1
+        startTime: 1609776000
+        endTime: 1641311999
+        weeksTime: 1,2,3,4,5,6,7
+        period: 00:00-23:59
+      jsonfy: [poiPolicy]
+      requires:
+        - wmPoiId
+        - poiPolicy/policy_detail
+        - startTime
+        - endTime
+
+    超值换购/create:
+      url: https://waimaieapp.meituan.com/reuse/activity/setting/w/batchSaveItemFullDiscount
+      body:
+        policyType: 40
+        actInfo:
+          {
+            'isReadProtocol': true,
+            'actName': '超值换购',
+            'startTime': 1609776000,
+            'endTime': 1641311999,
+            'isAgree': 1,
+            'orderPrice': 0,
+            'orderLimitItems': -1,
+            'userType': 0,
+          }
+        actItems:
+          [
+            {
+              'list': ['9470231_3098577023_12'],
+              'dayLimit': -1,
+              'orderLimit': '1',
+              'mtCharge': 0,
+              'actItemPrice': '6.9',
+              'itemName': '咖喱鱼丸【6个】',
+            },
+            {
+              'list': ['9470231_3098467930_12'],
+              'dayLimit': -1,
+              'orderLimit': '1',
+              'mtCharge': 0,
+              'actItemPrice': '6.9',
+              'itemName': '骨肉相连【3串】',
+            },
+            {
+              'list': ['9470231_3098577128_12'],
+              'dayLimit': -1,
+              'orderLimit': '1',
+              'mtCharge': 0,
+              'actItemPrice': '6.9',
+              'itemName': '香芋地瓜丸【6个】',
+            },
+          ]
+      jsonfy: [actInfo, actItems]
+      requires:
+        - actInfo/startTime
+        - actInfo/endTime
+        - actItems
+
+    满减活动/create:
+      url: https://waimaieapp.meituan.com/reuse/activity/setting/w/save
+      body:
+        wmActPoiId:
+        type: 2
+        wmPoiId: 10085676
+        valid: 1
+        isSettle: 1
+        autoDelayDays: 30
+        poiPolicy:
+          {
+            'online_pay': 1,
+            'policy_detail':
+              [
+                {
+                  'price': 15,
+                  'discounts':
+                    [
+                      {
+                        'code': 1,
+                        'type': 'default',
+                        'discount': 8,
+                        'poi_charge': 8,
+                        'mt_charge': 0,
+                        'agent_charge': 0,
+                      },
+                    ],
+                },
+                {
+                  'price': 28,
+                  'discounts':
+                    [
+                      {
+                        'code': 1,
+                        'type': 'default',
+                        'discount': 16,
+                        'poi_charge': 16,
+                        'mt_charge': 0,
+                        'agent_charge': 0,
+                      },
+                    ],
+                },
+                {
+                  'price': 42,
+                  'discounts':
+                    [
+                      {
+                        'code': 1,
+                        'type': 'default',
+                        'discount': 21,
+                        'poi_charge': 21,
+                        'mt_charge': 0,
+                        'agent_charge': 0,
+                      },
+                    ],
+                },
+                {
+                  'price': 60,
+                  'discounts':
+                    [
+                      {
+                        'code': 1,
+                        'type': 'default',
+                        'discount': 25,
+                        'poi_charge': 25,
+                        'mt_charge': 0,
+                        'agent_charge': 0,
+                      },
+                    ],
+                },
+                {
+                  'price': 100,
+                  'discounts':
+                    [
+                      {
+                        'code': 1,
+                        'type': 'default',
+                        'discount': 45,
+                        'poi_charge': 45,
+                        'mt_charge': 0,
+                        'agent_charge': 0,
+                      },
+                    ],
+                },
+              ],
+          }
+        isAgree: 1
+        startTime: 1610208000
+        endTime: 1641743999
+        weeksTime: 1,2,3,4,5,6,7
+        period: 00:00-23:59
+      jsonfy: [poiPolicy]
+      requires:
+        - wmPoiId
+        - poiPolicy/policy_detail
+        - startTime
+        - endTime
+
+    ### 商品
+    商品列表/search:
+      url: https://waimaie.meituan.com/reuse/product/food/r/searchByName
+      params:
+        wmPoiId: 9062221
+        pageNum: 1
+        pageSize: 30
+        needTagList: 0
+        name: 糍粑
+      requires:
+        - wmPoiId
+        - name
+
+    商品列表/get:
+      url: https://waimaie.meituan.com/reuse/product/food/r/spuList
+      params:
+        tagId: 178984089
+        opType: 0
+        queryCount: 0
+        pageNum: 1
+        pageSize: 100
+        wmPoiId: 10085676
+        needAllCount: false
+        needTagList: false
+      requires:
+        - wmPoiId
+        - tagId
+
+    商品列表/sort:
+      url: https://waimaie.meituan.com/reuse/product/food/w/updateSpuSequence
+      body:
+        wmPoiId: 10085676
+        tagId: 178984087
+        spuId: 3208510906
+        sequence: 1
+      requires:
+        - wmPoiId
+        - tagId
+        - spuId
+        - sequence
+
+    商品名称/update:
+      url: https://waimaie.meituan.com/reuse/product/food/w/updateSpuName
+      body:
+        v2: 1
+        opTab: 0
+        viewStyle: 0
+        tagCat: 1
+        wmPoiId: 9470231
+        spuName: 测试520
+        spuId: 3451479262
+
+    商品列表2/search: # 超值换购商品搜索
+      url: https://waimaieapp.meituan.com/reuse/activity/marketing/commodity/searchProductGroupByTagId
+      body:
+        wmPoiIds: 9470231
+        skuName: 咖喱鱼丸
+        wmActType: 40
+        random: 0.49252453914929206
+      requires:
+        - wmPoiIds
+        - skuName
+        - random
+
+    商品列表3/search: # 老板推荐商品搜索
+      url: https://waimaieapp.meituan.com/decoration/r/products
+      params:
+        keyWords: 招牌芋圆
+        pageNum: 1
+        pageSize: 30
+      requires:
+        - keyWords
+
+    折扣商品/get:
+      url: https://waimaieapp.meituan.com/reuse/activity/setting/r/getAllFoodActPolicy
+      body:
+        status: 0
+        startTime:
+        endTime:
+        itemName:
+        wmPoiId: 10085676
+        wmActPoiId: 1
+        dataSource: 1
+        wmActPolicyId: 1001
+      requires:
+        - wmPoiId
+
+    折扣商品/sort:
+      url: https://waimaieapp.meituan.com/reuse/activity/product/w/sort
+      body:
+        skuSet:
+          [{ 'id': 3741533070, 'wmPoiId': '10085676', 'wmSkuId': 3824275011, 'sortNumber': '20', 'spuId': 3412950683 }]
+        wmActType: 17
+        opType: 8
+      jsonfy: [skuSet]
+      requires:
+        - skuSet
+
+    分类列表/get:
+      url: https://waimaie.meituan.com/reuse/product/food/r/spuList
+      params:
+        opType: 0
+        queryCount: 0
+        pageNum: 1
+        pageSize: 1
+        wmPoiId: 10085676
+        needAllCount: false
+        needTagList: true
+      requires:
+        - wmPoiId
+
+    分类列表/sort:
+      url: https://waimaie.meituan.com/reuse/product/food/w/changeTagSequence
+      body:
+        wmPoiId: 10085676
+        tagId: 178984088
+        targetSeq: 2
+      requires:
+        - wmPoiId
+        - tagId
+        - targetSeq
+
+    ### 门店
+    公告电话/update:
+      url: https://waimaie.meituan.com/v2/shop/shopInfo/w/savePoi/baseSetting?ignoreSetRouterProxy=true
+      body:
+        call_center: 15814227912
+        bulletin: 因疫情期间平台运力不足，配送时间有所延长，如果看不到配送信息请小主们不要捉急，那是第三方在配送中。本店已开启无接触配送，请小主们安心购买食用。让我们一起为武汉加油，为中国加油！
+        userName: wmystp
+        password: gygc8888
+        csrfToken: 4/InGur34Ocn2+X275g6YuHLkvHlnSLL0lOqVi0AI85yRbCpX9FMnRaKcZznO75atfq4IaaCJb2cKtsaIoWTgOdAKn9PhUNMq3BkqSm4HCLbwR0rqo4Nh67Pi96hYGqIv9FYQn1zNU77i5d80FIz+w==
+      requires:
+        - call_center # split by /
+
+    营业设置/update:
+      url: https://waimaie.meituan.com/v2/shop/shopInfo/w/savePoi/businessSetting?ignoreSetRouterProxy=true
+      body:
+        shippingTime: 00:00-01:30,09:50-23:59
+        shippingTimeX:
+          [
+            ['00:00-01:30', '09:50-23:59'],
+            ['00:00-01:30', '09:50-23:59'],
+            ['00:00-01:30', '09:50-23:59'],
+            ['00:00-01:30', '09:50-23:59'],
+            ['00:00-01:30', '09:50-23:59'],
+            ['00:00-01:30', '09:50-23:59'],
+            ['00:00-01:30', '09:50-23:59'],
+          ]
+        preAllowedInClosingTime: 1
+        preAfterAtLeast: 0
+        preAfterAtMost: 1
+        preOrderReminderTime: 60
+        userName: wmystp
+        password: gygc8888
+        csrfToken: WSgOSDBgi5u+seeutHzjIUFnq7AtRnlcAv8mGGOhqQfuM5WRj3Js2Q1TdwByZSQsuh1k36gvxLmETFquY8OtLIYYnXC16KHghW1CmjSQjUa/X3mGF8knuWnIvtz5M9k++6crOVSgUm2veaS72/fPIA==
+
+    开具发票/update:
+      url: https://waimaie.meituan.com/v2/shop/shopInfo/w/updateInvoiceInfo?ignoreSetRouterProxy=true
+      body:
+        minPrice: 0
+        isSupport: 1 #0.不支持 1.支持
+        userName: wmystp
+        password: gygc8888
+        csrfToken: TCGcocurgd2zjchio6kk70aNHvqrQFj7kEXnhI3yqoOmRXcZRaPj/cGqfydwtL1AUvc82NeBSTHmFwrQjXomKRFNirigQclyfG2HdOFW+Ra1zJtYq8I8/qs8tijWzKh+2Gs9VjXz1kWZIRX+JRwdmQ==
+
+    到店自取/update:
+      url: https://waimaie.meituan.com/v2/shop/manage/selfPickup/w/update?ignoreSetRouterProxy=true
+      body:
+        wmPoiId: 10014983
+        leadTime: 300 # 备餐时间 秒
+        selfPickupSupport: 1 # 0.关闭 1.开启
+        selfPickupPromotionSupport: 1
+      requires:
+        - wmPoiId
+
+    极速退款/close:
+      url: https://waimaie.meituan.com/v2/shop/manage/speedRefund/w/close?ignoreSetRouterProxy=true
+      body:
+        wmPoiId: 10014983
+
+    极速退款/open:
+      url: https://waimaie.meituan.com/v2/shop/manage/speedRefund/w/open?ignoreSetRouterProxy=true
+      body:
+        wmPoiId: 10014983
+      requires:
+        - wmPoiId
+
+    青山公益/update:
+      url: https://waimaie.meituan.com/v2/shop/manage/donation/w/update/batch?ignoreSetRouterProxy=true
+      body:
+        wmPoiIdStr: 9470231
+        status: 1
+        updateStatus: 0
+        donationStatus: 2
+        donationAmount: 0.01
+        csrfToken: FMMKl0WMUHqdTnqZ6Y3X9BiApLjH1DokiSKWnGgUg1X8IaQD3IPI2PHzKb4xZOlvXacVk2i72/4J7yDQiRohGEXdeN0toUW8ArSu7LYSKak7CuqNyyf+VCNhQ0IBiWOfdDh7yA+GuEXMG3qpw6ZOwA==
+      requires:
+        - wmPoiIdStr
+
+    配送范围/get:
+      url: https://waimaie.meituan.com/gw/api/logistics/spAreas?ignoreSetRouterProxy=true
+      params:
+        ignoreSetRouterProxy: true
+
+    老板推荐/update/state:
+      url: https://waimaieapp.meituan.com/decoration/bossRecommend/w/commendSwitch
+      body:
+        wmPoiId: 9470231
+        state: 1
+      requires:
+        - wmPoiId
+        - state
+
+    老板推荐/update/products:
+      url: https://waimaieapp.meituan.com/decoration/bossRecommend/w/products
+      body:
+        productSpuListStr: 2748564840,2748394422,2748564457,2748564843,2748564853,2748394385,2748394032,2748524971,2748494502
+      requires:
+        - productSpuListStr
+
+    老板推荐/get/products:
+      url: https://waimaieapp.meituan.com/decoration/bossRecommend/r/products
+      body:
+        wmPoiId: 9470231
+      requires:
+        - wmPoiId
+
+    店内海报/create/pic:
+      url: https://waimaieapp.meituan.com/decoration/w/upload/base64
+      body:
+        picName: post_a.jpg
+        picStr: data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAtAAAADwCAYAAAApZFODAAAgAElEQVR4Xsy9B7hdZ3Um...
+      requires:
+        - picName
+        - picStr
+
+  elm:
+    商品列表/search:
+      url: https://app-api.shop.ele.me/nevermore.goods/invoke/?method=FoodService.getItemForSearch
+      body:
+        request: { keyWord: '手抓', shopId: 2036923650 }
+      requires:
+        - request/shopId
+        - request/keyWord
+
+    分类列表/get:
+      url: https://app-api.shop.ele.me/nevermore.goods/invoke/?method=FoodService.queryCategoryWithFoodFilter
+      body:
+        XHR_TIMEOUT: 30000
+        foodFilter: 0
+        shopId: 2036923650
+      requires:
+        - shopId

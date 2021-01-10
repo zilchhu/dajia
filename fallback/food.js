@@ -189,7 +189,7 @@ export default class Food {
     return instance.post(urls.food.batchUpdateBoxPrice, data)
   }
 
-  async createTestFood(tagId, tagName) {
+  async createTestFood(tagId, tagName, foodName) {
     let data = {
       wmPoiId: this.wmPoiId,
       wmFoodVoJson: JSON.stringify(
@@ -197,7 +197,8 @@ export default class Food {
           ...t,
           wm_poi_id: this.wmPoiId,
           tag_id: tagId,
-          tag_name: tagName
+          tag_name: tagName,
+          name: foodName
         }))
       )
     }
@@ -357,10 +358,10 @@ export default class Food {
 
   async setHighBoxPrice(tagI, sell) {
     try {
-      const tagids = [194000423, 194002074, 194001667, 194000957, 194001334, 207343554]
+      const tagids = [194000423, 194002074, 194001667, 194000957, 194001334, 207343554, 210203398]
       const highBoxPriceR = await this.getHighBoxPrice()
 
-      let canSave = highBoxPriceR.skuInSellOverall > highBoxPriceR.highBoxPriceCount
+      let canSave = highBoxPriceR.skuInSellOverall > highBoxPriceR.highBoxPriceCount || highBoxPriceR.highBoxPriceCount == 0
 
       console.log('highBoxPrice', '...')
 
@@ -370,7 +371,7 @@ export default class Food {
           all: highBoxPriceR.highBoxPriceCount,
           wmPoiId: this.wmPoiId
         })
-        if (tagI > 5) {
+        if (tagI > 6) {
           console.error('sync maxed', tagI)
           if (sell) {
             console.log('waiting 10m', '...')
@@ -392,6 +393,15 @@ export default class Food {
       return Promise.reject(err)
     }
   }
+
+  async updateMin(spuId) {
+    let data = {
+      wmPoiId: this.wmPoiId,
+      spuId,
+      minOrderCount: 2
+    }
+    return instance.post(urls.food.updateMinOrderCount, data)
+  }
 }
 
 let skuT = {
@@ -409,7 +419,7 @@ let foodT = [
     // wm_poi_id: '8221674',
     // tag_id: 124781406,
     // tag_name: '┏ 🙈 ┓店铺公告',
-    name: '饺子、冬至、汤圆',
+    // name: '饺子、冬至、汤圆',
     description: '说明产品，请勿下单',
     isShippingTimeSyncPoi: 2,
     shipping_time_x: '-',
@@ -438,8 +448,8 @@ let foodT = [
         wm_food_spu_id: '',
         wmProductPics: [
           {
-            pic_large_url: 'http://p1.meituan.net/wmproduct/a1164ddc4d5d4263975e7471f773695149977.png',
-            pic_small_url: 'http://p1.meituan.net/wmproduct/a1164ddc4d5d4263975e7471f773695149977.png',
+            pic_large_url: 'http://p0.meituan.net/wmproduct/97c3420cd5f99ec6aab53f37c61c55af72119.jpg',
+            pic_small_url: 'http://p0.meituan.net/wmproduct/97c3420cd5f99ec6aab53f37c61c55af72119.jpg',
             sequence: 1,
             is_quality_low: false,
             quality_score: 1
@@ -475,3 +485,5 @@ let foodT = [
     ]
   }
 ]
+
+

@@ -164,8 +164,16 @@ async function insertTableFromMysql(day_from_today = 1) {
     console.log(...arguments)
     await knx.raw(`SET @last_day = DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL ${day_from_today} DAY),'%Y%m%d');`)
     let [data, _] = await knx.raw(sql)
-    if (data.length == 0) return Promise.reject('no data')
-    const res = await knx('test_analyse_t_').insert(data).onConflict('id').merge()
+    if (data.length == 0 || data.every(v => v.third_send == 0)) return Promise.reject('no data')
+    const res = await knx('test_analyse_t_')
+      .insert(data)
+      .onConflict('id')
+      .merge()
+    // for (let d of data) {
+    //   await knx('test_analyse_t_')
+    //     .where({ shop_id: d.shop_id, date: d.date })
+    //     .update(d)
+    // }
     return Promise.resolve(res)
   } catch (err) {
     return Promise.reject(err)
@@ -187,68 +195,21 @@ async function insertTable(day_from_today) {
 
 async function updateTable(id, a) {
   try {
-    const res = await knx('test_analyse_t_')
-      .where('id', id)
-      .update({ a })
-    return Promise.resolve(res)
+    const [data, _] = await knx.raw(`SELECT * FROM wmb_expend  WHERE DATE(insert_date) = '2021-01-10'`)
+    for (let d of data) {
+      await knx('foxx_operating_data')
+        .where({ shop_id: d.shop_id, date: 20210109 })
+        .update({ third_send: d.third_send })
+    }
+    console.log(1)
+    return Promise.resolve(1)
   } catch (err) {
     return Promise.reject(err)
   }
 }
 
-async function updateTableAll() {
-  const data = await knx('foxx_operating_data')
-    .select()
-    .where({
-      date: 20201229
-    })
-  let cnt = data.length
-  for (let rec of data) {
-    console.log(cnt)
-    try {
-      let res = await knx('test_analyse_t_')
-        .where('id', rec.id)
-        .update({ city: rec.city, person: city.person })
-      console.log(rec.id, res)
-    } catch (error) {
-      console.error(error)
-      fs.appendFileSync('log.error', rec.id + '\n')
-    }
-    cnt -= 1
-  }
-}
-
-async function updateTableAll2() {
-  try {
-    const data = await knx('test_analyse_t_')
-      .select()
-      .whereNotNull('a')
-      .orderBy('date')
-    let cnt = data.length
-    for (let rec of data) {
-      console.log(cnt)
-      try {
-        let a = JSON.parse(rec.a).map(v => {
-          let time = v.time.trim()
-          if (v.time.trim().length > 0 && v.time.startsWith('12')) time = `2020/${v.time}`
-          return {
-            ...v,
-            time
-          }
-        })
-        const res = await updateTable(rec.id, JSON.stringify(a))
-        console.log({ a, res })
-      } catch (err) {
-        console.error(err)
-      }
-      cnt -= 1
-    }
-  } catch (error) {
-    console.error(error)
-  }
-}
-
-// updateTableAll()
+// updateTable()
+// insertTableFromMysql()
 
 async function getTableByDate(day_from_today) {
   try {

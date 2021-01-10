@@ -21,6 +21,7 @@ const urls = {
     list: '/reuse/product/food/r/spuList',
     save: '/reuse/product/food/w/save',
     updatePrice: '/reuse/product/food/w/updatePrice',
+    updateMinOrderCount: '/reuse/product/food/w/updateSpuMinOrderCount',
     batchUpdateSkus: '/reuse/product/food/w/batchUpdateSku',
     batchUpdateBoxPrice: '/reuse/product/food/w/batchUpdateSkuBoxPrice',
     updateImg: '/reuse/product/food/w/saveMultiImage',
