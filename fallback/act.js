@@ -197,6 +197,25 @@ export default class Act {
     }
     return instance.post(urls.act.delete, data)
   }
+
+  sort_(skuSet) {
+    let data = {
+      skuSet: JSON.stringify(skuSet),
+      wmActType: 17,
+      opType: 7
+    }
+    return instance.post(urls.act.sort, data)
+  }
+
+  async sort(name, num) {
+    try {
+      const act = await this.find(name)
+      const skuSet = [{ id: act.id, wmPoiId: act.wmPoiId, wmSkuId: act.wmSkuId, sortNumber: num, spuId: act.spuId }]
+      return this.sort_(skuSet)
+    } catch (e) {
+      return Promise.reject(e)
+    }
+  }
 }
 
 class Reduction {

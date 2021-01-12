@@ -96,18 +96,18 @@ rules:
     - 南瓜饼
 
   满减活动:
-    奶茶:
-      - [25, 20]
-      - [45, 28]
-      - [60, 33]
-      - [100, 48]
-      - [150, 58]
     甜品:
       - [15, 8]
       - [28, 16]
       - [42, 21]
       - [60, 25]
       - [100, 45]
+    贡茶:
+      - [25, 20]
+      - [45, 28]
+      - [60, 33]
+      - [100, 48]
+      - [150, 58]
     原价扣点:
       - [10, 1]
       - [18, 2]
@@ -562,7 +562,7 @@ requests:
         skuSet:
           [{ 'id': 3741533070, 'wmPoiId': '10085676', 'wmSkuId': 3824275011, 'sortNumber': '20', 'spuId': 3412950683 }]
         wmActType: 17
-        opType: 8
+        opType: 7 # 7.不置顶  8.置顶
       jsonfy: [skuSet]
       requires:
         - skuSet
@@ -722,3 +722,51 @@ requests:
         shopId: 2036923650
       requires:
         - shopId
+
+    分类列表/sort:
+      url: https://app-api.shop.ele.me/nevermore.goods/invoke/?method=FoodService.setGroupPosition
+      body:
+        categoryOrders: [{ parentGroupId: '300000007466283362', childrenGroupIds: [] }]
+        shopId: 2065322800
+      requires:
+        - shopId
+        - categoryOrders
+
+    商品描述/update:
+      url: https://app-api.shop.ele.me/nevermore.goods/invoke/?method=BatchFoodService.batchUpdateFood
+      body:
+        batchFood: { itemIds: [2000000063823382], description: '仅限一粒。', updateFoodType: 'ITEM_DESCRIPTION' }
+        shopId: 500976570
+      requires:
+        - shopId
+        - batchFood/itemIds
+        - batchFood/description
+
+    原料列表/get:
+      url: https://app-api.shop.ele.me/nevermore.goods/invoke/?method=MenuDataService.getMaterialTreeByShopId
+      body:
+        shopId: 161591866
+      requires:
+        - shopId
+
+    类目列表/get:
+      url: https://app-api.shop.ele.me/nevermore.goods/invoke/?method=CategoryService.getCategoryList
+      body:
+        request: { includeProperties: false, shopId: 500823702 }
+      requires:
+        - request/shopId
+
+    商品编辑/get:
+      url: https://app-api.shop.ele.me/nevermore.goods/invoke/?method=FoodService.getFoodView
+      body:
+        filter: 0
+        foodId: 882643967
+      requires:
+        - foodId
+
+    商品下架/create:
+      url: https://app-api.shop.ele.me/nevermore.goods/invoke/?method=FoodService.setFoodsOffShelf
+      body:
+        foodsWithSpecId: [{ foodId: 2000000058850376, foodSpecIds: [2000000127866749] }]
+      requires:
+        - foodsWithSpecId

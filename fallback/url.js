@@ -3,6 +3,7 @@ const urls = {
     list: '/reuse/activity/setting/r/getAllFoodActPolicy',
     save: '/reuse/activity/setting/w/updateSpecialMealBase',
     delete: '/reuse/activity/setting/w/deleteWmActPolicySpecial',
+    sort: '/reuse/activity/product/w/sort',
 
     reduction: {
       list: '/reuse/activity/query/list',
@@ -32,7 +33,7 @@ const urls = {
     batchUpdateTag: 'reuse/product/food/w/batchUpdateTag',
     batchDelete: 'reuse/product/food/w/batchDelete',
     highBoxPrice: '/reuse/product/food/r/highBoxPriceProductCount',
-    syncFood: '/reuse/product/sync_food/w/submit'
+    syncFood: '/reuse/product/sync_food/w/submit',
   },
   poi: {
     list: '/v2/shop/businessStatus/r/poiListSearch'

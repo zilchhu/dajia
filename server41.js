@@ -689,7 +689,8 @@ async function base(d) {
   try {
     let [data, _] = await knx.raw(date_sql(d))
     if (data.length == 0) {
-      await insertTable(d)
+      // await insertTable(d)
+      return Promise.reject('no data')
     }
 
     const res = new M(data)

@@ -92,7 +92,7 @@ instanceElm.interceptors.request.use(
         method,
         params: {
           ...config.data
-        },
+        }
       }
     }
     // console.log(config)
@@ -177,6 +177,13 @@ function xshard(shopId) {
   return { 'x-shard': `shopid=${shopId}` }
 }
 
+function move(ls, oldPos, newPos) {
+  let newLs = [...ls]
+  let dE = newLs.splice(oldPos, 1)[0]
+  newLs.splice(newPos, 0, dE)
+  return newLs
+}
+
 function execRequest(inst = instance, req, args, headers) {
   try {
     let { url, params, body, jsonfy, requires } = req
@@ -209,9 +216,7 @@ async function searchRace(api, vs, wmPoiId) {
   try {
     let v = vs.shift()
     if (!v) return Promise.reject('search maxed')
-    let res = await execRequest(api, [v], {
-      Cookie: updateCookie(singleCookie, { wmPoiId })
-    })
+    let res = await execRequest(undefined, api, [v], cookie(wmPoiId))
     if (res.totalCount == 0) return searchRace(api, vs, wmPoiId)
     return Promise.resolve(res)
   } catch (err) {
@@ -219,9 +224,9 @@ async function searchRace(api, vs, wmPoiId) {
   }
 }
 
-function b(req, args, headers) {
+function b(inst = instance, req, args, headers) {
   return function() {
-    return execRequest(req, args, headers)
+    return execRequest(inst, req, args, headers)
   }
 }
 
@@ -313,8 +318,8 @@ async function a(wmPoiId) {
     //   }))
     // const res = await execRequest(y.requests['超值换购/create'], [unix(), unix(365), actItems], cookie(10085676))
 
-    // const res = await execRequest(y.requests['折扣商品/get'], [10085676])
-    // const res = await execRequest(y.requests['折扣商品/sort'], [[{"id":3741533070,"wmPoiId":"10085676","wmSkuId":3824275011,"sortNumber":"2","spuId":3412950683}]])
+    // const res = await execRequest(undefined, y.requests.mt['折扣商品/get'], [10085676])
+    // const res = await execRequest(undefined, y.requests.mt['折扣商品/sort'], [[{"id":3741533070,"wmPoiId":"10085676","wmSkuId":3824275011,"sortNumber":"2","spuId":3412950683}]])
 
     // const res = await execRequest(undefined, y.requests.mt['分类列表/get'], [10085676])
     // const res = await execRequest(y.requests['分类列表/sort'], [10085676, 178984094, 1])
@@ -342,25 +347,176 @@ async function a(wmPoiId) {
      */
     // const res = await execRequest(instanceElm, y.requests.elm['商品列表/search'], [2036923650, '招牌'], xshard(2036923650))
 
-    const res = await execRequest(instanceElm, y.requests.elm['分类列表/get'], [2065322800])
-    console.log(res)
+    // const res = await execRequest(instanceElm, y.requests.elm['分类列表/get'], [2065322800])
+
+    // const materials = await execRequest(instanceElm, y.requests.elm['原料列表/get'], [2036923650], xshard(2036923650))
+    // const root = { name: 'root', children: materials, leaf: 0 }
+    // function find(node, name) {
+    //   if (node.children.length == 0) {
+    //     if (node.name == name) {
+    //       return node
+    //     } else {
+    //       return null
+    //     }
+    //   } else {
+    //     for (let child of node.children) {
+    //       let n = find(child, name)
+    //       if(n) return n
+    //     }
+    //   }
+    //   return null
+    // }
+    // const res = find(root, '水')
+    // const cats = await execRequest(instanceElm, y.requests.elm['类目列表/get'], [2036923650], xshard(2036923650))
+    // const root = { name: 'root', children: cats.categoryList }
+    // function find(node, name, path) {
+    //   if (node.children.length == 0) {
+    //     if (node.name == name) {
+    //       return path
+    //     } else {
+    //       path.splice(0, path.length)
+    //       return null
+    //     }
+    //   } else {
+    //     for (let child of node.children) {
+    //       let n = find(child, name, [...path, child])
+    //       if (n) return n
+    //     }
+    //   }
+    //   return null
+    // }
+    // const path = find(root, '手抓饼', [])
+    // const categoryModel = path.reduceRight((s, v) => ({...v, children: [s]}))
+
+    // fs.writeFileSync('tools/all.json', JSON.stringify(categoryModel))
   } catch (error) {
     console.error(error)
   }
 }
 
-a(9470231)
+// a(9470231)
 
-// koa.use(cors())
-// koa.use(
-//   bodyParser({
-//     onerror: function(err, ctx) {
-//       ctx.throw('body parse error', 422)
-//     }
-//   })
-// )
+koa.use(cors())
+koa.use(
+  bodyParser({
+    onerror: function(err, ctx) {
+      ctx.throw('body parse error', 422)
+    }
+  })
+)
 
-// router.get('/date/:date', async ctx => {})
+router.post('/fresh/mt', async ctx => {
+  try {
+    let { userTasks, userRule } = ctx.request.body
+    if (!userTasks || !userRule) {
+      ctx.body = { e: 'invalid params' }
+      return
+    }
+    const res = await freshMt(userTasks, userRule)
+    ctx.body = { res }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
 
-// koa.use(router.routes())
-// koa.listen(9005, () => console.log('running at 9005'))
+koa.use(router.routes())
+koa.listen(9010, () => console.log('running at 9010'))
+
+async function freshMt(userTasks, userRule) {
+  try {
+    const y = readYaml('tools/all.yaml')
+    const { wmPoiId, wmPoiType } = userRule
+
+    if (!wmPoiId || !wmPoiType) return Promise.reject({ err: 'invalid params' })
+
+    const allTasks = [
+      {
+        name: '下单返券',
+        fn: b(undefined, y.requests.mt['下单返券/create'], [wmPoiId, date(), date(365)])
+      },
+      {
+        name: '店内领券',
+        fn: b(undefined, y.requests.mt['店内领券/create'], [wmPoiId, unix(), unix(365)])
+      },
+      {
+        name: '收藏有礼',
+        fn: b(undefined, y.requests.mt['收藏有礼/create'], [[wmPoiId]])
+      },
+      {
+        name: '代金券包',
+        fn: b(undefined, y.requests.mt['代金券包/create'], [unix(), unix(30), [wmPoiId], wmPoiId])
+      },
+      {
+        name: '集点返券',
+        fn: b(undefined, y.requests.mt['集点返券/create'], [unix(), unix(90), [wmPoiId].join(',')])
+      },
+      {
+        name: '满减活动',
+        fn: async function() {
+          try {
+            const policy = y.rules['满减活动'][wmPoiType].map(([a, b]) => ({
+              price: a,
+              discounts: [
+                {
+                  code: 1,
+                  type: 'default',
+                  discount: b,
+                  poi_charge: b,
+                  mt_charge: 0,
+                  agent_charge: 0
+                }
+              ]
+            }))
+            return execRequest(undefined, y.requests.mt['满减活动/create'], [wmPoiId, policy, unix(), unix(365)])
+          } catch (e) {
+            return Promise.reject(e)
+          }
+        }
+      },
+      {
+        name: '老板推荐',
+        fn: async function() {
+          try {
+            const promises = y.rules['老板推荐'][wmPoiType].map(v =>
+              typeof v == 'string'
+                ? execRequest(undefined, y.requests.mt['商品列表3/search'], [v], cookie(wmPoiType))
+                : searchRace(y.requests.mt['商品列表3/search'], v, wmPoiId)
+            )
+            let goods = await Promise.allSettled(promises)
+            goods = goods
+              .filter(v => v.status == 'fulfilled' && v.value.totalCount > 0)
+              .map(v => v.value.productList[0])
+            return Promise.all([
+              execRequest(undefined, y.requests.mt['老板推荐/update/state'], [wmPoiId, 1]),
+              execRequest(
+                undefined,
+                y.requests.mt['老板推荐/update/products'],
+                [goods.map(g => g.id).join(',')],
+                cookie(wmPoiId)
+              )
+            ])
+          } catch (e) {
+            return Promise.reject(e)
+          }
+        }
+      },
+    ]
+
+    let tasks = allTasks.filter(t => userTasks.map(u => u.name).includes(t.name))
+    let results = []
+    for (let t of tasks) {
+      try {
+        let value = await t.fn()
+        results.push({ name: t.name, status: 'succ', value })
+      } catch (e) {
+        results.push({ name: t.name, status: 'fail', reason: e })
+      }
+    }
+
+    console.log(results)
+    return Promise.resolve(results)
+  } catch (e) {
+    return Promise.reject(e)
+  }
+}

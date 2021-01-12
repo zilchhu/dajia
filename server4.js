@@ -76,7 +76,7 @@ router.post('/plan', async ctx => {
       ctx.body = { err: 'invalid params' }
       return
     }
-    const data = await updateTable(id, a)
+    const data = await plan(id, a)
     ctx.body = { err: null, data }
   } catch (err) {
     console.error(err)
@@ -164,7 +164,7 @@ async function insertTableFromMysql(day_from_today = 1) {
     console.log(...arguments)
     await knx.raw(`SET @last_day = DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL ${day_from_today} DAY),'%Y%m%d');`)
     let [data, _] = await knx.raw(sql)
-    if (data.length == 0 || data.every(v => v.third_send == 0)) return Promise.reject('no data')
+    if (data.length < 400 || data.every(v => v.third_send == 0)) return Promise.reject('no data')
     const res = await knx('test_analyse_t_')
       .insert(data)
       .onConflict('id')
@@ -174,6 +174,7 @@ async function insertTableFromMysql(day_from_today = 1) {
     //     .where({ shop_id: d.shop_id, date: d.date })
     //     .update(d)
     // }
+    // console.log(1)
     return Promise.resolve(res)
   } catch (err) {
     return Promise.reject(err)
@@ -195,10 +196,10 @@ async function insertTable(day_from_today) {
 
 async function updateTable(id, a) {
   try {
-    const [data, _] = await knx.raw(`SELECT * FROM wmb_expend  WHERE DATE(insert_date) = '2021-01-10'`)
+    const [data, _] = await knx.raw(`SELECT * FROM wmb_expend  WHERE DATE(insert_date) = '2021-01-12'`)
     for (let d of data) {
       await knx('foxx_operating_data')
-        .where({ shop_id: d.shop_id, date: 20210109 })
+        .where({ shop_id: d.shop_id, date: 20210111 })
         .update({ third_send: d.third_send })
     }
     console.log(1)
@@ -250,22 +251,6 @@ async function insertTableAll() {
 
 // insertTableAll()
 
-async function getHistoryTableFromMysql(day_from_today, shop_id, interval = 7) {
-  let histories = []
-  try {
-    let start = day_from_today
-    while (start < day_from_today + interval) {
-      let [data, _] = await getTableFromMysql(start, shop_id)
-      if (!data) return Promise.resolve(histories)
-      histories.push(data)
-      start = start + 1
-    }
-    return Promise.resolve(histories)
-  } catch (err) {
-    return Promise.reject(err)
-  }
-}
-
 async function getRules() {
   try {
     const data = await knx('test_analyse_rule_').select()
@@ -275,36 +260,12 @@ async function getRules() {
   }
 }
 
-async function postPlan(oid, name, q, a) {
+async function plan(id, a) {
   try {
-    if (!oid || !name || !q || !a) return Promise.reject('param is invalid')
-    if (name.length < 2 || name.length > 10) return Promise.reject('param is invalid')
-    if (q.length < 1 || a.length < 1) return Promise.reject('param is invalid')
-
-    const data = await knx('test_analyse_a_').insert({ oid, name, q, a })
-    return Promise.resolve(data)
-  } catch (err) {
-    return Promise.reject(err)
-  }
-}
-
-async function getPlans(shop_id) {
-  try {
-    if (!shop_id) {
-      const data = await knx('test_analyse_a_').select()
-      return Promise.resolve(data)
-    } else {
-      const op_data = await knx('foxx_operating_data')
-        .select()
-        .where({ shop_id })
-      const data = await knx('test_analyse_a_')
-        .select()
-        .whereIn(
-          'oid',
-          op_data.map(v => v.id)
-        )
-      return Promise.resolve(data)
-    }
+    let update_res = await knx('test_analyse_t_')
+      .where('id', id)
+      .update({ a })
+    return Promise.resolve(update_res)
   } catch (err) {
     return Promise.reject(err)
   }

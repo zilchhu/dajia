@@ -38,17 +38,14 @@ content-type: application/json
 
 ###
 
-POST http://localhost:9005/plans
+POST http://localhost:9010/fresh/mt
 content-type: application/json
 
 {
-  "shopids": ["2034961279","8811093","9596488", "2056477563"],
-  "date": "20210102",
-  "a":  [{"q": "低收入",
-          "name": "小伍",
-          "a": "满减昨天批量修改成16-10了，先观察",
-          "operation": "save",
-          "time": "2021/01/03 10:48:34"}]
+  "userTasks": [
+    {"name": "满减活动"}
+  ],
+  "userRule": {"wmPoiId": 10085676, "wmPoiType": "甜品"}
 }
 
 ###

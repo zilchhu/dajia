@@ -164,8 +164,6 @@ async function batchUpdateFoodSkus(id, name, skus) {
   try {
     const food = await fallbackApp.food.find(name)
 
-    await fallbackApp.food.updateMin(food.id)
-
     if (food.wmProductSkus.length >= skus.length)
       skus = skus.map((sku, i) => {
         return {
@@ -656,14 +654,15 @@ async function test_catName() {
   }
 }
 
-async function moveFood(id, spuId) {
+async function moveFood(id, name) {
   const fallbackApp = new FallbackApp(id)
 
   try {
     const tags = await fallbackApp.food.listTags()
     const tag = tags.find(v => /.*店铺公告|门店公告|不要下单|别点了.*/.test(v.name))
     if (!tag) return Promise.reject({ err: 'tag not found' })
-    const res = await fallbackApp.food.batchUpdateTag(tag.id, [spuId])
+    const food = await fallbackApp.food.find(name)
+    const res = await fallbackApp.food.batchUpdateTag(tag.id, [food.id])
     return res
   } catch (err) {
     return Promise.reject(err)
@@ -672,11 +671,8 @@ async function moveFood(id, spuId) {
 
 async function test_move() {
   try {
-    let [data, _] = await knx.raw(`SELECT * FROM foxx_food_manage f 
-    LEFT JOIN foxx_spareas_info sp USING (wmpoiid)
-    WHERE f.date = CURDATE() AND  f.name LIKE '%热狗%' 
-    AND DATE(sp.insert_date) = CURDATE() AND sp.minPrice >= 15`)
-    data = data.map(v => [v.wmpoiid, v.productId])
+    let data = await readXls('plan/雪花球重上.xlsm', '美团雪花球重上')
+    data = data.map(v => [v.门店id, v.品名])
     await loop(moveFood, data, false)
   } catch (error) {
     console.error(error)
@@ -765,7 +761,7 @@ async function updateFoodSku(id, name, price, boxPrice) {
     let skus = [
       {
         price,
-        wmProductLadderBoxPrice: { ladder_num: 2, ladder_price: boxPrice, status: 1 }
+        wmProductLadderBoxPrice: { ladder_num: 1, ladder_price: boxPrice, status: 1 }
       }
     ]
     const { ok } = await fallbackApp.food.setHighBoxPrice(0, true)
@@ -774,15 +770,16 @@ async function updateFoodSku(id, name, price, boxPrice) {
 
       const updateSkusRes = await batchUpdateFoodSkus(id, name, skus)
 
-      if (delActRes.noAct) {
-        // const testsRes = await delFoods(id)
-        return Promise.resolve({ delActRes, updateSkusRes })
-      }
+      // if (delActRes.noAct) {
+      //   // const testsRes = await delFoods(id)
+      //   return Promise.resolve({ delActRes, updateSkusRes })
+      // }
 
-      const createActRes = await createAct(id, name, delActRes.actPrice, delActRes.orderLimit)
+      const createActRes = await createAct(id, name, 10.8, -1)
+      const sortActRes = await fallbackApp.act.sort(name, 30)
 
       // const testsRes = await delFoods(id)
-      return Promise.resolve({ delActRes, updateSkusRes, createActRes })
+      return Promise.resolve({ delActRes, updateSkusRes, createActRes, sortActRes })
     } else return Promise.reject({ err: 'sync failed' })
   } catch (err) {
     return Promise.reject(err)
@@ -791,11 +788,11 @@ async function updateFoodSku(id, name, price, boxPrice) {
 
 async function test_plan() {
   try {
-    let dataSource = await readXls('plan/美团批量修改.xlsx', '修改原价')
-    dataSource = dataSource.map(v => [v.门店id, v.产品名, 6.9, 0.5]).slice(dataSource.length - 956)
-    await loop(updateFoodSku, dataSource, false)
-    // dataSource = Array.from(new Set(dataSource.map(v => v.wmpoiid))).map(v => [v])
-    // await loop(delFoods, dataSource)
+    let dataSource = await readJson('log/log.json')
+    // dataSource = dataSource.map(v => v.meta)
+    // await loop(updateFoodSku, dataSource, false)
+    dataSource = dataSource.map(v => [v.meta[0]])
+    await loop(delFoods, dataSource)
   } catch (error) {
     console.error(error)
   }
@@ -814,9 +811,10 @@ async function test_updateActTime() {
 
 async function test_updateAct() {
   try {
-    let data = await readXls('plan/工作簿2.xlsx', '改折扣价7.9')
-    data = data.map(v => [v.id, v.品名, 7.9])
-    await loop(updateAct, data, false)
+    // let data = await readXls('plan/雪花球重上.xlsm', '美团雪花球重上')
+    let data = await readJson('log/log.json')
+    data = data.map(v => v.meta)
+    await loop(createAct, data, false)
   } catch (error) {
     console.error(error)
   }
@@ -833,8 +831,9 @@ async function test() {
   }
 }
 
+test_updateAct()
 // test_plan()
 // test_updateAct()1
 // test_delFoods()
 // test_testFood()
-test_rename2()
+// test_rename2()
