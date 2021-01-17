@@ -694,7 +694,8 @@ async function delFoods(id) {
         if (tests.length > 0) {
           const skuIds = tests.map(v => v.wmProductSkus.map(k => k.id).join(','))
           const res = await fallbackApp.food.batchDeleteFoods(skuIds)
-          results.push(res)
+          const res2 = await fallbackApp.food.delTag(tag.id)
+          results.push({ tests: res, tag: res2 })
         }
       } catch (err) {
         return Promise.reject({ err })
@@ -708,10 +709,10 @@ async function delFoods(id) {
 
 async function test_delFoods() {
   try {
-    let fallbackApp = new FallbackApp()
-    let data = await fallbackApp.poi.list()
-    data = data.map(v => [v.id])
-    await loop(delFoods, data, false)
+    // let fallbackApp = new FallbackApp()
+    // let data = await fallbackApp.poi.list()
+    // data = data.map(v => [v.id])
+    await loop(delFoods, [[9993224]], false)
   } catch (error) {
     console.log(error)
   }
@@ -770,16 +771,17 @@ async function updateFoodSku(id, name, price, boxPrice) {
 
       const updateSkusRes = await batchUpdateFoodSkus(id, name, skus)
 
-      // if (delActRes.noAct) {
-      //   // const testsRes = await delFoods(id)
-      //   return Promise.resolve({ delActRes, updateSkusRes })
-      // }
-
-      const createActRes = await createAct(id, name, 10.8, -1)
-      const sortActRes = await fallbackApp.act.sort(name, 30)
-
       // const testsRes = await delFoods(id)
-      return Promise.resolve({ delActRes, updateSkusRes, createActRes, sortActRes })
+
+      if (delActRes.noAct) {
+        // const testsRes = await delFoods(id)
+        return Promise.resolve({ delActRes, updateSkusRes })
+      }
+
+      const createActRes = await createAct(id, name, delActRes.actPrice, delActRes.orderLimit)
+      // const sortActRes = await fallbackApp.act.sort(name, 30)
+
+      return Promise.resolve({ delActRes, updateSkusRes, createActRes })
     } else return Promise.reject({ err: 'sync failed' })
   } catch (err) {
     return Promise.reject(err)
@@ -788,11 +790,10 @@ async function updateFoodSku(id, name, price, boxPrice) {
 
 async function test_plan() {
   try {
-    let dataSource = await readJson('log/log.json')
-    // dataSource = dataSource.map(v => v.meta)
-    // await loop(updateFoodSku, dataSource, false)
-    dataSource = dataSource.map(v => [v.meta[0]])
-    await loop(delFoods, dataSource)
+    let dataSource = await readXls('plan/美团贡茶修改.xlsx', '修改原价13.8+1')
+    dataSource = dataSource.slice(dataSource.length - 148)
+      .map((v, i) => [v.门店id, v.品名, 13.8, 1, i])
+    await loop(updateFoodSku, dataSource, false, { test: delFoods })
   } catch (error) {
     console.error(error)
   }
@@ -831,8 +832,8 @@ async function test() {
   }
 }
 
-test_updateAct()
-// test_plan()
+// test_updateAct()
+test_plan()
 // test_updateAct()1
 // test_delFoods()
 // test_testFood()

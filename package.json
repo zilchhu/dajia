@@ -17,6 +17,7 @@
     "deepmerge": "^4.2.2",
     "download": "^8.0.0",
     "flatten": "^1.0.3",
+    "htmlparser2": "^6.0.0",
     "knex": "^0.21.12",
     "koa": "^2.13.0",
     "koa-bodyparser": "^4.3.0",
@@ -36,6 +37,8 @@
     "vue-hot-reload-api": "^2.3.4",
     "vuex": "^3.6.0",
     "xls-to-json": "^2.1.0",
+    "xmldom": "^0.4.0",
+    "xpath": "^0.0.32",
     "yaml": "^1.10.0"
   },
   "devDependencies": {

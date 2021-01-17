@@ -24,7 +24,6 @@ const knx = knex({
   }
 })
 
-
 class M {
   constructor(val) {
     this.val = val
@@ -428,6 +427,11 @@ async function user_acts(name, d) {
     }
 
     res = res.bind(filter_person)
+    if (d != ':all') {
+      return Promise.resolve(res.val)
+    }
+
+    res = res.bind(filter_time)
     return Promise.resolve(res.val)
   } catch (e) {
     return Promise.reject(e)
@@ -496,11 +500,12 @@ async function user_acts(name, d) {
   }
 
   function split_person(xs) {
-    function order(ps) {
+    function order(ps, p) {
       let as = flatten(
         ps.map(x =>
           x.a
-            .filter(a => a.time.trim().length > 0 && same(a.time_parsed, d))
+            .filter(a => a.time.trim().length > 0 && (d != ':all' ? same(a.time_parsed, d) : true))
+            .filter(a => a.name == p)
             .map(a => ({ ...a, as: x.a, ...omit(x, ['a']) }))
         )
       )
@@ -535,7 +540,7 @@ async function user_acts(name, d) {
       }))
       .map(per => ({
         person: per.person,
-        activities: order(per.participated)
+        activities: order(per.participated, per.person)
       }))
 
     return new M(ys)
@@ -565,6 +570,36 @@ async function user_acts(name, d) {
 
   function filter_person(xs) {
     return new M(xs[name])
+  }
+
+  function filter_time(xs) {
+    function ls_times() {
+      return Array.from(new Set(xs.activities.map(act => dayjs(act.time_parsed).format('YYYY-MM-DD'))))
+    }
+    function split_times(times) {
+      return times.reduce((o, t) => {
+        return {
+          ...o,
+          [t]: xs.activities
+            .filter(act => dayjs(act.time_parsed).format('YYYY-MM-DD') == t)
+            .map(act => ({
+              q: act.q,
+              name: act.name,
+              a: act.a,
+              operation: act.operation,
+              time: act.time,
+              time_parsed: act.time_parsed,
+              id: act.id,
+              shop_id: act.shop_id,
+              shop_name: act.shop_name,
+              platform: act.platform,
+              date: act.date
+            }))
+        }
+      }, {})
+    }
+    let ys = split_times(ls_times())
+    return new M({ ...xs, activities: ys })
   }
 }
 

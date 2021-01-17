@@ -1,11 +1,30 @@
 import instance, { urls } from './base.js'
+import instance2 from './base2.js'
 import sleep from 'sleep-promise'
 import dayjs from 'dayjs'
 import download from 'download'
 import xls2Json from 'xls-to-json'
 import util from 'util'
+import htmlparser2 from 'htmlparser2'
+import fs from 'fs'
 
 const axls2Json = util.promisify(xls2Json)
+
+function omit(obj, ks) {
+  let newKs = Object.keys(obj).filter(v => !ks.includes(v))
+  let newObj = newKs.reduce((res, k) => {
+    return { ...res, [k]: obj[k] }
+  }, {})
+  return newObj
+}
+
+function keep(obj, ks) {
+  let newKs = Object.keys(obj).filter(v => ks.includes(v))
+  let newObj = newKs.reduce((res, k) => {
+    return { ...res, [k]: obj[k] }
+  }, {})
+  return newObj
+}
 
 export default class Food {
   constructor(wmPoiId) {
@@ -140,6 +159,14 @@ export default class Food {
     } catch (err) {
       return Promise.reject(err)
     }
+  }
+
+  async delTag(tagId) {
+    let data = {
+      tagId,
+      wmPoiId: this.wmPoiId
+    }
+    return instance.post(urls.food.delTag, data)
   }
 
   async updatePrice(skuId, price) {
@@ -361,7 +388,8 @@ export default class Food {
       const tagids = [194000423, 194002074, 194001667, 194000957, 194001334, 207343554, 210203398]
       const highBoxPriceR = await this.getHighBoxPrice()
 
-      let canSave = highBoxPriceR.skuInSellOverall > highBoxPriceR.highBoxPriceCount || highBoxPriceR.highBoxPriceCount == 0
+      let canSave =
+        highBoxPriceR.skuInSellOverall > highBoxPriceR.highBoxPriceCount || highBoxPriceR.highBoxPriceCount == 0
 
       console.log('highBoxPrice', '...')
 
@@ -401,6 +429,152 @@ export default class Food {
       minOrderCount: 2
     }
     return instance.post(urls.food.updateMinOrderCount, data)
+  }
+
+  async getEditView(spuId) {
+    let params = {
+      wmPoiId: this.wmPoiId,
+      spuId,
+      from: 'new',
+      productNew: 1
+    }
+    return instance2.get(urls.food.editView, { params })
+  }
+
+  async searchProperty(tagName, wm_product_lib_tag_id = 1000000015) {
+    let params = {
+      tagName,
+      wm_product_lib_tag_id,
+      wmPoiId: this.wmPoiId
+    }
+    return instance.get(urls.food.searchProp, { params })
+  }
+
+  async getTemplate(spuId) {
+    let params = {
+      spuId,
+      wmPoiId: this.wmPoiId
+    }
+    return instance.get(urls.food.getTemp, { params })
+  }
+
+  async getMinOrderCount(name) {
+    try {
+      const food = await this.find(name)
+
+      const editView = await this.getEditView(food.id)
+      let pageModel = ''
+      const parser = new htmlparser2.Parser({
+        onopentag(name, attrs) {
+          if (name == 'meta' && attrs.name == 'pageModel') {
+            pageModel = attrs.data
+          }
+        }
+      })
+      parser.write(editView)
+      parser.end()
+
+      if (pageModel == '') return Promise.reject({ err: 'pageModel null' })
+      pageModel = JSON.parse(pageModel)
+      return Promise.resolve(pageModel.wmProductSpu.min_order_count)
+    } catch (e) {
+      return Promise.reject(e)
+    }
+  }
+
+  async save_(food) {
+    let data = {
+      wmPoiId: this.wmPoiId,
+      wmFoodVoJson: JSON.stringify([food])
+    }
+    return instance.post(urls.food.save, data)
+  }
+
+  async save(name, minOrderCount) {
+    try {
+      const food = await this.find(name)
+
+      const editView = await this.getEditView(food.id)
+      let pageModel = ''
+      const parser = new htmlparser2.Parser({
+        onopentag(name, attrs) {
+          if (name == 'meta' && attrs.name == 'pageModel') {
+            pageModel = attrs.data
+          }
+        }
+      })
+      parser.write(editView)
+      parser.end()
+      if (pageModel == '') return Promise.reject({ err: 'pageModel null' })
+      pageModel = JSON.parse(pageModel)
+
+      let attrList = pageModel.wmProductSpu.attrList.map(v =>
+        keep(v, ['id', 'wm_product_spu_id', 'no', 'name', 'value'])
+      )
+
+      const temp = await this.getTemplate(food.id)
+      let category_id = temp.categoryId
+      let wm_product_property_template_id = temp.wm_product_property_template_id
+
+      let { ok, properties_values, unreqs } = isPropMatchReqs(temp.propertiesKeys, temp.properties_values)
+      if (!ok) return Promise.reject({ err: `properties required ${unreqs}` })
+
+      let spu = keep(pageModel.wmProductSpu, [
+        'id',
+        'wm_poi_id',
+        'tag_id',
+        'tag_name',
+        'name',
+        'description',
+        'isShippingTimeSyncPoi',
+        'shipping_time_x',
+        'wmProductSkus',
+        'labelList',
+        'specialEffectPic',
+        'min_order_count',
+        'wmProductVideo',
+        'search_terms',
+        'labelValues',
+        'customPropertiesValues',
+        'productCardDisplayContent'
+      ])
+
+      spu = {
+        ...spu,
+        attrList,
+        labelList: spu.labelList || [],
+        search_terms: spu.search_terms || [],
+        labelValues: spu.labelValues || [],
+        customPropertiesValues: spu.customPropertiesValues || [],
+        category_id,
+        wm_product_property_template_id,
+        properties_values,
+        min_order_count: minOrderCount || spu.min_order_count
+      }
+      // fs.writeFileSync('log/logE.json', JSON.stringify(pageModel))
+      return this.save_(spu)
+    } catch (e) {
+      return Promise.reject(e)
+    }
+
+    function isPropMatchReqs(propertiesKeys, properties_values) {
+      let unreqs = propertiesKeys
+        .filter(k => k.is_required == 1) // 1.require 2.not
+        .filter(k => !properties_values[k.wm_product_lib_tag_id])
+
+      if (unreqs.length == 0) {
+        return { ok: true, properties_values }
+      } else {
+        let r = unreqs.find(k => k.wm_product_lib_tag_name == '茶底')
+        if (r) {
+          return isPropMatchReqs(propertiesKeys, {
+            ...properties_values,
+            [r.wm_product_lib_tag_id]: [r.child.find(c => c.wm_product_lib_tag_name == '其他茶型')]
+          })
+        }
+        return { ok: false, unreqs }
+      }
+    }
   }
 }
 
@@ -486,4 +660,13 @@ let foodT = [
   }
 ]
 
+async function test() {
+  try {
+    const res = await new Food(10549708).save('桂圆红枣生姜茶')
+    console.log(res)
+  } catch (error) {
+    console.error(error)
+  }
+}
 
+// test()

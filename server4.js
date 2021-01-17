@@ -196,10 +196,10 @@ async function insertTable(day_from_today) {
 
 async function updateTable(id, a) {
   try {
-    const [data, _] = await knx.raw(`SELECT * FROM wmb_expend  WHERE DATE(insert_date) = '2021-01-12'`)
+    const [data, _] = await knx.raw(`SELECT * FROM wmb_expend  WHERE DATE(insert_date) = '2021-01-14'`)
     for (let d of data) {
       await knx('foxx_operating_data')
-        .where({ shop_id: d.shop_id, date: 20210111 })
+        .where({ shop_id: d.shop_id, date: 20210113 })
         .update({ third_send: d.third_send })
     }
     console.log(1)

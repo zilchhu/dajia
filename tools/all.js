@@ -8,28 +8,49 @@ import Koa from 'koa'
 import Router from 'koa-router'
 import bodyParser from 'koa-bodyparser'
 import cors from 'koa2-cors'
-import parse5 from 'parse5'
+import htmlparser2 from 'htmlparser2'
+import FallbackApp, { loop, wrap, readJson, readXls } from '../fallback/fallback_app.js'
 
 const koa = new Koa()
 const router = new Router()
 
+const y = readYaml('tools/all.yaml')
+
 const singleCookie =
-  '_lxsdk_cuid=173796b978082-0920d6b94f4f16-b7a1334-144000-173796b97817c; _ga=GA1.2.1511021963.1597473654; _lxsdk=173796b978082-0920d6b94f4f16-b7a1334-144000-173796b97817c; _hc.v=c9793375-e9a8-7952-72a7-e404fd7ad70a.1602157773; uuid=16db610009dfc3c606c8.1602213490.1.0.0; device_uuid=!39ecd268-5a7e-4541-8aa6-33fc60963ac7; uuid_update=true; acctId=23262521; brandId=-1; city_id=0; isChain=1; existBrandPoi=true; ignore_set_router_proxy=true; region_id=; region_version=0; newCategory=false; cityId=440300; provinceId=440000; city_location_id=0; location_id=0; pushToken=0BCjlFCGNeTf0_xqoT71TuF12Ymx2cPcm0s49sjFsfrg*; wpush_server_url=wss://wpush.meituan.com; e_u_id_3299326472=7e0dbe1fc46d29c6155e6acc5ce0c4c1; isOfflineSelfOpen=0; logan_custom_report=; bsid=YPF3VhNk_02OZorGYQ3Ihe1UGL7lwaTZH7AgAOT3UNaP-1A9ayCWM7SCaNOjvyWbHc76ugchn69-zAYIRJpksQ; token=06QT4N7pcCZf6cEcARzenRtMCGbUR-laXvgjt5Tf73Nw*; setPrivacyTime=7_20210104; wmPoiName=%E5%96%9C%E4%B8%89%E5%BE%B7%E7%94%9C%E5%93%81%E2%80%A2%E6%89%8B%E5%B7%A5%E8%8A%8B%E5%9C%86%EF%BC%88%E6%B1%9F%E5%8C%97%E5%BA%97%EF%BC%89; wmPoiId=9470231; logistics_support=1; shopCategory=food; set_info=%7B%22wmPoiId%22%3A9470231%2C%22ignoreSetRouterProxy%22%3Atrue%7D; JSESSIONID=10p53mwn1m2h3m4kw4krofu22; logan_session_token=pq4kw7z3wahlrjzs42aq; _lxsdk_s=176d10730d3-771-e50-8a%7C23262521%7C907'
+  'acctId=23262521; classRoomTips=true; bmm-uuid=8187924a-26c6-0a7e-5c0f-aaf09ad861cf; bizad_second_city_id=440300; bizad_cityId=440306; bizad_third_city_id=440306; wmPoiName=%E5%96%9C%E4%B8%89%E5%BE%B7%E7%94%9C%E5%93%81%E2%80%A2%E6%89%8B%E5%B7%A5%E8%8A%8B%E5%9C%86%EF%BC%88%E6%96%B0%E5%AE%89%E5%BA%97%EF%BC%89; _ga=GA1.2.1511021963.1597473654; _hc.v=c9793375-e9a8-7952-72a7-e404fd7ad70a.1602157773; _lxsdk=173796b978082-0920d6b94f4f16-b7a1334-144000-173796b97817c; _lxsdk_cuid=173796b978082-0920d6b94f4f16-b7a1334-144000-173796b97817c; uuid=16db610009dfc3c606c8.1602213490.1.0.0; igateApp=shangdan_qualification; __mta=146715147.1599578598056.1610506443155.1610506443174.10; token=0ZYJ8xEhxXGWervc28-KnTF_bRkAfHLEuU1ywvC-dEzs*; bsid=IkuK4w3u1sgGWZWfMf1kCTboJJuA-VgfcfmILhN1pHTxJV-mqvVC9WDWzEfiqXe02dwUdOs3GiBDPgxu1gWBuw; wmPoiId=10085676; JSESSIONID=18jcolmlpy6c2hjxpb63zd0b5; _lxsdk_s=1770462cca8-e55-b42-45%7C23262521%7C16'
+
+const baseHeaders = y.headers['老板推荐']
 const instance = axios.create({
   responseType: 'json',
+  headers: baseHeaders
+})
+
+const instance3 = axios.create({
+  responseType: 'json',
   headers: {
-    Host: 'waimaieapp.meituan.com',
-    Accept: '*/*',
-    'User-Agent':
-      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.121 Safari/537.36',
-    'X-Requested-With': 'XMLHttpRequest',
-    Referer: 'https://waimaieapp.meituan.com',
-    // 'https://waimaieapp.meituan.com/decoration/bossRecommend?_source=PC&token=06QT4N7pcCZf6cEcARzenRtMCGbUR-laXvgjt5Tf73Nw*&acctId=23262521&wmPoiId=9470231&region_id=&device_uuid=!39ecd268-5a7e-4541-8aa6-33fc60963ac7&bsid=YPF3VhNk_02OZorGYQ3Ihe1UGL7lwaTZH7AgAOT3UNaP-1A9ayCWM7SCaNOjvyWbHc76ugchn69-zAYIRJpksQ&appType=3&fromPoiChange=false',
-    'Accept-Encoding': 'gzip, deflate',
+    Accept: 'application/json, text/plain, */*',
+    'Accept-Encoding': 'gzip, deflate, br',
     'Accept-Language': 'zh-CN,zh;q=0.9',
-    Cookie: singleCookie
+    Connection: 'keep-alive',
+    Cookie:
+      'acctId=23262521; classRoomTips=true; bmm-uuid=8187924a-26c6-0a7e-5c0f-aaf09ad861cf; bizad_second_city_id=440300; bizad_cityId=440306; bizad_third_city_id=440306; wmPoiName=%E5%96%9C%E4%B8%89%E5%BE%B7%E7%94%9C%E5%93%81%E2%80%A2%E6%89%8B%E5%B7%A5%E8%8A%8B%E5%9C%86%EF%BC%88%E6%96%B0%E5%AE%89%E5%BA%97%EF%BC%89; _ga=GA1.2.1511021963.1597473654; _hc.v=c9793375-e9a8-7952-72a7-e404fd7ad70a.1602157773; _lxsdk=173796b978082-0920d6b94f4f16-b7a1334-144000-173796b97817c; _lxsdk_cuid=173796b978082-0920d6b94f4f16-b7a1334-144000-173796b97817c; uuid=16db610009dfc3c606c8.1602213490.1.0.0; igateApp=shangdan_qualification; __mta=146715147.1599578598056.1610506443155.1610506443174.10; e_u_id_3299326472=7e0dbe1fc46d29c6155e6acc5ce0c4c1; token=0ZYJ8xEhxXGWervc28-KnTF_bRkAfHLEuU1ywvC-dEzs*; bsid=IkuK4w3u1sgGWZWfMf1kCTboJJuA-VgfcfmILhN1pHTxJV-mqvVC9WDWzEfiqXe02dwUdOs3GiBDPgxu1gWBuw; _lxsdk_s=176f974fb47-0f0-2fc-4db%7C23262521%7C387; JSESSIONID=1lg8rmk76yur91rhpkdruvlgbg; wmPoiId=-1',
+    Host: 'waimaieapp.meituan.com',
+    Referer: 'https://waimaieapp.meituan.com/decoration/v2/signage',
+    // 'https://waimaieapp.meituan.com/decoration/brandStory?_source=PC&token=0ZYJ8xEhxXGWervc28-KnTF_bRkAfHLEuU1ywvC-dEzs*&acctId=23262521&wmPoiId=-1&region_id=&device_uuid=!39ecd268-5a7e-4541-8aa6-33fc60963ac7&bsid=IkuK4w3u1sgGWZWfMf1kCTboJJuA-VgfcfmILhN1pHTxJV-mqvVC9WDWzEfiqXe02dwUdOs3GiBDPgxu1gWBuw&appType=3&fromPoiChange=true',
+    'sec-ch-ua': '"Google Chrome";v="87", " Not;A Brand";v="99", "Chromium";v="87"',
+    'sec-ch-ua-mobile': '?0',
+    'Sec-Fetch-Dest': 'empty',
+    'Sec-Fetch-Mode': 'cors',
+    'Sec-Fetch-Site': 'same-origin',
+    'User-Agent':
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36',
+    'X-Requested-With': 'XMLHttpRequest'
   }
 })
+
+
+/////////////
+/////////////
 
 const id = 'F87A24ACA93043258B7D4AE0FD4F2246|1609236931131'
 const metas = {
@@ -62,13 +83,33 @@ const instanceElm = axios.create({
 
 instance.interceptors.request.use(
   config => {
-    config.data = qs.stringify(config.data)
+    if(config.method == 'post')
+      config.data = qs.stringify(config.data)
     return config
   },
   err => Promise.reject(err)
 )
 
 instance.interceptors.response.use(
+  res => {
+    if (res.data.code === 0) {
+      return res.data.data == '' || res.data.data == null ? Promise.resolve(res.data) : Promise.resolve(res.data.data)
+    } else {
+      return Promise.reject(res.data)
+    }
+  },
+  err => Promise.reject(err)
+)
+
+instance3.interceptors.request.use(
+  config => {
+    // config.data = qs.stringify(config.data)
+    return config
+  },
+  err => Promise.reject(err)
+)
+
+instance3.interceptors.response.use(
   res => {
     if (res.data.code === 0) {
       return res.data.data == '' || res.data.data == null ? Promise.resolve(res.data) : Promise.resolve(res.data.data)
@@ -232,7 +273,7 @@ function b(inst = instance, req, args, headers) {
 
 async function a(wmPoiId) {
   try {
-    const y = readYaml('tools/all.yaml')
+   
     const all = [
       // {
       //   task: '集点返券',
@@ -325,9 +366,9 @@ async function a(wmPoiId) {
     // const res = await execRequest(y.requests['分类列表/sort'], [10085676, 178984094, 1])
 
     // const res = await execRequest(y.requests['商品列表/get'], [10085676, 178984089])
-    // const res = await execRequest(y.requests['商品列表/sort'], [10085676, 178984089, 3208729658, 1])
 
-    // const res = await execRequest(y.requests['老板推荐/get/products'], [10085676])
+    const res = await execRequest(undefined, y.requests.mt['老板推荐/update/state'], [9976196, 0])
+
     // const goods = await Promise.all(
     //   res.productList.map(v => execRequest(y.requests['商品列表/search'], [10085676, v.productName]))
     // )
@@ -341,6 +382,85 @@ async function a(wmPoiId) {
     //   execRequest(y.requests['老板推荐/update/state'], [10085676, 1]),
     //   execRequest(y.requests['老板推荐/update/products'], [productSpuListStr], cookie(10085676))
     // ])
+
+    // const { productList } = await execRequest(undefined, y.requests.mt['商品列表/search'], [10085676, '炸双皮奶'])
+    // const food = productList.find(v => v.name == '炸双皮奶【3个】')
+    // const actFood = {
+    //   foodKey: 52,
+    //   id: 0,
+    //   wmPoiId: '10085676',
+    //   wmActPolicyId: '1001',
+    //   actInfo: { discount: 'NaN', origin_price: 12.8, act_price: '8.8' },
+    //   period: '00:00-23:59',
+    //   wmSkuId: 3595291980,
+    //   weeksTime: '1,2,3,4,5,6,7',
+    //   startTime: 1610380800,
+    //   endTime: 1627747199,
+    //   orderPayType: 2,
+    //   orderLimit: '-1',
+    //   limitTimeSale: '-1',
+    //   itemName: '炸双皮奶【3个】',
+    //   sortIndex: 0,
+    //   settingType: '1',
+    //   chargeType: '0',
+    //   wmUserType: 0,
+    //   poiUserType: '0',
+    //   WmActPriceVo: { originPrice: 12.8, actPrice: '8.8', mtCharge: '0', agentCharge: 0, poiCharge: '4.00' },
+    //   autoDelayDays: 0,
+    //   spec: '',
+    //   priority: 0
+    // }
+
+    // console.log(res.data)
+
+    // const fallbackApp = new FallbackApp()
+    // let data = await fallbackApp.poi.list()
+
+    // data = data.map(v=>[v.id, y])
+
+    // await loop(updateShopInfo, [[10085676, y.rules.店铺公告.甜品]], false)
+
+    // const res = await execRequest(undefined, y.requests.mt['公告电话/update'], ['13535410086'], cookie(10085676))
+    // const res = await execRequest(instance2, y.requests.mt['商品编辑/get'], [10085676, 3208545315])
+    // let pageModel = ''
+    // const parser = new htmlparser2.Parser({
+    //   onopentag(name, attrs) {
+    //     if(name == 'meta' && attrs.name == 'pageModel') {
+    //       pageModel = attrs.data
+    //     }
+    //   }
+    // })
+    // parser.write(res.data)
+    // parser.end()
+
+    // const tags = await execRequest(undefined, y.requests.mt['经营品类/get'], [10085676])
+    // const root = { name: 'root', children: tags, is_leaf: 0 }
+    // function find(node, name) {
+    //   if (node.is_leaf) {
+    //     if (node.name == name) {
+    //       return node
+    //     } else {
+    //       return null
+    //     }
+    //   } else {
+    //     for (let child of node.children) {
+    //       let n = find(child, name)
+    //       if (n) return n
+    //     }
+    //   }
+    //   return null
+    // }
+    // const res = await execRequest(instance3, y.requests.mt['店铺招牌/get'], {}, cookie(-1))
+    // let d = res.find(
+    //   v => v.signagePicUrl == 'http://p0.meituan.net/business/c666aee02214b357cbb900920c18e02a257037.png'
+    // )
+    // const res2 = await execRequest(
+    //   instance3,
+    //   y.requests.mt['店铺招牌/bind'],
+    //   [[...d.wmPoiIds, 9976196].join(','), d.wmPoiIds.join(','), d.signageIds.join(',')],
+    //   cookie(-1)
+    // )
+    // console.log(res2)
 
     /**
      * ELM     ELM      ELM     ELM
@@ -389,8 +509,46 @@ async function a(wmPoiId) {
     // const categoryModel = path.reduceRight((s, v) => ({...v, children: [s]}))
 
     // fs.writeFileSync('tools/all.json', JSON.stringify(categoryModel))
+
+    // const res = await execRequest(instanceElm, y.requests.elm['分类列表/get'], [2065322800], xshard(2065322800))
+
+    console.log(res)
   } catch (error) {
     console.error(error)
+  }
+}
+
+async function updateShopInfo(id, bulletin) {
+  try {
+    const y = readYaml('tools/all.yaml')
+    const res = await execRequest(instance2, y.requests.mt['门店信息/get'], {}, cookie(id))
+
+    let meetPhone = false
+    let phone = ''
+    const parser = new htmlparser2.Parser({
+      onopentag(name, attrs) {
+        if (name == 'div' && attrs.id == 'J-phone-list') {
+          meetPhone = true
+          console.log(attrs)
+        }
+      },
+      ontext(data) {
+        if (meetPhone) {
+          phone += data
+        }
+      },
+      onclosetag() {
+        meetPhone = false
+      }
+    })
+    parser.write(res.data)
+    parser.end()
+
+    if (phone == '') return Promise.reject({ err: 'phone null' })
+
+    return execRequest(instance, y.requests.mt['公告电话/update'], [JSON.parse(phone).join('/'), bulletin], cookie(id))
+  } catch (e) {
+    return Promise.reject(e)
   }
 }
 
@@ -425,10 +583,9 @@ koa.listen(9010, () => console.log('running at 9010'))
 
 async function freshMt(userTasks, userRule) {
   try {
-    const y = readYaml('tools/all.yaml')
     const { wmPoiId, wmPoiType } = userRule
 
-    if (!wmPoiId || !wmPoiType) return Promise.reject({ err: 'invalid params' })
+    if (!wmPoiId || !wmPoiType) return Promise.reject('invalid params')
 
     const allTasks = [
       {
@@ -475,12 +632,43 @@ async function freshMt(userTasks, userRule) {
         }
       },
       {
+        name: '超值换购',
+        fn: async function() {
+          try {
+            const promises = y.rules['超值换购'].map(v =>
+              execRequest(undefined, y.requests.mt['商品列表2/search'], [wmPoiId, v, Math.random()])
+            )
+            const goods = await Promise.allSettled(promises)
+            const actItems = goods
+              .filter(v => v.status == 'fulfilled')
+              .slice(0, 3)
+              .map(v => v.value[0].groupData[0])
+              .map(({ wm_poi_id, id, price, name }) => ({
+                list: [`${wm_poi_id}_${id}_${price}`],
+                dayLimit: -1,
+                orderLimit: '1',
+                mtCharge: 0,
+                actItemPrice: '6.9',
+                itemName: name
+              }))
+            return execRequest(
+              undefined,
+              y.requests.mt['超值换购/create'],
+              [unix(), unix(365), actItems],
+              cookie(wmPoiId)
+            )
+          } catch (e) {
+            return Promise.reject(e)
+          }
+        }
+      },
+      {
         name: '老板推荐',
         fn: async function() {
           try {
             const promises = y.rules['老板推荐'][wmPoiType].map(v =>
               typeof v == 'string'
-                ? execRequest(undefined, y.requests.mt['商品列表3/search'], [v], cookie(wmPoiType))
+                ? execRequest(undefined, y.requests.mt['商品列表3/search'], [v], cookie(wmPoiId))
                 : searchRace(y.requests.mt['商品列表3/search'], v, wmPoiId)
             )
             let goods = await Promise.allSettled(promises)
@@ -500,7 +688,7 @@ async function freshMt(userTasks, userRule) {
             return Promise.reject(e)
           }
         }
-      },
+      }
     ]
 
     let tasks = allTasks.filter(t => userTasks.map(u => u.name).includes(t.name))
@@ -518,5 +706,15 @@ async function freshMt(userTasks, userRule) {
     return Promise.resolve(results)
   } catch (e) {
     return Promise.reject(e)
+  }
+}
+
+async function freshElm() {
+  try {
+    const y = readYaml('tools/all.yaml')
+
+    const res = await execRequest(instanceElm, y.requests.elm['分类列表/get'])
+  } catch (e) {
+    console.error(e)
   }
 }

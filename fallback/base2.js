@@ -5,7 +5,7 @@ import urls_ from './url.js'
 
 let axiosConfig = {
   baseURL: 'https://waimaieapp.meituan.com',
-  responseType: 'json',
+  responseType: 'text',
   headers: {
     Accept: '*/*',
     'Accept-Encoding': 'gzip, deflate, br',
@@ -28,10 +28,9 @@ let axiosConfig = {
   }
 }
 
-const instance = axios.create(axiosConfig)
-const instance2 = axios.create({ ...axiosConfig, responseType: 'text' })
+const instance2 = axios.create(axiosConfig)
 
-instance.interceptors.request.use(
+instance2.interceptors.request.use(
   config => {
     config.data = qs.stringify(config.data)
     return config
@@ -39,18 +38,12 @@ instance.interceptors.request.use(
   err => Promise.reject(err)
 )
 
-instance.interceptors.response.use(
+instance2.interceptors.response.use(
   res => {
-    if (res.data.code === 0) {
-      // console.log(0)
-      return res.data.data == '' || res.data.data == null ? res.data : res.data.data
-    } else {
-      // console.log(1)
-      return Promise.reject(res.data)
-    }
+    return Promise.resolve(res.data)
   },
   err => Promise.reject(err)
 )
 
-export default instance
+export default instance2
 export const urls = urls_

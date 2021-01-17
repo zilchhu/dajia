@@ -28,13 +28,26 @@ export async function wrap(f, meta) {
   }
 }
 
-export async function loop(f, dataSource, slow) {
+export async function loop(f, dataSource, slow, del) {
   try {
     let count = dataSource.length
     for (let data of dataSource) {
       console.log(count)
       await wrap(f, data)
-      if(slow) await sleep(4000)
+
+      if (del) {
+        let idx = data[data.length - 1]
+        let comp = dataSource[idx + 1] && dataSource[idx + 1][0] == data[0]
+        if (!comp) {
+          try {
+            console.log(await del.test(data[0]))
+          } catch (err) {
+            console.error(err)
+            log({ data, err })
+          }
+        }
+      }
+      if (slow) await sleep(4000)
       count -= 1
     }
   } catch (err) {

@@ -34,6 +34,10 @@ const urls = {
     batchDelete: 'reuse/product/food/w/batchDelete',
     highBoxPrice: '/reuse/product/food/r/highBoxPriceProductCount',
     syncFood: '/reuse/product/sync_food/w/submit',
+    editView: 'reuse/product/food/r/editView',
+    searchProp: 'reuse/product/properties/r/property/sug',
+    delTag: '/reuse/product/food/w/deleteTagById',
+    getTemp: 'reuse/product/properties/r/template'
   },
   poi: {
     list: '/v2/shop/businessStatus/r/poiListSearch'

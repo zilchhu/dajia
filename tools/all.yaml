@@ -64,6 +64,31 @@
 #                 actItemPrice: "",//换购价
 # `${item.groupData[j].wm_poi_id}_${item.groupData[j].id}_${item.groupData[j].price}
 
+# preProcess: [0, 3, 9],
+#         inProcess: [1, 8],
+#         endProcess: [2, 4, 10, 11],
+#         freezing: [5, 6, 7,],
+
+headers:
+  老板推荐:
+    Accept: application/json, text/plain, */*
+    Accept-Encoding: gzip, deflate, br
+    Accept-Language: zh-CN,zh;q=0.9
+    Connection: keep-alive
+    Content-Type: application/x-www-form-urlencoded
+    Cookie: acctId=23262521; classRoomTips=true; bmm-uuid=8187924a-26c6-0a7e-5c0f-aaf09ad861cf; bizad_second_city_id=440300; bizad_cityId=440306; bizad_third_city_id=440306; wmPoiName=%E5%96%9C%E4%B8%89%E5%BE%B7%E7%94%9C%E5%93%81%E2%80%A2%E6%89%8B%E5%B7%A5%E8%8A%8B%E5%9C%86%EF%BC%88%E6%96%B0%E5%AE%89%E5%BA%97%EF%BC%89; _ga=GA1.2.1511021963.1597473654; _hc.v=c9793375-e9a8-7952-72a7-e404fd7ad70a.1602157773; _lxsdk=173796b978082-0920d6b94f4f16-b7a1334-144000-173796b97817c; _lxsdk_cuid=173796b978082-0920d6b94f4f16-b7a1334-144000-173796b97817c; uuid=16db610009dfc3c606c8.1602213490.1.0.0; igateApp=shangdan_qualification; __mta=146715147.1599578598056.1610506443155.1610506443174.10; token=0ZYJ8xEhxXGWervc28-KnTF_bRkAfHLEuU1ywvC-dEzs*; bsid=IkuK4w3u1sgGWZWfMf1kCTboJJuA-VgfcfmILhN1pHTxJV-mqvVC9WDWzEfiqXe02dwUdOs3GiBDPgxu1gWBuw; wmPoiId=10085676; JSESSIONID=16c809paxgkjp1813v5n3iircf; _lxsdk_s=17704886365-5d7-5bf-705%7C23262521%7C43
+    Host: waimaieapp.meituan.com
+    Origin: https://waimaieapp.meituan.com
+    Referer: https://waimaieapp.meituan.com/decoration/bossRecommend?_source=PC&token=0ZYJ8xEhxXGWervc28-KnTF_bRkAfHLEuU1ywvC-dEzs*&acctId=23262521&wmPoiId=10085676&region_id=&device_uuid=!39ecd268-5a7e-4541-8aa6-33fc60963ac7&bsid=IkuK4w3u1sgGWZWfMf1kCTboJJuA-VgfcfmILhN1pHTxJV-mqvVC9WDWzEfiqXe02dwUdOs3GiBDPgxu1gWBuw&appType=3&fromPoiChange=false
+    sec-ch-ua: '"Google Chrome";v="87", " Not;A Brand";v="99", "Chromium";v="87"'
+    sec-ch-ua-mobile: ?0
+    Sec-Fetch-Dest: empty
+    Sec-Fetch-Mode: cors
+    Sec-Fetch-Site: same-origin
+    User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36
+    X-Requested-With: XMLHttpRequest
+
+
 rules:
   老板推荐: # &店内海报
     甜品:
@@ -114,10 +139,26 @@ rules:
       - [28, 3]
       - [38, 4]
       - [58, 5]
+  
+  店铺公告:
+    甜品: "喜三德甜品源自于深圳本土品牌，本店产品是有多年研发经验的广式甜品师傅亲自研发，严格把控每一份产品的质量，不断提高我们的服务质量，温馨提示：
+      
+      1、本店支持开发票业务有需要的可以联系门店。 
+      
+      2、如果出现漏餐少餐情况请及时联系门店，我们一定会在第一时间内处理好事情。
+      
+      3、店铺产品0元购产品主要是为了回馈老顾客长久以来对于本店的支持所做出的福利，下单时间记得收藏店铺哦。
+      
+      4、临近年关，平台骑手运力不足，可能出现配送延迟的情况，请耐心等待，有特殊问题可以联系门店。"
 
 requests:
   mt:
     ### 活动
+    店铺活动/get:
+      url: https://waimaieapp.meituan.com/reuse/activity/query/agg?wmPoiId=10085676&status=1,8&pageNum=1&pageSize=10
+      params:
+
+
     下单返券/create:
       url: https://waimaieapp.meituan.com/reuse/activity/marketing/e/v2/campaign/shopActivity/w/create
       body:
@@ -469,6 +510,49 @@ requests:
         - startTime
         - endTime
 
+    活动/disable:
+      url: https://waimaieapp.meituan.com/reuse/activity/act/marketing/w/disableNew
+      body:
+        wmPoiId: 10085676
+        type: 100  # 103.店内领券
+        activityId: 189456334
+      requires:
+        - wmPoiId
+        - type
+        - activityId
+
+    超值换购/disable:
+      url: https://waimaieapp.meituan.com/reuse/activity/setting/w/deleteWmActItemsByWmActItemIds
+      body:
+        wmPoiId: 10085676
+        type: 40
+        listIds: 4262377216
+        policyType: 40
+      requires:
+        - wmPoiId
+        - listIds
+    
+    满减活动/disable:
+      url: https://waimaieapp.meituan.com/reuse/activity/setting/w/delPoiAct
+      body:
+        wmPoiId: 10085676
+        type: 2
+        wmActPoiId: 1845921574
+      requires:
+        - wmPoiId
+        - wmActPoiId
+
+    集点返券/disable:
+      url: https://waimaieapp.meituan.com/reuse/activity/marketing/commodity/batchActivityDisable
+      body:
+        wmPoiId: 10085676
+        type: 98
+        wmPoiIdAndActIds: [{"wmPoiId":10085676,"actId":189456340}]
+      jsonfy: [wmPoiIdAndActIds]
+      requires:
+        - wmPoiId
+        - wmPoiIdAndActIds
+
     ### 商品
     商品列表/search:
       url: https://waimaie.meituan.com/reuse/product/food/r/searchByName
@@ -521,6 +605,46 @@ requests:
         spuName: 测试520
         spuId: 3451479262
 
+    商品编辑/get:
+      url: https://waimaie.meituan.com/reuse/product/food/r/editView
+      params:
+        wmPoiId: 10085676
+        spuId: 3208545315
+        from: new
+        productNew: 1
+      requires:
+        - wmPoiId
+        - spuId
+
+    商品编辑/update:
+      url: https://waimaie.meituan.com/reuse/product/food/w/save
+      body:
+        wmPoiId: 8195644
+        wmFoodVoJson: [{}]
+      jsonfy: [wmFoodVoJson]
+      requires: 
+        - wmPoiId
+        - wmFoodVoJson
+
+    商品标签/get:
+      url: https://waimaie.meituan.com/reuse/product/properties/r/template
+      params:
+        spuId: 3374633174
+        wmPoiId: 8600359
+      requires:
+        - wmPoiId
+        - spuId
+
+    商品主料/search:
+      url: https://waimaie.meituan.com/reuse/product/properties/r/property/sug
+      params:
+        tagName: 糖
+        wm_product_lib_tag_id: 1000000015
+        wmPoiId: 10549708
+      requires:
+       - wmPoiId
+       - tagName
+
     商品列表2/search: # 超值换购商品搜索
       url: https://waimaieapp.meituan.com/reuse/activity/marketing/commodity/searchProductGroupByTagId
       body:
@@ -555,6 +679,51 @@ requests:
         wmActPolicyId: 1001
       requires:
         - wmPoiId
+
+    折扣商品/create:
+      url: https://waimaieapp.meituan.com/reuse/activity/setting/w/updateSpecialMealBase
+      body:
+        wmPoiId: 10085676
+        policyId: 1001
+        poiPolicy:
+          {
+            'online_pay': 0,
+            'foods':
+              [
+                {
+                  'foodKey': 52,
+                  'id': 0,
+                  'wmPoiId': '10085676',
+                  'wmActPolicyId': '1001',
+                  'actInfo': { 'discount': 'NaN', 'origin_price': 12.8, 'act_price': '8.8' },
+                  'period': '00:00-23:59',
+                  'wmSkuId': 3595291980,
+                  'weeksTime': '1,2,3,4,5,6,7',
+                  'startTime': 1610380800,
+                  'endTime': 1627747199,
+                  'orderPayType': 2,
+                  'orderLimit': '-1',
+                  'limitTimeSale': '-1',
+                  'itemName': '炸双皮奶【3个】',
+                  'sortIndex': 0,
+                  'settingType': '1',
+                  'chargeType': '0',
+                  'wmUserType': 0,
+                  'poiUserType': '0',
+                  'WmActPriceVo':
+                    { 'originPrice': 12.8, 'actPrice': '8.8', 'mtCharge': '0', 'agentCharge': 0, 'poiCharge': '4.00' },
+                  'autoDelayDays': 0,
+                  'spec': '',
+                  'priority': 0,
+                },
+              ],
+          }
+        isAgree: 1
+        wmActType: 17
+      jsonfy: [poiPolicy]
+      requires:
+        - wmPoiId
+        - poiPolicy/foods
 
     折扣商品/sort:
       url: https://waimaieapp.meituan.com/reuse/activity/product/w/sort
@@ -592,16 +761,52 @@ requests:
         - targetSeq
 
     ### 门店
+    门店列表/search: # 品牌故事
+      url: https://waimaieapp.meituan.com/decoration/brandStory/r/poiList
+      params:
+        cityId: -1
+        hasBrandStory: -1 # -1.全部 1.有 2.无
+        keywords: 大朗 
+
+    门店信息/get:
+      url: https://waimaie.meituan.com/v2/shop/manage/shopInfo
+      params:
+        ignoreSetRouterProxy: true
+
+    经营品类/get:
+      url: https://waimaie.meituan.com/v2/shop/shopInfo/r/tag
+      params:
+        wmPoiId: 10085676
+        ignoreSetRouterProxy: true
+      requires:
+        - wmPoiId
+
+    门店头像/get:
+      url: https://waimaie.meituan.com/v2/shop/shopInfo/r/poiPicUrl
+      params:
+        ignoreSetRouterProxy: true
+
+    品类头像/update:
+      url: https://waimaie.meituan.com/v2/shop/shopInfo/w/savePoi/tagAndPoiPic?ignoreSetRouterProxy=true
+      body:
+        newPoiPicUrl: http://p0.meituan.net/business/d21081902bbc9f3141b53ebd3f9c2c26221654.png
+        originPoiPicUrl: http://p0.meituan.net/business/d21081902bbc9f3141b53ebd3f9c2c26221654.png
+        tagIds: 20060000,22020800 # 主营，辅营
+        userName: wmystp
+        password: gygc8888
+        csrfToken: xoP0GdeVSl2SpWgceKtP7NGxOilisW4X0O6NlnBOmHF1nhlf2xstB5AoeD2v6UO5Ywc6VvIImw3NZeSVPVWXpXnboyOI0mZxWWm8D4aVgbe9upE3R/7KRfJEXsbdJtrgG6yYDabywufEuEAudBo0PQ==
+
     公告电话/update:
       url: https://waimaie.meituan.com/v2/shop/shopInfo/w/savePoi/baseSetting?ignoreSetRouterProxy=true
       body:
-        call_center: 15814227912
+        call_center: 13535410086/13535410086
         bulletin: 因疫情期间平台运力不足，配送时间有所延长，如果看不到配送信息请小主们不要捉急，那是第三方在配送中。本店已开启无接触配送，请小主们安心购买食用。让我们一起为武汉加油，为中国加油！
         userName: wmystp
         password: gygc8888
-        csrfToken: 4/InGur34Ocn2+X275g6YuHLkvHlnSLL0lOqVi0AI85yRbCpX9FMnRaKcZznO75atfq4IaaCJb2cKtsaIoWTgOdAKn9PhUNMq3BkqSm4HCLbwR0rqo4Nh67Pi96hYGqIv9FYQn1zNU77i5d80FIz+w==
+        csrfToken: yLYXk5rQBwZktFBwqBoCNxLssXM9sR5E+Qf3tIR82o9qLuNNeNfLOh6wOk43V52DFLHovZpwGETIBDmCCzqXBr9ZxnGg0QrWtaqjJ83Imb2N19lMxolMkTGg7seQojvQTjADsUaOa5HXb1D7rHtJFA==
       requires:
         - call_center # split by /
+        - bulletin
 
     营业设置/update:
       url: https://waimaie.meituan.com/v2/shop/shopInfo/w/savePoi/businessSetting?ignoreSetRouterProxy=true
@@ -705,15 +910,69 @@ requests:
         - picName
         - picStr
 
-  elm:
-    商品列表/search:
-      url: https://app-api.shop.ele.me/nevermore.goods/invoke/?method=FoodService.getItemForSearch
-      body:
-        request: { keyWord: '手抓', shopId: 2036923650 }
-      requires:
-        - request/shopId
-        - request/keyWord
+    品牌故事/get:
+      url: https://waimaieapp.meituan.com/decoration/brandStory/r/list
+      params:
+        wmPoiId: -1
 
+    品牌故事/甜品/update:
+      url: https://waimaieapp.meituan.com/decoration/brandStory/w/update
+      body:
+        id: 89016
+        wmPoiUrl: http://p0.meituan.net/business/996e8ca9feb5d78d72faf02b5da90c07229055.jpg
+        wmPoiTitle: 
+        wmPoiTitleSub: 
+        videoTitle: 
+        videoResource: 
+        videoDuration: 0
+        bigPicTitle: 中国味道喜三德
+        smallPicTitle: 喜三德美食甜品榜
+        brandStoryForBigPicResListStr: [{"content":"%3Cp%20style%3D%22text-align%3Aleft%22%3E%C2%A0%E7%94%9C%E5%93%81%E5%9C%A8%E4%B8%AD%E5%9B%BD%E6%9C%89%E6%82%A0%E4%B9%85%E7%9A%84%E5%8E%86%E5%8F%B2%E3%80%82%E6%8D%AE%E3%80%8A%E8%AF%97%C2%B7%E5%B9%BD%E9%A3%8E%C2%B7%E4%B8%83%E6%9C%88%E3%80%8B%E8%BD%BD%EF%BC%9A%E2%80%9C%E4%BA%8C%E4%B9%8B%E6%97%A5%E5%87%BF%E5%86%B0%E5%86%B2%E5%86%B2%EF%BC%8C%E4%B8%89%E4%B9%8B%E6%97%A5%E7%BA%B3%E4%BA%8E%E5%87%8C%E9%98%B4%E3%80%82%E2%80%9D%E8%AF%B4%E6%98%8E%E8%BF%9C%E5%9C%A8%E4%B8%89%E5%8D%83%E5%B9%B4%E5%89%8D%E7%9A%84%E5%95%86%E4%BB%A3%EF%BC%8C%E4%BA%BA%E4%BB%AC%E5%B0%B1%E5%9C%A8%E9%9A%86%E5%86%AC%E5%AD%A3%E8%8A%82%E6%8A%8A%E5%86%B0%E5%9D%97%E5%82%A8%E8%97%8F%E8%B5%B7%E6%9D%A5%E4%BE%9B%E5%A4%8F%E6%97%A5%E7%94%A8%E3%80%82%E5%88%B0%E4%BA%86%E5%91%A8%E4%BB%A3%EF%BC%8C%E8%BF%98%E4%B8%93%E9%97%A8%E8%AE%BE%E6%9C%89%E4%B8%93%E7%AE%A1%E5%8F%96%E5%86%B0%E7%94%A8%E5%86%B0%E7%9A%84%E5%AE%98%E5%91%98%EF%BC%8C%E7%A7%B0%E4%B8%BA%E2%80%9C%E5%87%8C%E4%BA%BA%E2%80%9D%E3%80%82%E3%80%8A%E5%91%A8%E7%A4%BC%C2%B7%E5%A4%A9%E5%AE%98%C2%B7%E5%87%8C%E4%BA%BA%E3%80%8B%E8%AE%B0%E6%9C%89%EF%BC%9A%E2%80%9C%E5%87%8C%E4%BA%BA%EF%BC%8C%E6%8E%8C%E5%86%B0%E3%80%82%E6%AD%A3%E5%B2%81%E5%8D%81%E6%9C%89%E4%BA%8C%E6%9C%88%EF%BC%8C%E4%BB%A4%E6%96%A9%E5%86%B0%EF%BC%8C%E4%B8%89%E5%85%B6%E5%87%8C%E3%80%82%E2%80%9D%E5%94%90%E4%BB%A3%EF%BC%8C%E9%95%BF%E5%AE%89%E7%9A%84%E5%B8%82%E5%9C%BA%E4%B8%8A%E5%B7%B2%E6%9C%89%E4%BA%86%E4%B8%93%E9%97%A8%E5%81%9A%E5%86%B0%E4%B9%B0%E5%8D%96%E7%9A%84%E5%95%86%E4%BA%BA%E3%80%82%E5%AE%8B%E4%BA%BA%E7%8E%8B%E9%83%85%E3%80%8A%E4%BA%91%E4%BB%99%E6%9D%82%E8%AE%B0%E3%80%8B%E4%B9%A6%E4%B8%AD%E8%BD%BD%EF%BC%9A%E2%80%9C%E9%95%BF%E5%AE%89%E5%86%B0%E9%9B%AA%EF%BC%8C%E8%87%B3%E5%A4%8F%E6%97%A5%E5%88%99%E4%BB%B7%E7%AD%89%E9%87%91%E7%92%A7%E3%80%82%E2%80%9D%3C%2Fp%3E","contentAuditStatus":2,"contentAuditMsg":null,"picUrl":"http://p0.meituan.net/business/d33576b74e07b461b44c6bc5352fbc96303099.jpg","picUrlAuditStatus":2,"picUrlAuditMsg":null,"pureContent":" 甜品在中国有悠久的历史。据《诗·幽风·七月》载：“二之日凿冰冲冲，三之日纳于凌阴。”说明远在三千年前的商代，人们就在隆冬季节把冰块储藏起来供夏日用。到了周代，还专门设有专管取冰用冰的官员，称为“凌人”。《周礼·天官·凌人》记有：“凌人，掌冰。正岁十有二月，令斩冰，三其凌。”唐代，长安的市场上已有了专门做冰买卖的商人。宋人王郅《云仙杂记》书中载：“长安冰雪，至夏日则价等金璧。”"}]
+        brandStoryForSmallPicResListStr: [{"title":"招牌烧仙草","picUrl":"http://p0.meituan.net/business/ccbdd52392a2adbf5770753dd4474752561142.jpg","content":"烧仙草是用草直接煮烧而成，清凉降火炎热消暑圣品，店长推荐必点","titleAuditStatus":2,"titleAuditMsg":null,"picUrlAuditStatus":2,"picUrlAuditMsg":null,"contentAuditStatus":2,"contentAuditMsg":null,"setContent":true,"setTitle":true,"setPicUrl":true,"setPicUrlAuditStatus":true,"setPicUrlAuditMsg":false,"setContentAuditStatus":true,"setContentAuditMsg":false,"setTitleAuditStatus":true,"setTitleAuditMsg":false},{"title":"招牌芋圆","picUrl":"http://p0.meituan.net/business/8cec4ec4b678dfbdeae9506aeecfafc0535193.jpg","content":"芋圆加上牛奶，多种可搭配，夏日甜点必选，冬日即暖胃又暖心","titleAuditStatus":2,"titleAuditMsg":null,"picUrlAuditStatus":2,"picUrlAuditMsg":null,"contentAuditStatus":2,"contentAuditMsg":null,"setContent":true,"setTitle":true,"setPicUrl":true,"setPicUrlAuditStatus":true,"setPicUrlAuditMsg":false,"setContentAuditStatus":true,"setContentAuditMsg":false,"setTitleAuditStatus":true,"setTitleAuditMsg":false},{"title":"红豆甜品","picUrl":"http://p0.meituan.net/business/03e4a679908d9a9f25bea8f0fc7162bb582759.jpg","content":"红豆既有“相思”之称谓，又能美颜养生，入口醇香，味道甘甜","titleAuditStatus":2,"titleAuditMsg":null,"picUrlAuditStatus":2,"picUrlAuditMsg":null,"contentAuditStatus":2,"contentAuditMsg":null,"setContent":true,"setTitle":true,"setPicUrl":true,"setPicUrlAuditStatus":true,"setPicUrlAuditMsg":false,"setContentAuditStatus":true,"setContentAuditMsg":false,"setTitleAuditStatus":true,"setTitleAuditMsg":false}]
+        templateId: 1
+        wmPoiIdListStr: 6434760,6950373,7351446,7632277,7673028,7735904,7740255,7779873,7968147,8051354,8126893,8221674,8670629,8751302,8828359,8911549,8981890,8981920,8981943,9014461,9018543,9100878,9123504,9153911,9224233,9236042,9249572,9250896,9257560,9258295,9324887,9344971,9355348,9391341,9411129,9411146,9470147,9479893,9485479,9492674,9568488,9576423,9592515,9596488,9620939,9636784,9688940,9703463,9720238,9725155,9726260,9732198,9776028,9793397,9812382,9833613,9842782,9861088,9901167,9920776,9927233,9936831,9995398,9997882,9999141,9999888,10014983,10038920,10045394,10056855,10061444,10076509,10083564,10093423,10096753,10096784,10106799,10134903,10148759,10156945,10285968,10307635,10328667,10345552,10369391,10372220,10417267,10426282,10427603,10431523,10451351,10456106,10464925,10480104,10497086,10515109,10554281,10603386,10693363,10700120,10757738
+        csrfToken: 
+      jsonfy: [brandStoryForBigPicResListStr, brandStoryForSmallPicResListStr]
+      requires:
+        - wmPoiIdListStr
+
+    品牌故事/贡茶/update:
+      url: https://waimaieapp.meituan.com/decoration/brandStory/w/update
+      body:
+        id: 169026
+        wmPoiUrl: http://p0.meituan.net/business/ae3126e18bf5b722a636e4fde7b1c93e152516.jpg
+        wmPoiTitle: 古御贡茶
+        wmPoiTitleSub: 百年品牌精选优质好茶
+        videoTitle: 百年品牌精选优质好茶
+        videoResource: http://s3plus.meituan.net/v1/mss_0b65c6e091934c3284dbec4e190b16e7/brandstory/transcode_6318340679188151570605392574.mp4
+        videoDuration: 59
+        bigPicTitle: 贡茶始于公元1916年历史悠久
+        smallPicTitle: 店长推荐优选好茶
+        brandStoryForBigPicResListStr: [{"content":"%3Cp%20style%3D%22text-align%3Aleft%22%3E%E8%B4%A1%E8%8C%B6%E5%9C%A8%E4%B8%AD%E5%9B%BD%E5%B7%B2%E6%9C%89%E6%82%A0%E4%B9%85%E7%9A%84%E5%8E%86%E5%8F%B2%E3%80%82%E6%82%A0%E6%82%A0%E6%95%B0%E5%8D%83%E5%B9%B4%EF%BC%8C%E8%B4%A1%E8%8C%B6%E5%AF%B9%E6%95%B4%E4%B8%AA%E8%8C%B6%E5%8F%B6%E7%94%9F%E4%BA%A7%E7%9A%84%E5%BD%B1%E5%93%8D%E5%92%8C%E8%8C%B6%E5%8F%B6%E6%96%87%E5%8C%96%E7%9A%84%E5%BD%B1%E5%93%8D%E6%98%AF%E5%B7%A8%E5%A4%A7%E7%9A%84%E3%80%82%3C%2Fp%3E","contentAuditStatus":2,"contentAuditMsg":null,"picUrl":"http://p0.meituan.net/business/bc822b518d6d9828e90ba1d161311e5e161927.jpg","picUrlAuditStatus":2,"picUrlAuditMsg":null,"pureContent":"贡茶在中国已有悠久的历史。悠悠数千年，贡茶对整个茶叶生产的影响和茶叶文化的影响是巨大的。"}]
+        brandStoryForSmallPicResListStr: [{"title":"招牌珍珠奶茶","picUrl":"http://p1.meituan.net/business/a108bb628d13684ca06959356ab35a40951571.jpg","content":"珍珠奶茶一直是受大众所喜爱，口感丝滑，入口甘甜。进店必点哦","titleAuditStatus":2,"titleAuditMsg":null,"picUrlAuditStatus":2,"picUrlAuditMsg":null,"contentAuditStatus":2,"contentAuditMsg":null,"setContent":true,"setTitle":true,"setPicUrl":true,"setPicUrlAuditStatus":true,"setPicUrlAuditMsg":false,"setContentAuditStatus":true,"setContentAuditMsg":false,"setTitleAuditStatus":true,"setTitleAuditMsg":false},{"title":"招牌烧仙草","picUrl":"http://p0.meituan.net/business/864fe83caaf20fa19a328c8f304f38cc845063.jpg","content":"多样食材集一身，一勺一口，都是满满的满足，也是高颜值哦","titleAuditStatus":2,"titleAuditMsg":null,"picUrlAuditStatus":2,"picUrlAuditMsg":null,"contentAuditStatus":2,"contentAuditMsg":null,"setContent":true,"setTitle":true,"setPicUrl":true,"setPicUrlAuditStatus":true,"setPicUrlAuditMsg":false,"setContentAuditStatus":true,"setContentAuditMsg":false,"setTitleAuditStatus":true,"setTitleAuditMsg":false},{"title":"招牌水果茶","picUrl":"http://p0.meituan.net/business/8c188fa8e8cfdfc90142aacb8ad6e0591114891.jpg","content":"精选优质好茶和水果，不但好喝，也是高颜值的拍照神助攻。","titleAuditStatus":2,"titleAuditMsg":null,"picUrlAuditStatus":2,"picUrlAuditMsg":null,"contentAuditStatus":2,"contentAuditMsg":null,"setContent":true,"setTitle":true,"setPicUrl":true,"setPicUrlAuditStatus":true,"setPicUrlAuditMsg":false,"setContentAuditStatus":true,"setContentAuditMsg":false,"setTitleAuditStatus":true,"setTitleAuditMsg":false}]
+        templateId: 1
+        wmPoiIdListStr: 2924399,4799060,6119122,6914754,7180353,7231605,7373263,7439647,7449372,7486501,7494614,7552065,7735455,7882136,7918815,7937650,7973175,8025493,8135116,8195644,8195835,8540299,8591999,8600359,8811093,8939455,8953861,8975165,8996740,8999546,9003389,9016370,9018772,9062221,9072424,9076895,9134834,9155621,9191424,9199827,9206400,9230108,9271561,9306217,9314533,9325142,9365870,9392676,9401067,9403595,9405763,9412662,9435009,9452709,9457484,9481181,9483822,9535472,9561138,9569351,9576153,9593214,9622013,9624308,9658172,9663962,9677396,9718295,9718661,9724838,9724873,9734731,9736458,9752958,9760342,9760354,9771558,9779574,9808200,9809624,9819976,9820232,9820648,9876250,9882817,9899410,9921225,9927170,9947281,9947800,9959091,9963039,9979761,9984947,9993224,10027746,10028591,10039526,10049050,10065090,10084390,10085036,10096975,10104145,10148964,10159750,10224276,10231556,10289760,10295736,10304111,10373360,10405440,10452138,10479865,10488755,10590682,10711763,10724806,10748080
+        csrfToken: 
+      jsonfy: [brandStoryForBigPicResListStr, brandStoryForSmallPicResListStr]
+      requires:
+        - wmPoiIdListStr
+
+    店铺招牌/get:
+      url: https://waimaieapp.meituan.com/decoration/signage/queryList
+      params: {}
+
+    店铺招牌/bind:
+      url: https://waimaieapp.meituan.com/decoration/signage/rebindPois
+      body:
+        newPoiIds: "10177204,10085676"
+        originPoiIds: "10177204"
+        signageIds: "7406138"
+      requires:
+        - newPoiIds
+        - originPoiIds
+        - signageIds
+
+  elm:
     分类列表/get:
       url: https://app-api.shop.ele.me/nevermore.goods/invoke/?method=FoodService.queryCategoryWithFoodFilter
       body:
@@ -731,6 +990,32 @@ requests:
       requires:
         - shopId
         - categoryOrders
+
+    商品列表/get:
+      url: https://app-api.shop.ele.me/nevermore.goods/invoke/?method=FoodService.queryFoodsByCategoryIdWithFoodFilter
+      body:
+        foodFilter: 0
+        foodQueryPage: { categoryId: 2000000007277945, offset: 0, limit: 500 }
+        shopId: 2065322800
+        shopType: 1
+      requires:
+        - shopId
+        - foodQueryPage/categoryId
+
+    商品列表/sort:
+      url: https://app-api.shop.ele.me/nevermore.goods/invoke/?method=FoodService.setFoodPositions
+      body:
+        foodIds: [2000000058854552, 2000000058850376, 2000000058850377, 2000000058850378, 2000000058868808]
+      requires:
+        - foodIds
+
+    商品列表/search:
+      url: https://app-api.shop.ele.me/nevermore.goods/invoke/?method=FoodService.getItemForSearch
+      body:
+        request: { keyWord: '手抓', shopId: 2036923650 }
+      requires:
+        - request/shopId
+        - request/keyWord
 
     商品描述/update:
       url: https://app-api.shop.ele.me/nevermore.goods/invoke/?method=BatchFoodService.batchUpdateFood
@@ -770,3 +1055,25 @@ requests:
         foodsWithSpecId: [{ foodId: 2000000058850376, foodSpecIds: [2000000127866749] }]
       requires:
         - foodsWithSpecId
+
+    商品申诉/create:
+      url: https://app-api.shop.ele.me/nevermore.goods/invoke/?method=IllegalItemService.appealForControl
+      body:
+        auditItem: 
+          auditId: 161633531
+          auditMemo: "您提交的调价申请被驳回，详询市场经理"
+          auditStatus: "AUDIT_FAILED"
+          auditType: "PRICE_CHNAGED"
+          commitTime: "2021-01-03 19:47"
+          detail: "商品价格改为13.8元"
+          fields: [1]
+          handlerJob: "CKA业务经理"
+          handlerName: "李春阳"
+          handlerNo: "100000238666102"
+          handlerPhone: "18503010907"
+          skuId: "200000414970603407"
+          skuName: ""
+        shopId: 171285597
+      requires:
+        - shopId
+        - auditItem

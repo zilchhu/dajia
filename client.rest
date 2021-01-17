@@ -43,7 +43,7 @@ content-type: application/json
 
 {
   "userTasks": [
-    {"name": "满减活动"}
+    {"name": "老板推荐"}
   ],
   "userRule": {"wmPoiId": 10085676, "wmPoiType": "甜品"}
 }
@@ -70,7 +70,7 @@ content-type: application/json
 
 ###
 
-GET https://waimaie.meituan.com/reuse/product/food/r/editView?wmPoiId=9470231&spuId=3452480010&from=new&productNew=1
+POST https://waimaie.meituan.com/v2/shop/shopInfo/w/savePoi/baseSetting?ignoreSetRouterProxy=true
 Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9
 Accept-Encoding: gzip, deflate, br
 Accept-Language: zh-CN,zh;q=0.9
@@ -84,3 +84,93 @@ Sec-Fetch-Mode: navigate
 Sec-Fetch-Site: none
 Upgrade-Insecure-Requests: 1
 User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36
+
+
+###
+
+GET https://waimaieapp.meituan.com/decoration/brandStory/r/list?wmPoiId=-1
+Accept: */*
+Accept-Encoding: gzip, deflate, br
+Accept-Language: zh-CN,zh;q=0.9
+Connection: keep-alive
+Cookie: acctId=23262521; classRoomTips=true; bmm-uuid=8187924a-26c6-0a7e-5c0f-aaf09ad861cf; bizad_second_city_id=440300; bizad_cityId=440306; bizad_third_city_id=440306; wmPoiName=%E5%96%9C%E4%B8%89%E5%BE%B7%E7%94%9C%E5%93%81%E2%80%A2%E6%89%8B%E5%B7%A5%E8%8A%8B%E5%9C%86%EF%BC%88%E6%96%B0%E5%AE%89%E5%BA%97%EF%BC%89; _ga=GA1.2.1511021963.1597473654; _hc.v=c9793375-e9a8-7952-72a7-e404fd7ad70a.1602157773; _lxsdk=173796b978082-0920d6b94f4f16-b7a1334-144000-173796b97817c; _lxsdk_cuid=173796b978082-0920d6b94f4f16-b7a1334-144000-173796b97817c; uuid=16db610009dfc3c606c8.1602213490.1.0.0; igateApp=shangdan_qualification; __mta=146715147.1599578598056.1610506443155.1610506443174.10; e_u_id_3299326472=7e0dbe1fc46d29c6155e6acc5ce0c4c1; token=0ZYJ8xEhxXGWervc28-KnTF_bRkAfHLEuU1ywvC-dEzs*; bsid=IkuK4w3u1sgGWZWfMf1kCTboJJuA-VgfcfmILhN1pHTxJV-mqvVC9WDWzEfiqXe02dwUdOs3GiBDPgxu1gWBuw; _lxsdk_s=176f974fb47-0f0-2fc-4db%7C23262521%7C387; JSESSIONID=1lg8rmk76yur91rhpkdruvlgbg; wmPoiId=-1
+Host: waimaieapp.meituan.com
+Referer: https://waimaieapp.meituan.com/decoration/brandStory?_source=PC&token=0ZYJ8xEhxXGWervc28-KnTF_bRkAfHLEuU1ywvC-dEzs*&acctId=23262521&wmPoiId=-1&region_id=&device_uuid=!39ecd268-5a7e-4541-8aa6-33fc60963ac7&bsid=IkuK4w3u1sgGWZWfMf1kCTboJJuA-VgfcfmILhN1pHTxJV-mqvVC9WDWzEfiqXe02dwUdOs3GiBDPgxu1gWBuw&appType=3&fromPoiChange=true
+sec-ch-ua: "Google Chrome";v="87", " Not;A Brand";v="99", "Chromium";v="87"
+sec-ch-ua-mobile: ?0
+Sec-Fetch-Dest: empty
+Sec-Fetch-Mode: cors
+Sec-Fetch-Site: same-origin
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36
+X-Requested-With: XMLHttpRequest
+
+###
+
+POST https://waimaieapp.meituan.com/decoration/signage/rebindPois
+Accept: application/json, text/plain, */*
+Accept-Encoding: gzip, deflate, br
+Accept-Language: zh-CN,zh;q=0.9
+Connection: keep-alive
+Content-Type: application/json
+Cookie: acctId=23262521; classRoomTips=true; bmm-uuid=8187924a-26c6-0a7e-5c0f-aaf09ad861cf; bizad_second_city_id=440300; bizad_cityId=440306; bizad_third_city_id=440306; wmPoiName=%E5%96%9C%E4%B8%89%E5%BE%B7%E7%94%9C%E5%93%81%E2%80%A2%E6%89%8B%E5%B7%A5%E8%8A%8B%E5%9C%86%EF%BC%88%E6%96%B0%E5%AE%89%E5%BA%97%EF%BC%89; _ga=GA1.2.1511021963.1597473654; _hc.v=c9793375-e9a8-7952-72a7-e404fd7ad70a.1602157773; _lxsdk=173796b978082-0920d6b94f4f16-b7a1334-144000-173796b97817c; _lxsdk_cuid=173796b978082-0920d6b94f4f16-b7a1334-144000-173796b97817c; uuid=16db610009dfc3c606c8.1602213490.1.0.0; igateApp=shangdan_qualification; __mta=146715147.1599578598056.1610506443155.1610506443174.10; e_u_id_3299326472=7e0dbe1fc46d29c6155e6acc5ce0c4c1; token=0ZYJ8xEhxXGWervc28-KnTF_bRkAfHLEuU1ywvC-dEzs*; bsid=IkuK4w3u1sgGWZWfMf1kCTboJJuA-VgfcfmILhN1pHTxJV-mqvVC9WDWzEfiqXe02dwUdOs3GiBDPgxu1gWBuw; JSESSIONID=np5nnsw5z5ygs6hlf2znw16r; wmPoiId=-1; _lxsdk_s=176f974fb47-0f0-2fc-4db%7C23262521%7C783
+Host: waimaieapp.meituan.com
+Origin: https://waimaieapp.meituan.com
+Referer: https://waimaieapp.meituan.com/decoration/v2/signage
+sec-ch-ua: "Google Chrome";v="87", " Not;A Brand";v="99", "Chromium";v="87"
+sec-ch-ua-mobile: ?0
+Sec-Fetch-Dest: empty
+Sec-Fetch-Mode: cors
+Sec-Fetch-Site: same-origin
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36
+
+{
+  "newPoiIds": "10085676,10177204",
+  "originPoiIds": "10085676,9976196,10177204",
+  "signageIds": "9926465,9926464,9926466"
+}
+
+
+###
+
+POST https://waimaieapp.meituan.com/decoration/bossRecommend/w/commendSwitch
+Accept: application/json, text/plain, */*
+Accept-Encoding: gzip, deflate, br
+Accept-Language: zh-CN,zh;q=0.9
+Connection: keep-alive
+Content-Type: application/x-www-form-urlencoded
+Cookie: acctId=23262521; classRoomTips=true; bmm-uuid=8187924a-26c6-0a7e-5c0f-aaf09ad861cf; bizad_second_city_id=440300; bizad_cityId=440306; bizad_third_city_id=440306; wmPoiName=%E5%96%9C%E4%B8%89%E5%BE%B7%E7%94%9C%E5%93%81%E2%80%A2%E6%89%8B%E5%B7%A5%E8%8A%8B%E5%9C%86%EF%BC%88%E6%96%B0%E5%AE%89%E5%BA%97%EF%BC%89; _ga=GA1.2.1511021963.1597473654; _hc.v=c9793375-e9a8-7952-72a7-e404fd7ad70a.1602157773; _lxsdk=173796b978082-0920d6b94f4f16-b7a1334-144000-173796b97817c; _lxsdk_cuid=173796b978082-0920d6b94f4f16-b7a1334-144000-173796b97817c; uuid=16db610009dfc3c606c8.1602213490.1.0.0; igateApp=shangdan_qualification; __mta=146715147.1599578598056.1610506443155.1610506443174.10; token=0ZYJ8xEhxXGWervc28-KnTF_bRkAfHLEuU1ywvC-dEzs*; bsid=IkuK4w3u1sgGWZWfMf1kCTboJJuA-VgfcfmILhN1pHTxJV-mqvVC9WDWzEfiqXe02dwUdOs3GiBDPgxu1gWBuw; wmPoiId=10085676; JSESSIONID=16c809paxgkjp1813v5n3iircf; _lxsdk_s=17704886365-5d7-5bf-705%7C23262521%7C43
+Host: waimaieapp.meituan.com
+Origin: https://waimaieapp.meituan.com
+Referer: https://waimaieapp.meituan.com/decoration/bossRecommend?_source=PC&token=0ZYJ8xEhxXGWervc28-KnTF_bRkAfHLEuU1ywvC-dEzs*&acctId=23262521&wmPoiId=10085676&region_id=&device_uuid=!39ecd268-5a7e-4541-8aa6-33fc60963ac7&bsid=IkuK4w3u1sgGWZWfMf1kCTboJJuA-VgfcfmILhN1pHTxJV-mqvVC9WDWzEfiqXe02dwUdOs3GiBDPgxu1gWBuw&appType=3&fromPoiChange=false
+sec-ch-ua: "Google Chrome";v="87", " Not;A Brand";v="99", "Chromium";v="87"
+sec-ch-ua-mobile: ?0
+Sec-Fetch-Dest: empty
+Sec-Fetch-Mode: cors
+Sec-Fetch-Site: same-origin
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36
+X-Requested-With: XMLHttpRequest
+
+wmPoiId=10085676&state=0
+
+
+###
+
+GET http://localhost:9020/allTableInfos
+
+###
+
+POST  http://localhost:9020/chart
+Content-Type: application/json
+
+{
+  "tableName": "foxx_food_manage",
+  "x": { "name": "日期", "field": "date" },
+  "ys": [
+    { "name": "销量", "field": "sellCount" },
+    { "name": "价格", "field": "price" }
+  ],
+  "conds":  [
+    { "field": "wmpoiid", "op": "=", "cond": 9963039 },
+    { "field": "name", "op": "=", "cond": "双蛋烤冷面" }
+  ]
+}
