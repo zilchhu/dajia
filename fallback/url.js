@@ -15,6 +15,11 @@ const urls = {
       list: '/reuse/activity/query/list',
       save: '/reuse/activity/setting/w/save',
       delete: '/reuse/activity/setting/w/deleteWmActItemsByWmActItemIds'
+    },
+
+    newCustomer: {
+      list: 'reuse/activity/query/list',
+      delete: 'reuse/activity/setting/w/delPoiAct'
     }
   },
   food: {

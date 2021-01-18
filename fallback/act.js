@@ -7,6 +7,7 @@ export default class Act {
     this.actList = null
     this.reduction = new Reduction(wmPoiId)
     this.tradeIn = new Tradein(wmPoiId)
+    this.newCustomer = new NewCustomer(wmPoiId)
   }
 
   async list() {
@@ -322,6 +323,45 @@ class Tradein {
       policyType: 40
     }
     return instance.post(urls.act.tradein.delete, data)
+  }
+}
+
+class NewCustomer {
+  constructor(wmPoiId) {
+    this.wmPoiId = wmPoiId
+  }
+
+  async list() {
+    let params = {
+      type: 22,
+      wmPoiId: this.wmPoiId,
+      status: 1,
+      effect: false,
+      pageNum: 1,
+      pageSize: 200
+    }
+    return instance.get(urls.act.newCustomer.list, { params })
+  }
+
+  async find() {
+    try {
+      const listRes = await this.list()
+      if (!listRes || !listRes.list) return Promise.reject({ err: 'find failed' })
+      const r = listRes.list.find(v => v.status == 1)
+      if (!r) return Promise.reject({ err: 'not find' })
+      return Promise.resolve(r)
+    } catch (err) {
+      return Promise.reject(err)
+    }
+  }
+
+  async delete(wmActPoiId) {
+    let data = {
+      wmPoiId: this.wmPoiId,
+      type: 22,
+      wmActPoiId
+    }
+    return instance.post(urls.act.newCustomer.delete, data)
   }
 }
 
