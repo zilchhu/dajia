@@ -508,6 +508,7 @@ export default class Food {
       if (pageModel == '') return Promise.reject({ err: 'pageModel null' })
       pageModel = JSON.parse(pageModel)
 
+      pageModel.wmProductSpu.attrList = pageModel.wmProductSpu.attrList || []
       let attrList = pageModel.wmProductSpu.attrList.map(v =>
         keep(v, ['id', 'wm_product_spu_id', 'no', 'name', 'value'])
       )

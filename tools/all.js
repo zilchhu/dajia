@@ -19,35 +19,15 @@ const y = readYaml('tools/all.yaml')
 const singleCookie =
   'acctId=23262521; classRoomTips=true; bmm-uuid=8187924a-26c6-0a7e-5c0f-aaf09ad861cf; bizad_second_city_id=440300; bizad_cityId=440306; bizad_third_city_id=440306; wmPoiName=%E5%96%9C%E4%B8%89%E5%BE%B7%E7%94%9C%E5%93%81%E2%80%A2%E6%89%8B%E5%B7%A5%E8%8A%8B%E5%9C%86%EF%BC%88%E6%96%B0%E5%AE%89%E5%BA%97%EF%BC%89; _ga=GA1.2.1511021963.1597473654; _hc.v=c9793375-e9a8-7952-72a7-e404fd7ad70a.1602157773; _lxsdk=173796b978082-0920d6b94f4f16-b7a1334-144000-173796b97817c; _lxsdk_cuid=173796b978082-0920d6b94f4f16-b7a1334-144000-173796b97817c; uuid=16db610009dfc3c606c8.1602213490.1.0.0; igateApp=shangdan_qualification; __mta=146715147.1599578598056.1610506443155.1610506443174.10; token=0ZYJ8xEhxXGWervc28-KnTF_bRkAfHLEuU1ywvC-dEzs*; bsid=IkuK4w3u1sgGWZWfMf1kCTboJJuA-VgfcfmILhN1pHTxJV-mqvVC9WDWzEfiqXe02dwUdOs3GiBDPgxu1gWBuw; wmPoiId=10085676; JSESSIONID=18jcolmlpy6c2hjxpb63zd0b5; _lxsdk_s=1770462cca8-e55-b42-45%7C23262521%7C16'
 
-const baseHeaders = y.headers['老板推荐']
+const baseHeaders = y.headers['基本设置']
 const instance = axios.create({
   responseType: 'json',
   headers: baseHeaders
 })
-
-const instance3 = axios.create({
-  responseType: 'json',
-  headers: {
-    Accept: 'application/json, text/plain, */*',
-    'Accept-Encoding': 'gzip, deflate, br',
-    'Accept-Language': 'zh-CN,zh;q=0.9',
-    Connection: 'keep-alive',
-    Cookie:
-      'acctId=23262521; classRoomTips=true; bmm-uuid=8187924a-26c6-0a7e-5c0f-aaf09ad861cf; bizad_second_city_id=440300; bizad_cityId=440306; bizad_third_city_id=440306; wmPoiName=%E5%96%9C%E4%B8%89%E5%BE%B7%E7%94%9C%E5%93%81%E2%80%A2%E6%89%8B%E5%B7%A5%E8%8A%8B%E5%9C%86%EF%BC%88%E6%96%B0%E5%AE%89%E5%BA%97%EF%BC%89; _ga=GA1.2.1511021963.1597473654; _hc.v=c9793375-e9a8-7952-72a7-e404fd7ad70a.1602157773; _lxsdk=173796b978082-0920d6b94f4f16-b7a1334-144000-173796b97817c; _lxsdk_cuid=173796b978082-0920d6b94f4f16-b7a1334-144000-173796b97817c; uuid=16db610009dfc3c606c8.1602213490.1.0.0; igateApp=shangdan_qualification; __mta=146715147.1599578598056.1610506443155.1610506443174.10; e_u_id_3299326472=7e0dbe1fc46d29c6155e6acc5ce0c4c1; token=0ZYJ8xEhxXGWervc28-KnTF_bRkAfHLEuU1ywvC-dEzs*; bsid=IkuK4w3u1sgGWZWfMf1kCTboJJuA-VgfcfmILhN1pHTxJV-mqvVC9WDWzEfiqXe02dwUdOs3GiBDPgxu1gWBuw; _lxsdk_s=176f974fb47-0f0-2fc-4db%7C23262521%7C387; JSESSIONID=1lg8rmk76yur91rhpkdruvlgbg; wmPoiId=-1',
-    Host: 'waimaieapp.meituan.com',
-    Referer: 'https://waimaieapp.meituan.com/decoration/v2/signage',
-    // 'https://waimaieapp.meituan.com/decoration/brandStory?_source=PC&token=0ZYJ8xEhxXGWervc28-KnTF_bRkAfHLEuU1ywvC-dEzs*&acctId=23262521&wmPoiId=-1&region_id=&device_uuid=!39ecd268-5a7e-4541-8aa6-33fc60963ac7&bsid=IkuK4w3u1sgGWZWfMf1kCTboJJuA-VgfcfmILhN1pHTxJV-mqvVC9WDWzEfiqXe02dwUdOs3GiBDPgxu1gWBuw&appType=3&fromPoiChange=true',
-    'sec-ch-ua': '"Google Chrome";v="87", " Not;A Brand";v="99", "Chromium";v="87"',
-    'sec-ch-ua-mobile': '?0',
-    'Sec-Fetch-Dest': 'empty',
-    'Sec-Fetch-Mode': 'cors',
-    'Sec-Fetch-Site': 'same-origin',
-    'User-Agent':
-      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36',
-    'X-Requested-With': 'XMLHttpRequest'
-  }
+const instance2 = axios.create({
+  responseType: 'text',
+  headers: baseHeaders
 })
-
 
 /////////////
 /////////////
@@ -83,13 +63,11 @@ const instanceElm = axios.create({
 
 instance.interceptors.request.use(
   config => {
-    if(config.method == 'post')
-      config.data = qs.stringify(config.data)
+    if (config.method == 'post') config.data = qs.stringify(config.data)
     return config
   },
   err => Promise.reject(err)
 )
-
 instance.interceptors.response.use(
   res => {
     if (res.data.code === 0) {
@@ -100,22 +78,16 @@ instance.interceptors.response.use(
   },
   err => Promise.reject(err)
 )
-
-instance3.interceptors.request.use(
+instance2.interceptors.request.use(
   config => {
-    // config.data = qs.stringify(config.data)
+    if (config.method == 'post') config.data = qs.stringify(config.data)
     return config
   },
   err => Promise.reject(err)
 )
-
-instance3.interceptors.response.use(
+instance2.interceptors.response.use(
   res => {
-    if (res.data.code === 0) {
-      return res.data.data == '' || res.data.data == null ? Promise.resolve(res.data) : Promise.resolve(res.data.data)
-    } else {
-      return Promise.reject(res.data)
-    }
+    return res.data
   },
   err => Promise.reject(err)
 )
@@ -273,7 +245,6 @@ function b(inst = instance, req, args, headers) {
 
 async function a(wmPoiId) {
   try {
-   
     const all = [
       // {
       //   task: '集点返券',
@@ -336,11 +307,6 @@ async function a(wmPoiId) {
     // }))
     // const res = await execRequest(y.requests['满减活动/create'], [10085676, policy, unix(), unix(365)])
 
-    // const res = await execRequest(y.requests['配送范围/get'], {}, cookie(10085676))
-    // const fee = +res.logisticsPlanDetails[0].periods[0].spAreas[0].shippingFee + 4.1
-    // const policy = [{ discount: fee, shipping_charge: '0', mt_charge: '0', poi_charge: fee, agent_charge: '0' }]
-    // const res2 = await execRequest(y.requests['减配送费/create'], [10085676, policy, unix(), unix(365)])
-
     // const promises = y.rules['超值换购'].map(v =>
     //   execRequest(y.requests['商品列表2/search'], [10085676, v, Math.random()])
     // )
@@ -367,7 +333,7 @@ async function a(wmPoiId) {
 
     // const res = await execRequest(y.requests['商品列表/get'], [10085676, 178984089])
 
-    const res = await execRequest(undefined, y.requests.mt['老板推荐/update/state'], [9976196, 0])
+    // const res = await execRequest(undefined, y.requests.mt['老板推荐/update/state'], [9976196, 0])
 
     // const goods = await Promise.all(
     //   res.productList.map(v => execRequest(y.requests['商品列表/search'], [10085676, v.productName]))
@@ -512,16 +478,20 @@ async function a(wmPoiId) {
 
     // const res = await execRequest(instanceElm, y.requests.elm['分类列表/get'], [2065322800], xshard(2065322800))
 
-    console.log(res)
+    // console.log(res)
   } catch (error) {
     console.error(error)
   }
 }
 
-async function updateShopInfo(id, bulletin) {
+async function updateShopInfo(wmPoiId, bulletin) {
   try {
-    const y = readYaml('tools/all.yaml')
-    const res = await execRequest(instance2, y.requests.mt['门店信息/get'], {}, cookie(id))
+    const res = await execRequest(
+      instance2,
+      y.requests.mt['门店信息/get'],
+      {},
+      { ...y.headers['店铺设置'], Cookie: updateCookie(y.headers['店铺设置'].Cookie, { wmPoiId }) }
+    )
 
     let meetPhone = false
     let phone = ''
@@ -541,12 +511,15 @@ async function updateShopInfo(id, bulletin) {
         meetPhone = false
       }
     })
-    parser.write(res.data)
+    parser.write(res)
     parser.end()
 
     if (phone == '') return Promise.reject({ err: 'phone null' })
 
-    return execRequest(instance, y.requests.mt['公告电话/update'], [JSON.parse(phone).join('/'), bulletin], cookie(id))
+    return execRequest(undefined, y.requests.mt['公告电话/update'], [JSON.parse(phone).join('/'), bulletin], {
+      ...y.headers['店铺设置'],
+      Cookie: updateCookie(y.headers['店铺设置'].Cookie, { wmPoiId })
+    })
   } catch (e) {
     return Promise.reject(e)
   }
@@ -571,6 +544,36 @@ router.post('/fresh/mt', async ctx => {
       return
     }
     const res = await freshMt(userTasks, userRule)
+    ctx.body = { res }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
+
+router.post('/tests/sync', async ctx => {
+  try {
+    let { wmPoiId } = ctx.request.body
+    if (!wmPoiId) {
+      ctx.body = { e: 'invalid params' }
+      return
+    }
+    const res = await testsSync(wmPoiId)
+    ctx.body = { res }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
+
+router.post('/tests/del', async ctx => {
+  try {
+    let { wmPoiId } = ctx.request.body
+    if (!wmPoiId) {
+      ctx.body = { e: 'invalid params' }
+      return
+    }
+    const res = await testsDel(wmPoiId)
     ctx.body = { res }
   } catch (e) {
     console.log(e)
@@ -688,6 +691,61 @@ async function freshMt(userTasks, userRule) {
             return Promise.reject(e)
           }
         }
+      },
+      {
+        name: '减配送费',
+        fn: async function() {
+          try {
+            const res = await execRequest(undefined, y.requests.mt['配送范围/get'], {}, cookie(wmPoiId))
+            const fee = +res.logisticsPlanDetails[0].periods[0].spAreas[0].shippingFee + 4.1
+            const policy = [{ discount: fee, shipping_charge: '0', mt_charge: '0', poi_charge: fee, agent_charge: '0' }]
+            const res2 = await execRequest(undefined, y.requests.mt['减配送费/create'], [
+              wmPoiId,
+              policy,
+              unix(),
+              unix(365)
+            ])
+            return Promise.resolve(res2)
+          } catch (e) {
+            return Promise.reject(e)
+          }
+        }
+      },
+      {
+        name: '到店自取',
+        fn: b(undefined, y.requests.mt['到店自取/update'], [wmPoiId], y.headers['店铺设置'])
+      },
+      {
+        name: '极速退款',
+        fn: b(undefined, y.requests.mt['极速退款/close'], [wmPoiId], y.headers['店铺设置'])
+      },
+      {
+        name: '青山公益',
+        fn: b(undefined, y.requests.mt['青山公益/update'], [wmPoiId], y.headers['总店'])
+      },
+      {
+        name: '营业设置',
+        fn: b(
+          undefined,
+          y.requests.mt['营业设置/update'],
+          {},
+          { ...y.headers['店铺设置'], Cookie: updateCookie(y.headers['店铺设置'].Cookie, { wmPoiId }) }
+        )
+      },
+      {
+        name: '开具发票',
+        fn: b(
+          undefined,
+          y.requests.mt['开具发票/update'],
+          {},
+          { ...y.headers['店铺设置'], Cookie: updateCookie(y.headers['店铺设置'].Cookie, { wmPoiId }) }
+        )
+      },
+      {
+        name: '门店公告',
+        fn: async function() {
+          return updateShopInfo(wmPoiId, y.rules['店铺公告'][wmPoiType])
+        }
       }
     ]
 
@@ -716,5 +774,46 @@ async function freshElm() {
     const res = await execRequest(instanceElm, y.requests.elm['分类列表/get'])
   } catch (e) {
     console.error(e)
+  }
+}
+
+async function testsSync(wmPoiId) {
+  const fallbackApp = new FallbackApp(wmPoiId)
+  try {
+    const { ok } = await fallbackApp.food.setHighBoxPrice(0, true)
+    if (ok) {
+      return Promise.resolve({ ok })
+    }
+    return Promise.reject('sync failed')
+  } catch (e) {
+    return Promise.reject(e)
+  }
+}
+
+async function testsDel(wmPoiId) {
+  const fallbackApp = new FallbackApp(wmPoiId)
+
+  try {
+    let tags = await fallbackApp.food.listTags()
+    tags = tags.filter(v => v.name.includes('店铺公告'))
+    let results = []
+    for (let tag of tags) {
+      try {
+        if (wmPoiId == 9470231) continue
+        if (!/店铺公告\d+/.test(tag.name)) continue
+        const tests = await fallbackApp.food.listFoods(tag.id)
+        if (tests.length > 0) {
+          const skuIds = tests.map(v => v.wmProductSkus.map(k => k.id).join(','))
+          const res = await fallbackApp.food.batchDeleteFoods(skuIds)
+          const res2 = await fallbackApp.food.delTag(tag.id)
+          results.push({ tests: res, tag: res2 })
+        }
+      } catch (err) {
+        return Promise.reject({ err })
+      }
+    }
+    return Promise.resolve(results)
+  } catch (e) {
+    return Promise.reject(e)
   }
 }

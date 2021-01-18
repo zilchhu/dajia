@@ -174,3 +174,36 @@ Content-Type: application/json
     { "field": "name", "op": "=", "cond": "双蛋烤冷面" }
   ]
 }
+
+
+###
+
+POST https://waimaie.meituan.com/v2/shop/shopInfo/w/savePoi/businessSetting?ignoreSetRouterProxy=true
+Accept: */*
+Accept-Encoding: gzip, deflate, br
+Accept-Language: zh-CN,zh;q=0.9
+Connection: keep-alive
+Content-Type: application/x-www-form-urlencoded; charset=UTF-8
+Cookie: _ga=GA1.2.1511021963.1597473654; _hc.v=c9793375-e9a8-7952-72a7-e404fd7ad70a.1602157773; _lxsdk=173796b978082-0920d6b94f4f16-b7a1334-144000-173796b97817c; _lxsdk_cuid=173796b978082-0920d6b94f4f16-b7a1334-144000-173796b97817c; uuid=16db610009dfc3c606c8.1602213490.1.0.0; device_uuid=!39ecd268-5a7e-4541-8aa6-33fc60963ac7; pushToken=0BCjlFCGNeTf0_xqoT71TuF12Ymx2cPcm0s49sjFsfrg*; uuid_update=true; acctId=23262521; token=0ZYJ8xEhxXGWervc28-KnTF_bRkAfHLEuU1ywvC-dEzs*; brandId=-1; city_id=0; isChain=1; existBrandPoi=true; ignore_set_router_proxy=true; region_id=; region_version=0; newCategory=false; bsid=IkuK4w3u1sgGWZWfMf1kCTboJJuA-VgfcfmILhN1pHTxJV-mqvVC9WDWzEfiqXe02dwUdOs3GiBDPgxu1gWBuw; cityId=440300; provinceId=440000; city_location_id=0; location_id=0; wpush_server_url=wss://wpush.meituan.com; logan_custom_report=; isOfflineSelfOpen=0; setPrivacyTime=3_20210117; wmPoiName=%E5%96%9C%E4%B8%89%E5%BE%B7%E7%94%9C%E5%93%81%E2%80%A2%E6%89%8B%E5%B7%A5%E8%8A%8B%E5%9C%86%EF%BC%88%E5%A4%A7%E6%9C%97%E5%BA%97%EF%BC%89; wmPoiId=10085676; logistics_support=1; shopCategory=food; set_info=%7B%22wmPoiId%22%3A10085676%2C%22ignoreSetRouterProxy%22%3Atrue%7D; JSESSIONID=ueg50whdd1jddscteccnvouy; logan_session_token=dssmtw7u4sizxgbv38wv; _lxsdk_s=177137968a1-9f4-85d-2b6%7C23262521%7C14
+Host: waimaie.meituan.com
+Origin: https://waimaie.meituan.com
+Referer: https://waimaie.meituan.com/v2/shop/manage/shopInfo?ignoreSetRouterProxy=true
+sec-ch-ua: "Google Chrome";v="87", " Not;A Brand";v="99", "Chromium";v="87"
+sec-ch-ua-mobile: ?0
+Sec-Fetch-Dest: empty
+Sec-Fetch-Mode: cors
+Sec-Fetch-Site: same-origin
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36
+X-Requested-With: XMLHttpRequest
+
+{
+  "shippingTime": "00:00-00:35,11:00-24:00",
+"shippingTimeX": "[["00:00-00:35","11:00-24:00"],["00:00-00:35","11:00-24:00"],["00:00-00:35","11:00-24:00"],["00:00-00:35","11:00-24:00"],["00:00-00:35","11:00-24:00"],["00:00-00:35","11:00-24:00"],["00:00-00:35","11:00-24:00"]]",
+"preAllowedInClosingTime": 1,
+"preAfterAtLeast": 0,
+"preAfterAtMost": 1,
+"preOrderReminderTime": 60,
+"userName": "wmystp",
+"password": "gygc8888",
+"csrfToken": "/nPQUb3RVJ/dEy8NNfdlhwqbNiqj6f7Cfqap2QcbNDals1eiJfHeXe2wwHNRtzWuoNLH9PUWWbDqWIz0pr9Gl2/47jdpWPBY8GbhMd6bJJ1V2xsY8kiM3jtPcMzrN0SnS+MlTMQreu7UuVneOxPBAg=="
+}

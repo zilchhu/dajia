@@ -769,19 +769,24 @@ async function updateFoodSku(id, name, price, boxPrice) {
     if (ok) {
       const delActRes = await delAct(id, name)
 
-      const updateSkusRes = await batchUpdateFoodSkus(id, name, skus)
+      const minOrderCount = await fallbackApp.food.getMinOrderCount(name)
+      // const minOrderCount = 2
 
+      const updateSkusRes = await batchUpdateFoodSkus(id, name, skus)
+     
       // const testsRes = await delFoods(id)
 
       if (delActRes.noAct) {
+        const saveRes = await fallbackApp.food.save(name, minOrderCount)
         // const testsRes = await delFoods(id)
-        return Promise.resolve({ delActRes, updateSkusRes })
+        return Promise.resolve({ delActRes, updateSkusRes, minOrderCount, saveRes })
       }
 
       const createActRes = await createAct(id, name, delActRes.actPrice, delActRes.orderLimit)
       // const sortActRes = await fallbackApp.act.sort(name, 30)
+      const saveRes = await fallbackApp.food.save(name, minOrderCount)
 
-      return Promise.resolve({ delActRes, updateSkusRes, createActRes })
+      return Promise.resolve({ delActRes, updateSkusRes, createActRes, minOrderCount, saveRes })
     } else return Promise.reject({ err: 'sync failed' })
   } catch (err) {
     return Promise.reject(err)
@@ -790,9 +795,9 @@ async function updateFoodSku(id, name, price, boxPrice) {
 
 async function test_plan() {
   try {
-    let dataSource = await readXls('plan/美团贡茶修改.xlsx', '修改原价13.8+1')
-    dataSource = dataSource.slice(dataSource.length - 148)
-      .map((v, i) => [v.门店id, v.品名, 13.8, 1, i])
+    let dataSource = await readXls('plan/美团贡茶修改.xlsx', '修改原价6.9+0.5')
+    dataSource = dataSource.slice(dataSource.length - 258)
+      .map((v, i) => [v.门店id, v.品名, 6.9, 0.5, i])
     await loop(updateFoodSku, dataSource, false, { test: delFoods })
   } catch (error) {
     console.error(error)
@@ -812,10 +817,10 @@ async function test_updateActTime() {
 
 async function test_updateAct() {
   try {
-    // let data = await readXls('plan/雪花球重上.xlsm', '美团雪花球重上')
+    // let data = await readXls('plan/美团贡茶修改.xlsx', '修改折扣价11.8')
     let data = await readJson('log/log.json')
-    data = data.map(v => v.meta)
-    await loop(createAct, data, false)
+    data = data.filter(v => v.err.msg == '服务器超时，请稍后再试').map(v => v.meta)
+    await loop(updateAct, data, false)
   } catch (error) {
     console.error(error)
   }
