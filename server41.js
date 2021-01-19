@@ -5,6 +5,7 @@ import cors from 'koa2-cors'
 import flatten from 'flatten'
 import dayjs from 'dayjs'
 
+
 function omit(obj, ks) {
   let newKs = Object.keys(obj).filter(v => !ks.includes(v))
   let newObj = newKs.reduce((res, k) => {
@@ -36,6 +37,7 @@ class M {
 
 const koa = new Koa()
 const router = new Router()
+
 
 koa.use(cors())
 

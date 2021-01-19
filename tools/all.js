@@ -11,6 +11,14 @@ import cors from 'koa2-cors'
 import htmlparser2 from 'htmlparser2'
 import FallbackApp, { loop, wrap, readJson, readXls } from '../fallback/fallback_app.js'
 
+function keep(obj, ks) {
+  let newKs = Object.keys(obj).filter(v => ks.includes(v))
+  let newObj = newKs.reduce((res, k) => {
+    return { ...res, [k]: obj[k] }
+  }, {})
+  return newObj
+}
+
 const koa = new Koa()
 const router = new Router()
 
@@ -586,7 +594,7 @@ koa.listen(9010, () => console.log('running at 9010'))
 
 async function freshMt(userTasks, userRule) {
   try {
-    const { wmPoiId, wmPoiType } = userRule
+    const { wmPoiId, wmPoiType, sourcePoiId } = userRule
 
     if (!wmPoiId || !wmPoiType) return Promise.reject('invalid params')
 
@@ -745,6 +753,73 @@ async function freshMt(userTasks, userRule) {
         name: '门店公告',
         fn: async function() {
           return updateShopInfo(wmPoiId, y.rules['店铺公告'][wmPoiType])
+        }
+      },
+      {
+        name: '折扣商品',
+        fn: async function() {
+          try {
+            if (!sourcePoiId) return Promise.reject('invalid params')
+            let acts = await execRequest(undefined, y.requests.mt['折扣商品/get'], [sourcePoiId])
+            const actsT = await execRequest(undefined, y.requests.mt['折扣商品/get'], [wmPoiId])
+            acts = acts
+              .filter(item => !(item.priority === 1200 || item.priority === 1400 || item.priority === 1600))
+              .filter(item => !actsT.find(k => k.itemName == item.itemName))
+              .reverse()
+            let results = []
+            for (let item of acts) {
+              try {
+                const searches = await execRequest(undefined, y.requests.mt['商品列表/search'], [
+                  wmPoiId,
+                  item.itemName
+                ])
+                const food = searches.productList.find(v => v.name == item.itemName)
+                if (!food) {
+                  results.push({ name: item.itemName, status: 'fail', reason: `name not matched` })
+                  continue
+                }
+                let policy = keep(item, [
+                  'wmActPolicyId',
+                  'itemName',
+                  'period',
+                  'weeksTime',
+                  'orderPayType',
+                  'orderLimit',
+                  'settingType',
+                  'chargeType',
+                  'wmUserType',
+                  'poiUserType',
+                  'autoDelayDays',
+                  'spec',
+                  'priority'
+                ])
+                policy = {
+                  ...policy,
+                  limitTimeSale: '-1',
+                  actInfo: JSON.parse(item.actInfo),
+                  WmActPriceVo: JSON.parse(item.charge),
+                  foodKey: 1,
+                  id: 0,
+                  sortIndex: 0,
+                  wmPoiId,
+                  wmSkuId: food.wmProductSkus[0].id,
+                  startTime: dayjs()
+                    .startOf('day')
+                    .unix(),
+                  endTime: dayjs('2021-07-31').unix()
+                }
+                const r = await execRequest(undefined, y.requests.mt['折扣商品/create'], [wmPoiId, [policy]])
+                console.log(r)
+                results.push({ name: item.itemName, status: 'succ', value: r })
+              } catch (e) {
+                console.log(e)
+                results.push({ name: item.itemName, status: 'fail', reason: e })
+              }
+            }
+            return Promise.resolve(results)
+          } catch (e) {
+            return Promise.reject(e)
+          }
         }
       }
     ]

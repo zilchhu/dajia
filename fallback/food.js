@@ -490,7 +490,7 @@ export default class Food {
     return instance.post(urls.food.save, data)
   }
 
-  async save(name, minOrderCount) {
+  async save(name, minOrderCount, weightUnit) {
     try {
       const food = await this.find(name)
 
@@ -550,7 +550,14 @@ export default class Food {
         category_id,
         wm_product_property_template_id,
         properties_values,
-        min_order_count: minOrderCount || spu.min_order_count
+        min_order_count: minOrderCount || spu.min_order_count,
+        wmProductSkus: weightUnit
+          ? spu.wmProductSkus.map(sku => ({
+              ...sku,
+              unit: weightUnit,
+              weight_unit: weightUnit
+            }))
+          : spu.wmProductSkus
       }
       // fs.writeFileSync('log/logE.json', JSON.stringify(pageModel))
       return this.save_(spu)

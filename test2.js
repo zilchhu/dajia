@@ -440,16 +440,21 @@ async function createTest(id, ti) {
   }
 }
 
-async function updateImg(id) {
+async function updateImg(id, foodId, newUrl) {
   const fallbackApp = new FallbackApp(id)
-
   try {
-    const food = await fallbackApp.food.find('饺子、冬至、汤圆')
-    const foodUpdateImgRes = await fallbackApp.food.updateImg(
-      food.id,
-      'http://p1.meituan.net/wmproduct/382db61cf2707f5b69698051a2a94756401785.png'
-    )
-    return Promise.resolve({ foodUpdateImgRes, foodId: food.id, foodName: food.name })
+    const foodUpdateImgRes = await fallbackApp.food.updateImg(foodId, newUrl)
+    return Promise.resolve(foodUpdateImgRes)
+  } catch (err) {
+    return Promise.reject(err)
+  }
+}
+
+async function updateUnit(id, name, unit) {
+  const fallbackApp = new FallbackApp(id)
+  try {
+    const res = await fallbackApp.food.save(name, null, unit)
+    return Promise.resolve(res)
   } catch (err) {
     return Promise.reject(err)
   }
@@ -468,22 +473,12 @@ async function test_testFood() {
 }
 
 async function test_updateImg() {
-  const fallbackApp = new FallbackApp()
-
   try {
-    let poiList = await fallbackApp.poi.list()
-    poiList = poiList.filter(v => v.poiName.includes('贡茶'))
-    for (let shop of poiList) {
-      console.log(shop.id, shop.poiName)
-      try {
-        const updateImgRes = await updateImg(shop.id)
-        console.log(updateImgRes)
-        // await sleep(8000)
-      } catch (err) {
-        console.error(err)
-        log({ shop: { id: shop.id, name: shop.poiName }, err })
-      }
-    }
+    let data = await readXls('plan/美团低质量产品1.18.xlsx', 'Sheet1')
+    data = data.filter(v => v.份量 != '').map(v => [v.wmPoiId, v.name, v.份量])
+    // let data = readJson('log/log.json')
+    // data = data.map(v => v.meta)
+    await loop(updateUnit, data, true)
   } catch (err) {
     console.error(err)
   }
@@ -792,8 +787,8 @@ async function updateFoodSku(id, name, price, boxPrice) {
     if (ok) {
       const delActRes = await delAct(id, name)
 
-      const minOrderCount = await fallbackApp.food.getMinOrderCount(name)
-      // const minOrderCount = 2
+      // const minOrderCount = await fallbackApp.food.getMinOrderCount(name)
+      const minOrderCount = 2
 
       const updateSkusRes = await batchUpdateFoodSkus(id, name, skus)
 
@@ -819,7 +814,7 @@ async function updateFoodSku(id, name, price, boxPrice) {
 async function test_plan() {
   try {
     let dataSource = await readXls('plan/美团贡茶修改.xlsx', '修改原价6.9+0.5')
-    dataSource = dataSource.slice(dataSource.length - 258).map((v, i) => [v.门店id, v.品名, 6.9, 0.5, i])
+    dataSource = dataSource.slice(dataSource.length - 26).map((v, i) => [v.门店id, v.品名, 6.9, 0.5, i])
     await loop(updateFoodSku, dataSource, false, { test: delFoods })
   } catch (error) {
     console.error(error)
@@ -869,10 +864,11 @@ async function test_delNewCustomer() {
 }
 
 // test_updateAct()
-// test_plan()
-test_delNewCustomer()
+test_plan()
+// test_delNewCustomer()
 // test_rename()
 // test_updateAct()1
 // test_delFoods()
 // test_testFood()
 // test_rename2()
+// test_updateImg()
