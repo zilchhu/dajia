@@ -11,6 +11,14 @@ import cors from 'koa2-cors'
 import htmlparser2 from 'htmlparser2'
 import FallbackApp, { loop, wrap, readJson, readXls } from '../fallback/fallback_app.js'
 
+function omit(obj, ks) {
+  let newKs = Object.keys(obj).filter(v => !ks.includes(v))
+  let newObj = newKs.reduce((res, k) => {
+    return { ...res, [k]: obj[k] }
+  }, {})
+  return newObj
+}
+
 function keep(obj, ks) {
   let newKs = Object.keys(obj).filter(v => ks.includes(v))
   let newObj = newKs.reduce((res, k) => {
@@ -24,8 +32,7 @@ const router = new Router()
 
 const y = readYaml('tools/all.yaml')
 
-const singleCookie =
-  'acctId=23262521; classRoomTips=true; bmm-uuid=8187924a-26c6-0a7e-5c0f-aaf09ad861cf; bizad_second_city_id=440300; bizad_cityId=440306; bizad_third_city_id=440306; wmPoiName=%E5%96%9C%E4%B8%89%E5%BE%B7%E7%94%9C%E5%93%81%E2%80%A2%E6%89%8B%E5%B7%A5%E8%8A%8B%E5%9C%86%EF%BC%88%E6%96%B0%E5%AE%89%E5%BA%97%EF%BC%89; _ga=GA1.2.1511021963.1597473654; _hc.v=c9793375-e9a8-7952-72a7-e404fd7ad70a.1602157773; _lxsdk=173796b978082-0920d6b94f4f16-b7a1334-144000-173796b97817c; _lxsdk_cuid=173796b978082-0920d6b94f4f16-b7a1334-144000-173796b97817c; uuid=16db610009dfc3c606c8.1602213490.1.0.0; igateApp=shangdan_qualification; __mta=146715147.1599578598056.1610506443155.1610506443174.10; token=0ZYJ8xEhxXGWervc28-KnTF_bRkAfHLEuU1ywvC-dEzs*; bsid=IkuK4w3u1sgGWZWfMf1kCTboJJuA-VgfcfmILhN1pHTxJV-mqvVC9WDWzEfiqXe02dwUdOs3GiBDPgxu1gWBuw; wmPoiId=10085676; JSESSIONID=18jcolmlpy6c2hjxpb63zd0b5; _lxsdk_s=1770462cca8-e55-b42-45%7C23262521%7C16'
+const singleCookie = y.headers['基本设置']['Cookie']
 
 const baseHeaders = y.headers['基本设置']
 const instance = axios.create({
@@ -71,7 +78,8 @@ const instanceElm = axios.create({
 
 instance.interceptors.request.use(
   config => {
-    if (config.method == 'post') config.data = qs.stringify(config.data)
+    if (config.method == 'post' && config.headers['Content-Type'] != 'application/json') config.data = qs.stringify(config.data)
+    // console.log(config)
     return config
   },
   err => Promise.reject(err)
@@ -239,6 +247,18 @@ async function searchRace(api, vs, wmPoiId) {
     if (!v) return Promise.reject('search maxed')
     let res = await execRequest(undefined, api, [v], cookie(wmPoiId))
     if (res.totalCount == 0) return searchRace(api, vs, wmPoiId)
+    return Promise.resolve(res)
+  } catch (err) {
+    return Promise.reject(err)
+  }
+}
+
+async function searchRace2(api, vs, wmPoiId) {
+  try {
+    let v = vs.shift()
+    if (!v) return Promise.reject('search maxed')
+    let res = await execRequest(undefined, api, [wmPoiId, v])
+    if (res.length == 0) return searchRace(api, vs, wmPoiId)
     return Promise.resolve(res)
   } catch (err) {
     return Promise.reject(err)
@@ -497,6 +517,11 @@ async function a(wmPoiId) {
     // parser.write(shopinfo)
     // parser.end()
     // if (tags == '') return Promise.reject({ err: 'tags null' })
+
+    // const res = await execRequest(undefined, y.requests.mt['店内海报/get'], [9976196])
+    // const res = await execRequest(undefined, y.requests.mt['商品列表4/search'], [10085676, '招牌烧仙草'])
+    const res = await execRequest(undefined, y.requests.mt['店铺招牌/get'], {}, cookie(-1))
+    console.log(res)
   } catch (error) {
     console.error(error)
   }
@@ -600,7 +625,7 @@ router.post('/tests/del', async ctx => {
 })
 
 koa.use(router.routes())
-// koa.listen(9010, () => console.log('running at 9010'))
+koa.listen(9010, () => console.log('running at 9010'))
 
 async function freshMt(userTasks, userRule) {
   try {
@@ -870,6 +895,79 @@ async function freshMt(userTasks, userRule) {
               y.requests.mt['品类头像/update'],
               [`${pri.id},${sec.id}`, poiPicUrl, y.rules['店铺头像'][wmPoiType]],
               { ...y.headers['店铺设置'], Cookie: updateCookie(y.headers['店铺设置'].Cookie, { wmPoiId }) }
+            )
+          } catch (e) {
+            return Promise.reject(e)
+          }
+        }
+      },
+      {
+        name: '店内海报',
+        fn: async function() {
+          try {
+            const promises = y.rules['老板推荐'][wmPoiType].map(v =>
+              typeof v == 'string'
+                ? execRequest(undefined, y.requests.mt['商品列表4/search'], [wmPoiId, v])
+                : searchRace2(y.requests.mt['商品列表4/search'], v, wmPoiId)
+            )
+            let goods = await Promise.allSettled(promises)
+            goods = goods.filter(v => v.status == 'fulfilled' && v.value.length > 0).map(v => v.value[0])
+            return execRequest(
+              undefined,
+              y.requests.mt['店内海报/create'],
+              [`${y.rules['店内海报'][wmPoiType]}?t=${dayjs().valueOf()}`, goods.map(g => g.id).join(',')],
+              cookie(wmPoiId)
+            )
+          } catch (e) {
+            return Promise.reject(e)
+          }
+        }
+      },
+      {
+        name: '品牌故事',
+        fn: async function() {
+          try {
+            const stories = await execRequest(undefined, y.requests.mt['品牌故事/get'], {}, cookie(-1))
+            const story = stories.find(v => v.id == y.rules['品牌故事'][wmPoiType])
+            if (!story) return Promise.reject({ err: 'story not found' })
+            if (story.wmPoiIdList.includes(parseInt(wmPoiId))) return Promise.reject({ err: 'story has been binded' })
+            let wmPoiIdListStr = [...story.wmPoiIdList, wmPoiId].join(',')
+            let brandStoryForBigPicResListStr = story.brandStoryForBigPicResList
+            let brandStoryForSmallPicResListStr = story.brandStoryForSmallPicResList
+            return execRequest(
+              undefined,
+              y.requests.mt['品牌故事/update'],
+              {
+                ...omit(story, ['wmPoiIdList', 'brandStoryForBigPicResList', 'brandStoryForSmallPicResList']),
+                wmPoiIdListStr,
+                brandStoryForBigPicResListStr,
+                brandStoryForSmallPicResListStr
+              },
+              cookie(-1)
+            )
+          } catch (e) {
+            return Promise.reject(e)
+          }
+        }
+      },
+      {
+        name: '店铺招牌',
+        fn: async function() {
+          try {
+            const signages = await execRequest(undefined, y.requests.mt['店铺招牌/get'], {}, cookie(-1))
+            const signage = signages.find(v => v.signagePicUrl == y.rules['店铺招牌'])
+            if (!signage) return Promise.reject({ err: 'signage not found' })
+            if (signage.wmPoiIds.includes(parseInt(wmPoiId))) return Promise.reject({ err: 'signage has been binded' })
+            let newPoiIds = [...signage.wmPoiIds, wmPoiId].join(',')
+            return execRequest(
+              undefined,
+              y.requests.mt['店铺招牌/bind'],
+              [newPoiIds, signage.wmPoiIds.join(','), signage.signageIds.join(',')],
+              {
+                ...cookie(-1),
+                Referer: `https://waimaieapp.meituan.com/decoration/v2/signage${new URL(baseHeaders.Referer).search}`,
+                'Content-Type': 'application/json'
+              }
             )
           } catch (e) {
             return Promise.reject(e)

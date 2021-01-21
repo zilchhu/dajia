@@ -76,10 +76,10 @@ headers:
     Accept-Language: zh-CN,zh;q=0.9
     Connection: keep-alive
     Content-Type: application/x-www-form-urlencoded; charset=UTF-8
-    Cookie: acctId=23262521; classRoomTips=true; bmm-uuid=8187924a-26c6-0a7e-5c0f-aaf09ad861cf; bizad_second_city_id=440300; bizad_cityId=440306; bizad_third_city_id=440306; wmPoiName=%E5%96%9C%E4%B8%89%E5%BE%B7%E7%94%9C%E5%93%81%E2%80%A2%E6%89%8B%E5%B7%A5%E8%8A%8B%E5%9C%86%EF%BC%88%E6%96%B0%E5%AE%89%E5%BA%97%EF%BC%89; _ga=GA1.2.1511021963.1597473654; _hc.v=c9793375-e9a8-7952-72a7-e404fd7ad70a.1602157773; _lxsdk=173796b978082-0920d6b94f4f16-b7a1334-144000-173796b97817c; _lxsdk_cuid=173796b978082-0920d6b94f4f16-b7a1334-144000-173796b97817c; uuid=16db610009dfc3c606c8.1602213490.1.0.0; igateApp=shangdan_qualification; __mta=146715147.1599578598056.1610506443155.1610506443174.10; token=0ZYJ8xEhxXGWervc28-KnTF_bRkAfHLEuU1ywvC-dEzs*; bsid=IkuK4w3u1sgGWZWfMf1kCTboJJuA-VgfcfmILhN1pHTxJV-mqvVC9WDWzEfiqXe02dwUdOs3GiBDPgxu1gWBuw; wmPoiId=10085676; JSESSIONID=16c809paxgkjp1813v5n3iircf; _lxsdk_s=17704886365-5d7-5bf-705%7C23262521%7C43
+    Cookie: acctId=23262521; classRoomTips=true; bmm-uuid=8187924a-26c6-0a7e-5c0f-aaf09ad861cf; igateApp=shangdan_qualification; bsid=IkuK4w3u1sgGWZWfMf1kCTboJJuA-VgfcfmILhN1pHTxJV-mqvVC9WDWzEfiqXe02dwUdOs3GiBDPgxu1gWBuw; platform=0; __mta=146715147.1599578598056.1611045199016.1611045199031.12; _ga=GA1.2.1511021963.1597473654; _hc.v=c9793375-e9a8-7952-72a7-e404fd7ad70a.1602157773; _lxsdk=173796b978082-0920d6b94f4f16-b7a1334-144000-173796b97817c; _lxsdk_cuid=173796b978082-0920d6b94f4f16-b7a1334-144000-173796b97817c; uuid=16db610009dfc3c606c8.1602213490.1.0.0; token=0k67YtjxZVQG8ST2AzIafR-TOztFmoBk02Fs8kaU_uIQ*; logan_session_token=q8svmf498yubqrhq49jl; logan_custom_report=%7B%22unionId%22%3A%2210085676%22%2C%22biz%22%3A%22waimai_ad_pc_vue%22%7D; bizad_cityId=441900; bizad_second_city_id=441900; bizad_third_city_id=4419015; wmPoiName=%E5%96%9C%E4%B8%89%E5%BE%B7%E7%94%9C%E5%93%81%E2%80%A2%E6%89%8B%E5%B7%A5%E8%8A%8B%E5%9C%86%EF%BC%88%E5%A4%A7%E6%9C%97%E5%BA%97%EF%BC%89; wmPoiId=10085676; JSESSIONID=b0n67ft5ud8s16cp47zj4ks6i; _lxsdk_s=177236f7c9b-c62-c74-e8%7C23262521%7C233
     Host: waimaieapp.meituan.com
     Origin: https://waimaieapp.meituan.com
-    Referer: https://waimaieapp.meituan.com/decoration/bossRecommend?_source=PC&token=0ZYJ8xEhxXGWervc28-KnTF_bRkAfHLEuU1ywvC-dEzs*&acctId=23262521&wmPoiId=10085676&region_id=&device_uuid=!39ecd268-5a7e-4541-8aa6-33fc60963ac7&bsid=IkuK4w3u1sgGWZWfMf1kCTboJJuA-VgfcfmILhN1pHTxJV-mqvVC9WDWzEfiqXe02dwUdOs3GiBDPgxu1gWBuw&appType=3&fromPoiChange=false
+    Referer: https://waimaieapp.meituan.com/decoration/bossRecommend?_source=PC&token=0k67YtjxZVQG8ST2AzIafR-TOztFmoBk02Fs8kaU_uIQ*&acctId=23262521&wmPoiId=10085676&region_id=&device_uuid=!39ecd268-5a7e-4541-8aa6-33fc60963ac7&bsid=IkuK4w3u1sgGWZWfMf1kCTboJJuA-VgfcfmILhN1pHTxJV-mqvVC9WDWzEfiqXe02dwUdOs3GiBDPgxu1gWBuw&appType=3&fromPoiChange=false
     sec-ch-ua: '"Google Chrome";v="87", " Not;A Brand";v="99", "Chromium";v="87"'
     sec-ch-ua-mobile: ?0
     Sec-Fetch-Dest: empty
@@ -198,6 +198,16 @@ rules:
   经营品类:
     甜品: [其他甜点, 其他小吃]
     贡茶: [奶茶, 煎饼果子/卷饼/手抓饼]
+
+  店内海报:
+    甜品: //p0.meituan.net/business/5721aee0ede6dc8e591992ad23aae289701972.png
+    贡茶: //p0.meituan.net/business/bc720a60576ece71c0fd1c41bff95144188130.png
+
+  品牌故事:
+    甜品: 89016
+    贡茶: 169026
+
+  店铺招牌: http://p0.meituan.net/business/84f9b8e9eae12318ac6b32302cfbf3d0158189.png
 
 requests:
   mt:
@@ -720,6 +730,19 @@ requests:
       requires:
         - keyWords
 
+    商品列表4/search: # 店内海报商品搜索
+      url: https://waimaieapp.meituan.com/decoration/r/searchProducts
+      body:
+        wmPoiIdStr: 10085676
+        acctId: 23262521
+        token: 0k67YtjxZVQG8ST2AzIafR-TOztFmoBk02Fs8kaU_uIQ*
+        keyWords: 招牌芋圆
+        pageNum: 1
+        pageSize: 50
+      requires:
+        - wmPoiIdStr
+        - keyWords
+
     折扣商品/get:
       url: https://waimaieapp.meituan.com/reuse/activity/setting/r/getAllFoodActPolicy
       body:
@@ -982,6 +1005,17 @@ requests:
         - picName
         - picStr
 
+    店内海报/create:
+      url: https://waimaieapp.meituan.com/decoration/w/saveTemplateV2
+      body:
+        source: {"id":0,"source_pic_url":"//p0.meituan.net/business/5721aee0ede6dc8e591992ad23aae289701972.png?t=1611213698375","product_spu_ids":"3664080403,3208729658,3208697396","verify_status":-1,"sequence":0,"valid":0,"time_setting":{"displayEndDay":-1,"displayEtime":-1,"displayStartDay":-1,"displayStime":-1,"displayWeeks":[1,2,3,4,5,6,7]},"formType":2}
+        queueStatus: 1
+        originTempId: 
+      jsonfy: [source]
+      requires:
+        - source/source_pic_url
+        - source/product_spu_ids
+
     品牌故事/get:
       url: https://waimaieapp.meituan.com/decoration/brandStory/r/list
       params:
@@ -1029,6 +1063,14 @@ requests:
       requires:
         - wmPoiIdListStr
 
+    品牌故事/update:
+      url: https://waimaieapp.meituan.com/decoration/brandStory/w/update
+      body:
+        brandStoryForBigPicResListStr: []
+        brandStoryForSmallPicResListStr: []
+        csrfToken: 
+      jsonfy: [brandStoryForBigPicResListStr, brandStoryForSmallPicResListStr]
+
     店铺招牌/get:
       url: https://waimaieapp.meituan.com/decoration/signage/queryList
       params: {}
@@ -1043,7 +1085,7 @@ requests:
         - newPoiIds
         - originPoiIds
         - signageIds
-
+       
   elm:
     分类列表/get:
       url: https://app-api.shop.ele.me/nevermore.goods/invoke/?method=FoodService.queryCategoryWithFoodFilter
