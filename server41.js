@@ -5,7 +5,6 @@ import cors from 'koa2-cors'
 import flatten from 'flatten'
 import dayjs from 'dayjs'
 
-
 function omit(obj, ks) {
   let newKs = Object.keys(obj).filter(v => !ks.includes(v))
   let newObj = newKs.reduce((res, k) => {
@@ -38,7 +37,6 @@ class M {
 const koa = new Koa()
 const router = new Router()
 
-
 koa.use(cors())
 
 koa.use(
@@ -54,6 +52,7 @@ router.get('/date/:date', async ctx => {})
 router.get('/shop/:shopid', async ctx => {
   try {
     let { shopid } = ctx.params
+ 
     if (!shopid) {
       ctx.body = { e: 'invalid params' }
       return
@@ -69,11 +68,12 @@ router.get('/shop/:shopid', async ctx => {
 router.get('/shop_history/:shopid', async ctx => {
   try {
     let { shopid } = ctx.params
+    let { oneday } = ctx.query
     if (!shopid) {
       ctx.body = { e: 'invalid params' }
       return
     }
-    const res = await shop_history(shopid)
+    const res = await shop_history(shopid, oneday)
     ctx.body = { res }
   } catch (e) {
     console.log(e)
@@ -219,7 +219,7 @@ async function shop(id) {
 ///////////////////
 //////////////////////////
 
-async function shop_history(id) {
+async function shop_history(id, oneday = false) {
   try {
     let data = await knx('test_analyse_t_')
       .select()
@@ -231,7 +231,8 @@ async function shop_history(id) {
       .bind(extend_qs)
       .bind(format)
 
-    return Promise.resolve(res.val)
+    if (!oneday) return Promise.resolve(res.val)
+    return Promise.resolve(res.bind(first).val)
   } catch (err) {
     return Promise.reject(err)
   }
@@ -273,6 +274,10 @@ async function shop_history(id) {
     }))
 
     return new M(formatShop(ys))
+  }
+
+  function first(xs) {
+    return new M(xs[0])
   }
 }
 

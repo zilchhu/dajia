@@ -1,117 +1,124 @@
 {
-  "id": 3478870740,
-  "wm_poi_id": "10549708",
-  "tag_id": 195816241,
-  "tag_name": "┏ 🍵 ┓贡茶热饮",
-  "name": "桂圆红枣生姜茶",
-  "description": "700ml大杯",
+  "id": 3577948825,
+  "wm_poi_id": "2924399",
+  "tag_id": 176788218,
+  "tag_name": "热销新品",
+  "name": "麻薯奶茶",
+  "description": "麻薯打底，风靡时下的一款饮品，广受顾客的喜爱，新品上线，优惠多多。",
   "isShippingTimeSyncPoi": 2,
   "shipping_time_x": "-",
   "attrList": [
     {
-      "id": 5839176514,
-      "wm_product_spu_id": 3478870740,
-      "no": 0,
+      "id": 6088238856,
+      "wm_product_spu_id": 3577948825,
+      "no": 1,
+      "name": "甜度",
+      "value": "正常糖"
+    },
+    {
+      "id": 6088238856,
+      "wm_product_spu_id": 3577948825,
+      "no": 1,
+      "name": "甜度",
+      "value": "少糖"
+    },
+    {
+      "id": 6088238856,
+      "wm_product_spu_id": 3577948825,
+      "no": 1,
+      "name": "甜度",
+      "value": "半糖"
+    },
+    {
+      "id": 6088238856,
+      "wm_product_spu_id": 3577948825,
+      "no": 1,
+      "name": "甜度",
+      "value": "多糖"
+    },
+    {
+      "id": 6088238860,
+      "wm_product_spu_id": 3577948825,
+      "no": 2,
       "name": "温度",
       "value": "正常冰"
     },
     {
-      "id": 5839176514,
-      "wm_product_spu_id": 3478870740,
-      "no": 0,
-      "name": "温度",
-      "value": "多冰"
-    },
-    {
-      "id": 5839176514,
-      "wm_product_spu_id": 3478870740,
-      "no": 0,
-      "name": "温度",
-      "value": "少冰"
-    },
-    {
-      "id": 5839176514,
-      "wm_product_spu_id": 3478870740,
-      "no": 0,
+      "id": 6088238860,
+      "wm_product_spu_id": 3577948825,
+      "no": 2,
       "name": "温度",
       "value": "去冰"
     },
     {
-      "id": 5839176514,
-      "wm_product_spu_id": 3478870740,
-      "no": 0,
+      "id": 6088238860,
+      "wm_product_spu_id": 3577948825,
+      "no": 2,
       "name": "温度",
-      "value": "温热"
+      "value": "少冰"
     },
     {
-      "id": 5839176514,
-      "wm_product_spu_id": 3478870740,
-      "no": 0,
+      "id": 6088238860,
+      "wm_product_spu_id": 3577948825,
+      "no": 2,
       "name": "温度",
-      "value": "常温"
-    },
-    {
-      "id": 5839176520,
-      "wm_product_spu_id": 3478870740,
-      "no": 1,
-      "name": "糖度",
-      "value": "正常糖"
+      "value": "多冰"
     }
   ],
   "wmProductSkus": [
     {
-      "id": 4165873308,
-      "wm_poi_id": 10549708,
+      "id": 4010852153,
+      "wm_poi_id": 2924399,
       "poi_id": 0,
       "food_id": 0,
       "source_food_code": "",
       "upc_code": "",
-      "price": 14.8,
+      "price": 13.8,
       "ori_price": 0,
       "min_order_count": 1,
-      "unit": "1人份",
+      "unit": "份",
       "box_num": 1,
       "box_price": 1,
-      "tag_id": "195816241",
+      "tag_id": "176788218",
       "tag_name": "",
-      "ctime": 1610849200,
-      "utime": 1610849201,
+      "ctime": 1608270346,
+      "utime": 1608573076,
       "status": 0,
       "valid": 1,
       "name": "",
       "description": "",
-      "picture": "http://p0.meituan.net/wmproduct/5100ef1e801e4104220d26a6387e3762138463.jpg",
+      "picture": "http://p0.meituan.net/wmproduct/87a86ee1836374b2a6a1ad49f803fd40508088.png",
       "limit_stock": 1,
-      "stock": 10000,
+      "stock": 9999,
       "label_ids": "",
       "sequence": 0,
       "shipping_time_x": "-",
-      "wm_food_spu_id": 3478870740,
+      "wm_food_spu_id": 3577948825,
       "spec": "",
       "sell_status": 0,
       "wmProductPics": [
         {
-          "id": 24496153100,
-          "wm_product_sku_id": 4165873308,
-          "pic_large_url": "http://p0.meituan.net/wmproduct/5100ef1e801e4104220d26a6387e3762138463.jpg",
+          "id": 23287936810,
+          "wm_product_sku_id": 4010852153,
+          "pic_large_url": "http://p0.meituan.net/wmproduct/87a86ee1836374b2a6a1ad49f803fd40508088.png",
           "pic_small_url": "",
-          "sequence": 1,
+          "sequence": 0,
           "valid": 1,
-          "ctime": 1610849200,
-          "utime": 1610849200,
-          "wm_poi_id": 10549708,
+          "ctime": 1608270346,
+          "utime": 1608270346,
+          "wm_poi_id": 2924399,
           "quality_score": 1,
           "white_rate_score": 1,
           "specialEffectUrl": "",
           "specialEffectEnable": 0,
           "isMaster": 0,
           "wmProductPicMaterialList": null,
-          "wm_food_spu_id": 3478870740,
+          "wm_food_spu_id": 3577948825,
           "is_quality_low": false,
           "border_result": 1,
           "border_score": 1,
           "blur_result": 1,
-          "blur_score": 1,
+          "blur_score": 0.953,
           "recapture_result": 1,
           "recapture_score": 1,
           "detailList": [
@@ -136,7 +143,7 @@
             {
               "type": "blur",
               "typeName": "图片模糊",
-              "score": 1,
+              "score": 0.953,
               "extra": "",
               "picPropaganda": {
                 "type": "blur",
@@ -200,15 +207,15 @@
       "wmProductSkuExtends": null,
       "wm_product_standard_id": 0,
       "locator_code": "",
-      "wm_product_spu_id": 3478870740,
+      "wm_product_spu_id": 3577948825,
       "spu_sequence": 1,
       "weight": -2,
       "wmProductStock": {
         "id": 0,
-        "wm_poi_id": 10549708,
-        "wm_product_sku_id": 4165873308,
-        "stock": 10000,
-        "max_stock": 10000,
+        "wm_poi_id": 2924399,
+        "wm_product_sku_id": 4010852153,
+        "stock": 9999,
+        "max_stock": 9999,
         "auto_refresh": 1,
         "ctime": 0,
         "utime": 0,
@@ -241,16 +248,11 @@
         ]
       },
       "wm_product_video_id": -1,
-      "ladder_box_price": "{\"ladder_num\":1,\"ladder_price\":1.0}",
+      "ladder_box_price": "",
       "wmProductLadderBoxPrice": {
-        "status": 1,
+        "status": 2,
         "ladder_num": 1,
-        "ladder_price": 1,
-        "__isset_bit_vector": [
-          1,
-          1,
-          1
-        ]
+        "ladder_price": null
       },
       "attrList": null,
       "weight_unit": "1人份",
@@ -298,51 +300,21 @@
   "wmProductVideo": null,
   "search_terms": [],
   "labelValues": [],
-  "category_id": 115492,
+  "category_id": 115425,
   "wm_product_property_template_id": 5167,
   "properties_values": {
     "1000000015": [
       {
-        "id": 38720477906,
-        "wm_poi_id": 10549708,
-        "wm_product_spu_id": 3478870740,
-        "getWm_product_property_category_id": 115492,
+        "id": "",
         "parent_tag_id": 0,
         "wm_product_lib_tag_id": 1000000015,
         "wm_product_lib_tag_name": "主料",
-        "value": "桂圆",
-        "value_id": 105093,
+        "value": "奶茶",
+        "value_id": 31,
         "level": 1,
-        "is_leaf": 1,
-        "sequence": 1
-      },
-      {
-        "id": 38720477907,
-        "wm_poi_id": 10549708,
-        "wm_product_spu_id": 3478870740,
-        "getWm_product_property_category_id": 115492,
-        "parent_tag_id": 0,
-        "wm_product_lib_tag_id": 1000000015,
-        "wm_product_lib_tag_name": "主料",
-        "value": "红枣",
-        "value_id": 564,
-        "level": 1,
-        "is_leaf": 1,
-        "sequence": 1
-      },
-      {
-        "id": 38720477908,
-        "wm_poi_id": 10549708,
-        "wm_product_spu_id": 3478870740,
-        "getWm_product_property_category_id": 115492,
-        "parent_tag_id": 0,
-        "wm_product_lib_tag_id": 1000000015,
-        "wm_product_lib_tag_name": "主料",
-        "value": "生姜丝",
-        "value_id": 114389,
-        "level": 1,
-        "is_leaf": 1,
-        "sequence": 1
+        "is_leaf": 2,
+        "sequence": 2,
+        "propertyOpType": 3
       }
     ],
     "1200004369": [
@@ -363,25 +335,25 @@
   "productCardDisplayContent": null,
   "suggestTraceInfoList": [
     {
-      "traceId": "-3938162740714590218",
+      "traceId": "4501132664355072381",
       "traceType": 100003,
       "setTraceType": true,
       "setTraceId": true
     },
     {
-      "traceId": "-3195913420730749528",
+      "traceId": "-1661049409730946979",
       "traceType": 100002,
       "setTraceType": true,
       "setTraceId": true
     },
     {
-      "traceId": "8723827079026444152",
+      "traceId": "-6927866366131855730",
       "traceType": 100001,
       "setTraceType": true,
       "setTraceId": true
     },
     {
-      "traceId": "5578606148701419227",
+      "traceId": "-1687917366859044658",
       "traceType": 100001,
       "setTraceType": true,
       "setTraceId": true

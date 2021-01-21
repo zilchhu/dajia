@@ -8,6 +8,7 @@ import fs from 'fs'
 const axls2Json = util.promisify(xls2json)
 import sleep from 'sleep-promise'
 import knex from 'knex'
+import schedule from 'node-schedule'
 const knx = knex({
   client: 'mysql',
   connection: {
@@ -453,32 +454,31 @@ async function updateImg(id, foodId, newUrl) {
 async function updateUnit(id, name, unit) {
   const fallbackApp = new FallbackApp(id)
   try {
-    const res = await fallbackApp.food.save(name, null, unit)
-    return Promise.resolve(res)
+    const { ok } = await fallbackApp.food.setHighBoxPrice(0, true)
+    if (ok) {
+      const res = await fallbackApp.food.save(name, null, unit)
+      return Promise.resolve(res)
+    } else return Promise.reject({ err: 'sync failed' })
   } catch (err) {
     return Promise.reject(err)
   }
 }
 
 async function test_testFood() {
-  const fallbackApp = new FallbackApp()
-
-  try {
-    // const poiList = await fallbackApp.poi.list()
-    let data = [3, 4, 5, 6, 7].map(v => [9470231, v])
-    await loop(createTest, data, false)
-  } catch (err) {
-    console.error(err)
-  }
+  let data = [1, 2, 3, 4, 5, 6, 7].map(v => [10085676, v])
+  await loop(createTest, data, false)
 }
 
-async function test_updateImg() {
+async function test_saveFood() {
   try {
     let data = await readXls('plan/美团低质量产品1.18.xlsx', 'Sheet1')
-    data = data.filter(v => v.份量 != '').map(v => [v.wmPoiId, v.name, v.份量])
+    data = data
+      .filter(v => v.份量 != '')
+      .slice(45)
+      .map((v, i) => [v.wmPoiId, v.name, v.份量, i])
     // let data = readJson('log/log.json')
     // data = data.map(v => v.meta)
-    await loop(updateUnit, data, true)
+    await loop(updateUnit, data, true, { test: delFoods })
   } catch (err) {
     console.error(err)
   }
@@ -706,7 +706,7 @@ async function delFoods(id) {
     let results = []
     for (let tag of tags) {
       try {
-        if (id == 9470231) continue
+        if (id == 9470231 || id == 10085676) continue
         if (!/店铺公告\d+/.test(tag.name)) continue
         const tests = await fallbackApp.food.listFoods(tag.id)
         if (tests.length > 0) {
@@ -722,6 +722,27 @@ async function delFoods(id) {
     return Promise.resolve(results)
   } catch (err) {
     return Promise.reject(err)
+  }
+}
+
+async function delTag(id) {
+  const fallbackApp = new FallbackApp(id)
+  try {
+    let tag = await fallbackApp.food.searchTag('❣️腊八专享套餐')
+    return fallbackApp.food.delTag(tag.id)
+  } catch (e) {
+    return Promise.reject(e)
+  }
+}
+
+async function test_delTag() {
+  try {
+    const fallbackApp = new FallbackApp()
+    let data = await fallbackApp.poi.list()
+    data = data.map(v => [v.id])
+    await loop(delTag, data, false)
+  } catch (error) {
+    console.error(error)
   }
 }
 
@@ -787,8 +808,8 @@ async function updateFoodSku(id, name, price, boxPrice) {
     if (ok) {
       const delActRes = await delAct(id, name)
 
-      // const minOrderCount = await fallbackApp.food.getMinOrderCount(name)
-      const minOrderCount = 2
+      const minOrderCount = await fallbackApp.food.getMinOrderCount(name)
+      // const minOrderCount = 2
 
       const updateSkusRes = await batchUpdateFoodSkus(id, name, skus)
 
@@ -813,8 +834,9 @@ async function updateFoodSku(id, name, price, boxPrice) {
 
 async function test_plan() {
   try {
-    let dataSource = await readXls('plan/美团贡茶修改.xlsx', '修改原价6.9+0.5')
-    dataSource = dataSource.slice(dataSource.length - 26).map((v, i) => [v.门店id, v.品名, 6.9, 0.5, i])
+    let dataSource = await readXls('plan/美团甜品修改.xlsx', '修改原价6.9+0.5')
+    dataSource = dataSource.slice(dataSource.length - 542)
+      .map((v, i) => [v.门店id, v.品名, 6.9, 0.5, i])
     await loop(updateFoodSku, dataSource, false, { test: delFoods })
   } catch (error) {
     console.error(error)
@@ -863,8 +885,16 @@ async function test_delNewCustomer() {
   }
 }
 
+// test_saveFood()
 // test_updateAct()
-test_plan()
+let date = new Date(2021, 0, 21, 3, 0, 0)
+console.log('task wiil be exec at', date)
+let j = schedule.scheduleJob(date, async function () {
+  await test_plan()
+})
+
+// test_plan()
+// test_delTag()
 // test_delNewCustomer()
 // test_rename()
 // test_updateAct()1

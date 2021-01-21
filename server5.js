@@ -2,10 +2,8 @@ import Koa from 'koa'
 import Router from 'koa-router'
 import bodyParser from 'koa-bodyparser'
 import cors from 'koa2-cors'
-import fs, { promises } from 'fs'
-import bcrypt from 'bcrypt'
-
 import knex from 'knex'
+
 const knx = knex({
   client: 'mysql',
   connection: {
@@ -29,23 +27,14 @@ koa.use(
   })
 )
 
-router.get('/allTableInfos', async ctx => {
+router.get('/elm/flow/distribution', async ctx => {
   try {
-    ctx.body = { r: await getAllTableInfos() }
-  } catch (e) {
-    console.error(e)
-    ctx.body = { e }
-  }
-})
-
-router.post('/chart', async ctx => {
-  try {
-    const { tableName, x, ys, conds } = ctx.request.body
-    if (!tableName || !x || !ys) {
+    const { dates, shop_id } = ctx.query
+    if (!dates || !shop_id) {
       ctx.body = { err: 'invalid params' }
       return
     }
-    ctx.body = { r: await getChart(tableName, x, ys, conds) }
+    ctx.body = { r: await elm_flow_distribution(dates, shop_id) }
   } catch (e) {
     console.error(e)
     ctx.body = { e }
@@ -56,69 +45,33 @@ koa.use(router.routes())
 
 koa.listen(9020, () => console.log('running at 9020'))
 
-async function getAllTableInfos() {
+async function elm_flow_distribution(dates, shop_id) {
   try {
-    const [r1, _] = await knx.raw('show tables')
-    return Promise.all(r1.map(v => knx.raw(`SHOW CREATE TABLE ${v.Tables_in_naicai}`).then(k => k[0])))
-  } catch (e) {
-    return Promise.reject(e)
-  }
-}
-
-async function getChart(tableName, x, ys, conds = []) {
-  function addWhere(q) {
-    if (conds.length == 0) return q
-    if (conds.length == 1) return q.where(conds[0].field, conds[0].op, conds[0].cond)
-    if (conds.length > 1)
-      return conds.slice(1).reduce((s, v) => {
-        return s.andWhere(v.field, v.op, v.cond)
-      }, q.where(conds[0].field, conds[0].op, conds[0].cond))
-  }
-
-  try {
-    let xQ = addWhere(knx(tableName).select([x.field]))
-    let xD = await xQ
-
-    let xAxis = [
-      {
-        type: 'category',
-        boundaryGap: true,
-        data: xD.map(v => v[x.field])
-      }
-    ]
-
-    let yQ = addWhere(knx(tableName).select(ys.map(y => y.field)))
-    let yDs = await yQ
-
-    let series = ys.map(y => ({
-      name: y.name,
-      type: 'line',
-      tiled: y.name,
-      areaStyle: { normal: {} },
-      data: yDs.map(v => v[y.field])
+    const expo_en_map = {
+      SEARCH: '搜索',
+      CATEGORY: '品类',
+      SHOP_LIST: '首页商家列表',
+      ORDER_PAGE: '订单页',
+      OTHER: '其他入口',
+      BIDDING: '竞价推广'
+    }
+    const flow_type_map = {
+      1: '整体流量',
+      2: '自然流量',
+      3: '广告流量'
+    }
+    let res = await knx('ele_flow_distribution')
+      .select()
+      .whereBetween('date', dates.split(','))
+      .andWhere({ shop_id })
+    res = res.map(v => ({
+      ...v,
+      flow_type: flow_type_map[v.flow_type],
+      exposure_entrance: expo_en_map[v.exposure_entrance] || v.exposure_entrance
     }))
-
-    return Promise.resolve({ xAxis, series })
+    return Promise.resolve(res)
   } catch (e) {
     return Promise.reject(e)
-  }
-}
-
-async function test() {
-  try {
-    const r = await getChart(
-      'foxx_food_manage',
-      { name: 'date', field: 'date' },
-      [{}],
-      [
-        { field: 'wmpoiid', op: '=', cond: 9963039 },
-        { field: 'minOrderCount', op: '=', cond: 1 }
-      ]
-    )
-    console.log(r)
-    // console.log(await getAllTableInfos())
-  } catch (e) {
-    console.error(e)
   }
 }
 

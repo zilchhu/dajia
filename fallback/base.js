@@ -28,11 +28,16 @@ let axiosConfig = {
   }
 }
 
+const namespace = 'axios-retry'
+
 const instance = axios.create(axiosConfig)
-const instance2 = axios.create({ ...axiosConfig, responseType: 'text' })
 
 instance.interceptors.request.use(
   config => {
+    config[namespace] = config[namespace] || {}
+    config[namespace].data = config.data
+    config[namespace].retryCount = config[namespace].retryCount || 0
+
     config.data = qs.stringify(config.data)
     return config
   },
@@ -49,7 +54,26 @@ instance.interceptors.response.use(
       return Promise.reject(res.data)
     }
   },
-  err => Promise.reject(err)
+  error => {
+    const config = error.config
+
+    if (!config || !config[namespace]) {
+      return Promise.reject(error)
+    }
+
+    const shouldRetry = (/ETIMEDOUT|ECONNRESET/.test(error.code) || err.msg =='服务器超时，请稍后再试') && config[namespace].retryCount < 3
+
+    if (shouldRetry) {
+      config[namespace].retryCount += 1
+
+      console.log('retry...', config[namespace].retryCount)
+      return new Promise(resolve =>
+        setTimeout(() => resolve(instance({ ...config, data: config[namespace].data })), 600)
+      )
+    }
+
+    return Promise.reject(error)
+  }
 )
 
 export default instance

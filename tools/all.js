@@ -389,10 +389,10 @@ async function a(wmPoiId) {
 
     // const fallbackApp = new FallbackApp()
     // let data = await fallbackApp.poi.list()
-
-    // data = data.map(v=>[v.id, y])
-
+    // data = data.filter(v => v.poiName.includes('甜品')).map(v => [v.id, y.rules.店铺公告.甜品])
     // await loop(updateShopInfo, [[10085676, y.rules.店铺公告.甜品]], false)
+    const res = await updateShopInfo(10085676, y.rules['店铺公告']['甜品'])
+    console.log(res)
 
     // const res = await execRequest(undefined, y.requests.mt['公告电话/update'], ['13535410086'], cookie(10085676))
     // const res = await execRequest(instance2, y.requests.mt['商品编辑/get'], [10085676, 3208545315])
@@ -533,7 +533,7 @@ async function updateShopInfo(wmPoiId, bulletin) {
   }
 }
 
-// a(9470231)
+// a()
 
 koa.use(cors())
 koa.use(
@@ -594,9 +594,9 @@ koa.listen(9010, () => console.log('running at 9010'))
 
 async function freshMt(userTasks, userRule) {
   try {
-    const { wmPoiId, wmPoiType, sourcePoiId } = userRule
+    const { wmPoiId, wmPoiType, wmPoiReducType, sourcePoiId } = userRule
 
-    if (!wmPoiId || !wmPoiType) return Promise.reject('invalid params')
+    if (!wmPoiId || !wmPoiType || !wmPoiReducType) return Promise.reject('invalid params')
 
     const allTasks = [
       {
@@ -623,7 +623,7 @@ async function freshMt(userTasks, userRule) {
         name: '满减活动',
         fn: async function() {
           try {
-            const policy = y.rules['满减活动'][wmPoiType].map(([a, b]) => ({
+            const policy = y.rules['满减活动'][wmPoiReducType].map(([a, b]) => ({
               price: a,
               discounts: [
                 {
@@ -857,6 +857,7 @@ async function testsSync(wmPoiId) {
   try {
     const { ok } = await fallbackApp.food.setHighBoxPrice(0, true)
     if (ok) {
+      console.log(ok)
       return Promise.resolve({ ok })
     }
     return Promise.reject('sync failed')

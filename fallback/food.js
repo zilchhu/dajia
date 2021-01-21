@@ -67,9 +67,9 @@ export default class Food {
   async find(name) {
     try {
       const searchRes = await this.search_(name)
-      if (!searchRes || !searchRes.productList) return Promise.reject(new Error('find failed'))
+      if (!searchRes || !searchRes.productList) return Promise.reject({ err: 'find failed' })
       const product = searchRes.productList.find(v => v.name == name)
-      if (!product) return Promise.reject(new Error('not find'))
+      if (!product) return Promise.reject({ err: 'not find' })
       return Promise.resolve(product)
     } catch (err) {
       return Promise.reject(err)
@@ -346,7 +346,7 @@ export default class Food {
     let data = {
       type: 1,
       foodSyncParam: JSON.stringify({
-        sourcePoiId: 9470231,
+        sourcePoiId: 10085676,
         targetPois: [this.wmPoiId],
         syncType: '2',
         syncAll: 0,
@@ -385,7 +385,7 @@ export default class Food {
 
   async setHighBoxPrice(tagI, sell) {
     try {
-      const tagids = [194000423, 194002074, 194001667, 194000957, 194001334, 207343554, 210203398]
+      const tagids = [214055264, 214055293, 214055327, 214055363, 214055426, 214055456, 214055473]
       const highBoxPriceR = await this.getHighBoxPrice()
 
       let canSave =
@@ -491,6 +491,7 @@ export default class Food {
   }
 
   async save(name, minOrderCount, weightUnit) {
+    let that = this
     try {
       const food = await this.find(name)
 
@@ -517,7 +518,7 @@ export default class Food {
       let category_id = temp.categoryId
       let wm_product_property_template_id = temp.wm_product_property_template_id
 
-      let { ok, properties_values, unreqs } = isPropMatchReqs(temp.propertiesKeys, temp.properties_values)
+      let { ok, properties_values, unreqs } = await isPropMatchReqs(temp.propertiesKeys, temp.properties_values)
       if (!ok) return Promise.reject({ err: `properties required ${unreqs}` })
 
       let spu = keep(pageModel.wmProductSpu, [
@@ -551,13 +552,15 @@ export default class Food {
         wm_product_property_template_id,
         properties_values,
         min_order_count: minOrderCount || spu.min_order_count,
-        wmProductSkus: weightUnit
-          ? spu.wmProductSkus.map(sku => ({
-              ...sku,
-              unit: weightUnit,
-              weight_unit: weightUnit
-            }))
-          : spu.wmProductSkus
+        wmProductSkus: spu.wmProductSkus.map(sku => ({
+          ...sku,
+          weight: -2,
+          weight_unit: weightUnit || sku.weight_unit,
+          wmProductStock: sku.wmProductStock || {
+            max_stock: 10000,
+            auto_refresh: 0
+          }
+        }))
       }
       // fs.writeFileSync('log/logE.json', JSON.stringify(pageModel))
       return this.save_(spu)
@@ -565,22 +568,72 @@ export default class Food {
       return Promise.reject(e)
     }
 
-    function isPropMatchReqs(propertiesKeys, properties_values) {
+    async function isPropMatchReqs(propertiesKeys, properties_values) {
       let unreqs = propertiesKeys
         .filter(k => k.is_required == 1) // 1.require 2.not
         .filter(k => !properties_values[k.wm_product_lib_tag_id])
 
       if (unreqs.length == 0) {
-        return { ok: true, properties_values }
+        return Promise.resolve({ ok: true, properties_values })
       } else {
         let r = unreqs.find(k => k.wm_product_lib_tag_name == '茶底')
-        if (r) {
+        let r2 = unreqs.find(k => k.wm_product_lib_tag_name == '主料')
+        if (r && r2) {
+          const { property } = await that.searchProperty('奶茶')
+          let p = property.find(v => v.name == '奶茶')
+          let c = r.child.find(c => c.wm_product_lib_tag_name == '其他茶型')
+
           return isPropMatchReqs(propertiesKeys, {
             ...properties_values,
-            [r.wm_product_lib_tag_id]: [r.child.find(c => c.wm_product_lib_tag_name == '其他茶型')]
+            [r.wm_product_lib_tag_id]: [
+              {
+                id: '',
+                parent_tag_id: 0,
+                wm_product_lib_tag_id: r.wm_product_lib_tag_id,
+                wm_product_lib_tag_name: '茶底',
+                value: c.wm_product_lib_tag_name,
+                value_id: c.wm_product_lib_tag_id,
+                level: 2,
+                is_leaf: 1,
+                sequence: r.sequence
+              }
+            ],
+            [r2.wm_product_lib_tag_id]: [
+              {
+                id: '',
+                parent_tag_id: 0,
+                wm_product_lib_tag_id: r2.wm_product_lib_tag_id,
+                wm_product_lib_tag_name: '主料',
+                value: p.name,
+                value_id: p.wm_product_lib_tag_id,
+                level: 1,
+                is_leaf: 2,
+                sequence: r2.sequence,
+                propertyOpType: 3
+              }
+            ]
           })
         }
-        return { ok: false, unreqs }
+        if (r) {
+          let c = r.child.find(c => c.wm_product_lib_tag_name == '其他茶型')
+          return isPropMatchReqs(propertiesKeys, {
+            ...properties_values,
+            [r.wm_product_lib_tag_id]: [
+              {
+                id: '',
+                parent_tag_id: 0,
+                wm_product_lib_tag_id: r.wm_product_lib_tag_id,
+                wm_product_lib_tag_name: '茶底',
+                value: c.wm_product_lib_tag_name,
+                value_id: c.wm_product_lib_tag_id,
+                level: 2,
+                is_leaf: 1,
+                sequence: r.sequence
+              }
+            ]
+          })
+        }
+        return Promise.reject({ ok: false, unreqs })
       }
     }
   }

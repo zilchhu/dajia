@@ -162,12 +162,24 @@ rules:
       - [42, 21]
       - [60, 25]
       - [100, 45]
+    甜品择优: 
+      - [15, 6]
+      - [30, 9]
+      - [45, 12]
+      - [60, 15]
+      - [100, 30]
     贡茶:
       - [25, 20]
       - [45, 28]
       - [60, 33]
       - [100, 48]
       - [150, 58]
+    贡茶择优:
+      - [16, 8]
+      - [32, 12]
+      - [48, 16]
+      - [60, 20]
+      - [100, 30]
     原价扣点:
       - [10, 1]
       - [18, 2]
@@ -176,9 +188,13 @@ rules:
       - [58, 5]
   
   店铺公告:
-    甜品: 因疫情期间平台运力不足，配送时间有所延长，如果看不到配送信息请小主们不要捉急，那是第三方在配送中。本店已开启无接触配送，请小主们安心购买食用。
-    贡茶: 因疫情期间平台运力不足，配送时间有所延长，如果看不到配送信息请小主们不要捉急，那是第三方在配送中。本店已开启无接触配送，请小主们安心购买食用。
-    
+    甜品: 因疫情期间平台运力不足，配送时间有所延长，如果看不到配送信息请小主们不要捉急，那是第三方在配送中。本店已开启无接触配送，请小主们安心购买食用。让我们一起为武汉加油，为中国加油！
+    贡茶: 因疫情期间平台运力不足，配送时间有所延长，如果看不到配送信息请小主们不要捉急，那是第三方在配送中。本店已开启无接触配送，请小主们安心购买食用。让我们一起为武汉加油，为中国加油！
+  
+  店铺头像:
+    甜品: http://p0.meituan.net/waimaipoi/5bba321a3912af322cb23ff99d6fb39668728.jpg
+    贡茶: http://p0.meituan.net/waimaipoi/54cfd2c32c384bb1cc59fcb1aafd1809348481.jpg
+
 requests:
   mt:
     ### 活动
@@ -829,7 +845,11 @@ requests:
         userName: wmystp
         password: gygc8888
         csrfToken: xoP0GdeVSl2SpWgceKtP7NGxOilisW4X0O6NlnBOmHF1nhlf2xstB5AoeD2v6UO5Ywc6VvIImw3NZeSVPVWXpXnboyOI0mZxWWm8D4aVgbe9upE3R/7KRfJEXsbdJtrgG6yYDabywufEuEAudBo0PQ==
-
+      requires:
+        - tagIds
+        - originPoiPicUrl
+        - newPoiPicUrl
+      
     公告电话/update:
       url: https://waimaie.meituan.com/v2/shop/shopInfo/w/savePoi/baseSetting?ignoreSetRouterProxy=true
       body:
