@@ -194,6 +194,10 @@ rules:
   店铺头像:
     甜品: http://p0.meituan.net/waimaipoi/5bba321a3912af322cb23ff99d6fb39668728.jpg
     贡茶: http://p0.meituan.net/waimaipoi/54cfd2c32c384bb1cc59fcb1aafd1809348481.jpg
+  
+  经营品类:
+    甜品: [其他甜点, 其他小吃]
+    贡茶: [奶茶, 煎饼果子/卷饼/手抓饼]
 
 requests:
   mt:
@@ -955,6 +959,17 @@ requests:
       url: https://waimaieapp.meituan.com/decoration/bossRecommend/r/products
       body:
         wmPoiId: 9470231
+      requires:
+        - wmPoiId
+
+    店内海报/get:
+      url: https://waimaieapp.meituan.com/decoration/posters
+      body:
+        wmPoiId: 10085676
+        pageSize: 10
+        pageNum: 1
+        tabType: 1
+        rejectResonType: 0
       requires:
         - wmPoiId
 

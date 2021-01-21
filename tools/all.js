@@ -391,8 +391,8 @@ async function a(wmPoiId) {
     // let data = await fallbackApp.poi.list()
     // data = data.filter(v => v.poiName.includes('甜品')).map(v => [v.id, y.rules.店铺公告.甜品])
     // await loop(updateShopInfo, [[10085676, y.rules.店铺公告.甜品]], false)
-    const res = await updateShopInfo(10085676, y.rules['店铺公告']['甜品'])
-    console.log(res)
+    // const res = await updateShopInfo(10085676, y.rules['店铺公告']['甜品'])
+    // console.log(res)
 
     // const res = await execRequest(undefined, y.requests.mt['公告电话/update'], ['13535410086'], cookie(10085676))
     // const res = await execRequest(instance2, y.requests.mt['商品编辑/get'], [10085676, 3208545315])
@@ -407,23 +407,6 @@ async function a(wmPoiId) {
     // parser.write(res.data)
     // parser.end()
 
-    // const tags = await execRequest(undefined, y.requests.mt['经营品类/get'], [10085676])
-    // const root = { name: 'root', children: tags, is_leaf: 0 }
-    // function find(node, name) {
-    //   if (node.is_leaf) {
-    //     if (node.name == name) {
-    //       return node
-    //     } else {
-    //       return null
-    //     }
-    //   } else {
-    //     for (let child of node.children) {
-    //       let n = find(child, name)
-    //       if (n) return n
-    //     }
-    //   }
-    //   return null
-    // }
     // const res = await execRequest(instance3, y.requests.mt['店铺招牌/get'], {}, cookie(-1))
     // let d = res.find(
     //   v => v.signagePicUrl == 'http://p0.meituan.net/business/c666aee02214b357cbb900920c18e02a257037.png'
@@ -486,7 +469,34 @@ async function a(wmPoiId) {
 
     // const res = await execRequest(instanceElm, y.requests.elm['分类列表/get'], [2065322800], xshard(2065322800))
 
-    // console.log(res)
+    // const shopinfo = await execRequest(
+    //   instance2,
+    //   y.requests.mt['门店信息/get'],
+    //   {},
+    //   { ...y.headers['店铺设置'], Cookie: updateCookie(y.headers['店铺设置'].Cookie, { wmPoiId }) }
+    // )
+
+    // let meetTags = false
+    // let tags = ''
+    // const parser = new htmlparser2.Parser({
+    //   onopentag(name, attrs) {
+    //     if (name == 'div' && attrs.id == 'J-tag-ids') {
+    //       meetTags = true
+    //       console.log(attrs)
+    //     }
+    //   },
+    //   ontext(data) {
+    //     if (meetTags) {
+    //       tags += data
+    //     }
+    //   },
+    //   onclosetag() {
+    //     meetTags = false
+    //   }
+    // })
+    // parser.write(shopinfo)
+    // parser.end()
+    // if (tags == '') return Promise.reject({ err: 'tags null' })
   } catch (error) {
     console.error(error)
   }
@@ -590,7 +600,7 @@ router.post('/tests/del', async ctx => {
 })
 
 koa.use(router.routes())
-koa.listen(9010, () => console.log('running at 9010'))
+// koa.listen(9010, () => console.log('running at 9010'))
 
 async function freshMt(userTasks, userRule) {
   try {
@@ -817,6 +827,50 @@ async function freshMt(userTasks, userRule) {
               }
             }
             return Promise.resolve(results)
+          } catch (e) {
+            return Promise.reject(e)
+          }
+        }
+      },
+      {
+        name: '品类头像',
+        fn: async function() {
+          try {
+            const { poiPicUrl } = await execRequest(
+              undefined,
+              y.requests.mt['门店头像/get'],
+              {},
+              { ...y.headers['店铺设置'], Cookie: updateCookie(y.headers['店铺设置'].Cookie, { wmPoiId }) }
+            )
+
+            const newTags = await execRequest(undefined, y.requests.mt['经营品类/get'], [wmPoiId], {
+              ...y.headers['店铺设置'],
+              Cookie: updateCookie(y.headers['店铺设置'].Cookie, { wmPoiId })
+            })
+            const root = { name: 'root', children: newTags, is_leaf: 0 }
+            function find(node, name) {
+              if (node.is_leaf) {
+                if (node.name == name) {
+                  return node
+                } else {
+                  return null
+                }
+              } else {
+                for (let child of node.children) {
+                  let n = find(child, name)
+                  if (n) return n
+                }
+              }
+              return null
+            }
+            let pri = find(root, y.rules['经营品类'][wmPoiType][0])
+            let sec = find(root, y.rules['经营品类'][wmPoiType][1])
+            return execRequest(
+              undefined,
+              y.requests.mt['品类头像/update'],
+              [`${pri.id},${sec.id}`, poiPicUrl, y.rules['店铺头像'][wmPoiType]],
+              { ...y.headers['店铺设置'], Cookie: updateCookie(y.headers['店铺设置'].Cookie, { wmPoiId }) }
+            )
           } catch (e) {
             return Promise.reject(e)
           }
