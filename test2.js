@@ -229,7 +229,7 @@ async function saveReduction(id, startTime, endTime, policyDetail) {
         policy_detail: policyDetail
       }
       const saveReductionRes = await fallbackApp.act.reduction.save(null, startTime, endTime, poiPolicy)
-      return saveReductionRes
+      return Promise.resolve(saveReductionRes)
     }
     // console.log(poiPolicy)
   } catch (err) {
@@ -834,10 +834,25 @@ async function updateFoodSku(id, name, price, boxPrice) {
 
 async function test_plan() {
   try {
-    let dataSource = await readXls('plan/美团甜品修改.xlsx', '修改原价6.9+0.5')
-    dataSource = dataSource.slice(dataSource.length - 542)
-      .map((v, i) => [v.门店id, v.品名, 6.9, 0.5, i])
+    let dataSource = await readXls('plan/美团贡茶修改1-22.xlsx', '原价13.8+餐盒费1')
+    dataSource = dataSource.map((v, i) => [v.门店id, v.产品名, 13.8, 1, i])
     await loop(updateFoodSku, dataSource, false, { test: delFoods })
+
+    let dataSource2 = await readXls('plan/美团贡茶修改1-22.xlsx', '原价6.9+餐盒0.5')
+    dataSource2 = dataSource2.map((v, i) => [v.门店id, v.产品名, 6.9, 0.5, i])
+    await loop(updateFoodSku, dataSource2, false, { test: delFoods })
+
+    let dataSource3 = await readXls('plan/美团甜品修改1-22.xlsx', '原价6.4+餐盒1')
+    dataSource3 = dataSource3.map((v, i) => [v.门店id, v.产品名, 6.4, 1, i])
+    await loop(updateFoodSku, dataSource3, false, { test: delFoods })
+
+    let dataSource4 = await readXls('plan/美团甜品修改1-22.xlsx', '原价12.8+餐盒1')
+    dataSource4 = dataSource4.map((v, i) => [v.门店id, v.产品名, 12.8, 1, i])
+    await loop(updateFoodSku, dataSource4, false, { test: delFoods })
+
+    let dataSource5 = await readXls('plan/美团甜品修改1-22.xlsx', '原价6.9+餐盒0.5')
+    dataSource5 = dataSource5.map((v, i) => [v.门店id, v.产品名, 6.9, 0.5, i])
+    await loop(updateFoodSku, dataSource5, false, { test: delFoods })
   } catch (error) {
     console.error(error)
   }
@@ -856,9 +871,8 @@ async function test_updateActTime() {
 
 async function test_updateAct() {
   try {
-    // let data = await readXls('plan/美团贡茶修改.xlsx', '修改折扣价11.8')
-    let data = await readJson('log/log.json')
-    data = data.filter(v => v.err.msg == '服务器超时，请稍后再试').map(v => v.meta)
+    let data = await readXls('plan/美团折扣修改.xls', '折扣价12.8')
+    data = data.map(v=>[v.id, v.产品名, 12.8])
     await loop(updateAct, data, false)
   } catch (error) {
     console.error(error)
@@ -885,14 +899,128 @@ async function test_delNewCustomer() {
   }
 }
 
-// test_saveFood()
-// test_updateAct()
-let date = new Date(2021, 0, 21, 3, 0, 0)
-console.log('task wiil be exec at', date)
-let j = schedule.scheduleJob(date, async function () {
-  await test_plan()
-})
+async function delDieliverAct(id) {
+  const fallbackApp = new FallbackApp(id)
+  try {
+    const act = await fallbackApp.act.dieliver.find()
+    return fallbackApp.act.dieliver.delete(act.id)
+  } catch (e) {
+    return Promise.reject(e)
+  }
+}
 
+async function createDieliverAct(id, fee) {
+  const fallbackApp = new FallbackApp(id)
+  try {
+    const res = await delDieliverAct(id)
+    const policy = [{ discount: fee, shipping_charge: '0', mt_charge: '0', poi_charge: fee, agent_charge: '0' }]
+    const res2 = await fallbackApp.act.dieliver.save(policy)
+    return Promise.resolve({ res, res2 })
+  } catch (e) {
+    return Promise.reject(e)
+  }
+}
+
+async function test_reduction2() {
+  try {
+    let data = await readXls('plan/美团满减和减配调整(1).xls', '补贴')
+    data = data.map(v => ({
+      ...v,
+      reduc: [
+        {
+          discounts: [
+            {
+              code: 1,
+              discount: v['第一档'].split('-')[1],
+              poi_charge: v['第一档'].split('-')[1],
+              agent_charge: 0,
+              type: 'default',
+              mt_charge: 0
+            }
+          ],
+          price: v['第一档'].split('-')[0]
+        },
+        {
+          discounts: [
+            {
+              code: 1,
+              discount: v['第二档'].split('-')[1],
+              poi_charge: v['第二档'].split('-')[1],
+              agent_charge: 0,
+              type: 'default',
+              mt_charge: 0
+            }
+          ],
+          price: v['第二档'].split('-')[0]
+        },
+        {
+          discounts: [
+            {
+              code: 1,
+              discount: v['第三档'].split('-')[1],
+              poi_charge: v['第三档'].split('-')[1],
+              agent_charge: 0,
+              type: 'default',
+              mt_charge: 0
+            }
+          ],
+          price: v['第三档'].split('-')[0]
+        },
+        {
+          discounts: [
+            {
+              code: 1,
+              discount: v['第四档'].split('-')[1],
+              poi_charge: v['第四档'].split('-')[1],
+              agent_charge: 0,
+              type: 'default',
+              mt_charge: 0
+            }
+          ],
+          price: v['第四档'].split('-')[0]
+        },
+        {
+          discounts: [
+            {
+              code: 1,
+              discount: v['第五档'].split('-')[1],
+              poi_charge: v['第五档'].split('-')[1],
+              agent_charge: 0,
+              type: 'default',
+              mt_charge: 0
+            }
+          ],
+          price: v['第五档'].split('-')[0]
+        }
+      ]
+    }))
+    data = data.map(v => [v['wmpoiid'], null, null, v['reduc']]).slice(data.length - 27)
+    await loop(saveReduction, data, false)
+  } catch (error) {
+    console.error(error)
+  }
+}
+
+async function test_updateTagName() {
+  try {
+    let data = await readXls('plan/hh美团店铺分类更改.xlsx', 'hh美团店铺id')
+    data = data.filter(v => v.修改后 != '').map(v => [v.店铺ID, v.tagname.replace(/—.*—|┏.*┓|\?|╭.*╮/, ''), v.修改后])
+    await loop(updateFoodCatName, data, false)
+  } catch (err) {
+    console.error(err)
+  }
+}
+// test_saveFood()
+test_updateAct()
+// let date = new Date(2021, 0, 23, 3, 0, 0)
+// console.log('task wiil be exec at', date)
+// let j = schedule.scheduleJob(date, async function() {
+//   await test_plan()
+// })
+
+
+// test_dieliver()
+// test_reduction2()
 // test_plan()
 // test_delTag()
 // test_delNewCustomer()

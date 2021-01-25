@@ -290,7 +290,7 @@ export default class Food {
       wmPoiId: this.wmPoiId,
       tagInfo: JSON.stringify({
         id: tag.id,
-        name: tag.name.replace('冬至汤圆', tagName),
+        name: tagName,
         description: tag.description,
         top_flag: tag.topFlag,
         tag_type: tag.tagType,

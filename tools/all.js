@@ -60,7 +60,6 @@ const instanceElm = axios.create({
     accept: 'application/json, text/plain, */*',
     'accept-encoding': 'gzip, deflate, br',
     'accept-language': 'zh-CN,zh;q=0.9',
-    'content-length': '280',
     'content-type': 'application/json;charset=UTF-8',
     'invocation-protocol': 'Napos-Communication-Protocol-2',
     origin: 'https://melody-goods.faas.ele.me',
@@ -78,7 +77,8 @@ const instanceElm = axios.create({
 
 instance.interceptors.request.use(
   config => {
-    if (config.method == 'post' && config.headers['Content-Type'] != 'application/json') config.data = qs.stringify(config.data)
+    if (config.method == 'post' && config.headers['Content-Type'] != 'application/json')
+      config.data = qs.stringify(config.data)
     // console.log(config)
     return config
   },
@@ -161,6 +161,13 @@ function date(addDay) {
     .startOf('day')
     .add(addDay, 'day')
     .format('YYYY-MM-DD')
+}
+
+function iso(addDay) {
+  if (!addDay) return dayjs().toISOString()
+  return dayjs()
+    .add(addDay, 'day')
+    .toISOString()
 }
 
 function createObj(path, value) {
@@ -520,7 +527,19 @@ async function a(wmPoiId) {
 
     // const res = await execRequest(undefined, y.requests.mt['店内海报/get'], [9976196])
     // const res = await execRequest(undefined, y.requests.mt['商品列表4/search'], [10085676, '招牌烧仙草'])
-    const res = await execRequest(undefined, y.requests.mt['店铺招牌/get'], {}, cookie(-1))
+    // const res = await execRequest(undefined, y.requests.mt['店铺招牌/get'], {}, cookie(-1))
+    // const res = await execRequest(
+    //   instanceElm,
+    //   y.requests.elm['吃货红包/create'],
+    //   [2073319496, 2073319496, date(), date(360), [iso(), iso(360)]],
+    //   xshard(2073319496)
+    // )
+    const res = await execRequest(
+      instanceElm,
+      y.requests.elm['店铺满赠/create'],
+      [501129234, [{ beginDate: date(), endDate: date(360) }]],
+      xshard(501129234)
+    )
     console.log(res)
   } catch (error) {
     console.error(error)
@@ -568,7 +587,7 @@ async function updateShopInfo(wmPoiId, bulletin) {
   }
 }
 
-// a()
+a()
 
 koa.use(cors())
 koa.use(
@@ -625,7 +644,7 @@ router.post('/tests/del', async ctx => {
 })
 
 koa.use(router.routes())
-koa.listen(9010, () => console.log('running at 9010'))
+// koa.listen(9010, () => console.log('running at 9010'))
 
 async function freshMt(userTasks, userRule) {
   try {

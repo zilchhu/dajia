@@ -1087,6 +1087,61 @@ requests:
         - signageIds
        
   elm:
+    #活动
+    吃货红包/create:
+      url: https://app-api.shop.ele.me/coupon/invoke/?method=ISingleFoodieCouponActivityService.createOrUpdateCouponActivity
+      body:
+        request:
+          activityStockCount: "9999"
+          autoRenewalFlag: true
+          beginDate: "2021-01-25"
+          chainId: 2073319496
+          channel: [2, 1]
+          date: ["2021-01-25T03:16:42.333Z", "2022-01-01T03:16:42.333Z"]
+          endDate: "2022-01-01"
+          reduction: "3"
+          shopId: 2073319496
+      requires:
+        - request/shopId
+        - request/chainId
+        - request/beginDate
+        - request/endDate
+        - request/date
+
+    超级吃货红包/create:
+      url: https://app-api.shop.ele.me/coupon/invoke/?method=ShopSuperVipService.createSuperVipActivity
+      body:
+        createSuperVipActivityReq:
+          activityStockCount: "9999"
+          autoRenewalFlag: true
+          beginDate: "2021-01-25"
+          endDate: "2022-01-01"
+          reduction: 3
+          shopId: 500605574
+          timeRange: ["2021-01-25", "2022-01-01"]
+      requires:
+        - createSuperVipActivityReq/shopId
+        - createSuperVipActivityReq/beginDate
+        - createSuperVipActivityReq/endDate
+        - createSuperVipActivityReq/timeRange
+
+    店铺满赠/create:
+      url: https://app-api.shop.ele.me/marketing/invoke/?method=ShopActivityNcpService.createSelfMarketingGiftActivity
+      body:
+        creation:
+          activityDateTime: {
+            dates: [{beginDate: "2021-01-25", endDate: "2022-01-01"}],
+            times: [{beginTime: "00:00:00", endTime: "23:59:59"}],
+            weekdays: [1, 2, 3, 4, 5, 6, 7]
+          }
+          effectiveCondition: {shopGiftShareWithSkuActivity: false}
+          giftActivityContents: [{name: "5星好评返现2元", unit: "份", quantity: 1, quota: "1"}]
+          shopId: 501129234
+      requires:
+        - creation/shopId
+        - creation/activityDateTime/dates
+
+    # 商品
     分类列表/get:
       url: https://app-api.shop.ele.me/nevermore.goods/invoke/?method=FoodService.queryCategoryWithFoodFilter
       body:
@@ -1191,3 +1246,13 @@ requests:
       requires:
         - shopId
         - auditItem
+
+    商品删除/del:
+      url: https://app-api.shop.ele.me/nevermore.goods/invoke/?method=FoodService.batchRemoveFoods
+      body:
+        filter: 0
+        foodsWithSpecId: [{foodId: 2000000041189260, foodSpecIds: [2000000084792806]}]
+        shopId: 2036859197
+      requires:
+        - shopId
+        - foodsWithSpecId

@@ -20,6 +20,12 @@ const urls = {
     newCustomer: {
       list: 'reuse/activity/query/list',
       delete: 'reuse/activity/setting/w/delPoiAct'
+    },
+
+    dieliver: {
+      list: 'reuse/activity/query/list',
+      delete: 'reuse/activity/setting/w/delPoiAct',
+      save: 'reuse/activity/setting/w/save'
     }
   },
   food: {

@@ -1,6 +1,17 @@
 import instance, { urls } from './base.js'
 import dayjs from 'dayjs'
 
+function unix(addDay) {
+  if (!addDay)
+    return dayjs()
+      .startOf('day')
+      .unix()
+  return dayjs()
+    .startOf('day')
+    .add(addDay, 'day')
+    .unix()
+}
+
 export default class Act {
   constructor(wmPoiId) {
     this.wmPoiId = wmPoiId
@@ -8,6 +19,7 @@ export default class Act {
     this.reduction = new Reduction(wmPoiId)
     this.tradeIn = new Tradein(wmPoiId)
     this.newCustomer = new NewCustomer(wmPoiId)
+    this.dieliver = new Dieliver(wmPoiId)
   }
 
   async list() {
@@ -362,6 +374,69 @@ class NewCustomer {
       wmActPoiId
     }
     return instance.post(urls.act.newCustomer.delete, data)
+  }
+}
+
+class Dieliver {
+  constructor(wmPoiId) {
+    this.wmPoiId = wmPoiId
+  }
+
+  async list() {
+    let params = {
+      type: 25,
+      wmPoiId: this.wmPoiId,
+      status: 1,
+      effect: false,
+      pageNum: 1,
+      pageSize: 200
+    }
+    return instance.get(urls.act.dieliver.list, { params })
+  }
+
+  async find() {
+    try {
+      const listRes = await this.list()
+      if (!listRes || !listRes.list) return Promise.reject({ err: 'find failed' })
+      const r = listRes.list.find(v => v.status == 1)
+      if (!r) return Promise.reject({ err: 'not find' })
+      return Promise.resolve(r)
+    } catch (err) {
+      return Promise.reject(err)
+    }
+  }
+
+  async delete(wmActPoiId) {
+    let data = {
+      wmPoiId: this.wmPoiId,
+      type: 25,
+      wmActPoiId
+    }
+    return instance.post(urls.act.dieliver.delete, data)
+  }
+
+  async save(policy) {
+    let data = {
+      type: 25,
+      wmPoiId: this.wmPoiId,
+      valid: 1,
+      isSettle: 1,
+      autoDelayDays: 30,
+      poiPolicy: JSON.stringify({
+        online_pay: 1,
+        wm_act_policy_detail_id: 0,
+        days_of_week: '1,2,3,4,5,6,7',
+        policy_detail: policy,
+        period: '00:00-23:59',
+        policy_type: 0
+      }),
+      isAgree: 1,
+      startTime: unix(),
+      endTime: unix(365),
+      weeksTime: '1,2,3,4,5,6,7',
+      period: '00:00-23:59'
+    }
+    return instance.post(urls.act.dieliver.save, data)
   }
 }
 

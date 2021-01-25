@@ -10,7 +10,8 @@ const knx = knex({
     host: '192.168.3.112',
     user: 'root',
     password: '123456',
-    database: 'naicai'
+    database: 'naicai',
+    multipleStatements: true
   }
 })
 
@@ -35,6 +36,88 @@ router.get('/elm/flow/distribution', async ctx => {
       return
     }
     ctx.body = { r: await elm_flow_distribution(dates, shop_id) }
+  } catch (e) {
+    console.error(e)
+    ctx.body = { e }
+  }
+})
+
+router.post('/custom', async ctx => {
+  try {
+    let { sql } = ctx.request.body
+    if (!sql) {
+      ctx.body = { err: 'invalid params' }
+      return
+    }
+    ctx.body = await custom(sql)
+  } catch (e) {
+    ctx.body = { e }
+  }
+})
+
+router.post('/customs', async ctx => {
+  try {
+    let { sqls } = ctx.request.body
+    if (!sqls) {
+      ctx.body = { err: 'invalid params' }
+      return
+    }
+    ctx.body = await customs(sqls)
+  } catch (e) {
+    ctx.body = { e }
+  }
+})
+
+router.get('/shops/real', async ctx => {
+  try {
+    ctx.body = await realShops()
+  } catch (e) {
+    console.error(e)
+    ctx.body = { e }
+  }
+})
+
+router.get('/shops', async ctx => {
+  try {
+    ctx.body = await shops()
+  } catch (e) {
+    console.error(e)
+    ctx.body = { e }
+  }
+})
+
+router.get('/charts', async ctx => {
+  try {
+    ctx.body = await charts()
+  } catch (e) {
+    console.error(e)
+    ctx.body = { e }
+  }
+})
+
+router.post('/chart/add', async ctx => {
+  try {
+    let { chart } = ctx.request.body
+    if (!chart) {
+      ctx.body = { err: 'invalid params' }
+      return
+    }
+    ctx.body = await addChart(chart)
+  } catch (e) {
+    console.error(e)
+    ctx.body = { e }
+  }
+})
+
+router.post('/chart/update', async ctx => {
+  try {
+    let { id, chart } = ctx.request.body
+    console.log(ctx.request.body)
+    if (id == null || id == undefined || !chart) {
+      ctx.body = { err: 'invalid params' }
+      return
+    }
+    ctx.body = await updateChart(id, chart)
   } catch (e) {
     console.error(e)
     ctx.body = { e }
@@ -75,4 +158,72 @@ async function elm_flow_distribution(dates, shop_id) {
   }
 }
 
+async function custom(sql) {
+  try {
+    const [data, _] = await knx.raw(sql)
+    return Promise.resolve(data)
+  } catch (e) {
+    return Promise.reject(e)
+  }
+}
+
+async function customs(sqls) {
+  try {
+    let [data, _] = await knx.raw(sqls.join(';'))
+    // data = data.map(v => v[0])
+    return Promise.resolve(data)
+  } catch (e) {
+    return Promise.reject(e)
+  }
+}
+
+async function shops() {
+  try {
+    const elms = await knx('ele_info_manage').select()
+    const mts = await knx('foxx_shop_reptile').select()
+    return Promise.resolve([
+      ...mts.map(v => ({ platform: '美团', shopId: v.wmpoiid, shopName: v.reptile_type })),
+      ...elms.map(v => ({ platform: '饿了么', shopId: v.shop_id, shopName: v.shop_name }))
+    ])
+  } catch (e) {
+    return Promise.reject(e)
+  }
+}
+
+async function realShops() {
+  try {
+    return knx('foxx_real_shop_info').distinct('real_shop_name')
+  } catch (e) {
+    return Promise.reject(e)
+  }
+}
+
+async function charts() {
+  try {
+    const charts = await knx('test_chart_').select()
+    return Promise.resolve(charts)
+  } catch (e) {
+    return Promise.reject(e)
+  }
+}
+
+async function addChart(chart) {
+  try {
+    const res = await knx('test_chart_').insert(chart, ['id'])
+    return Promise.resolve(res)
+  } catch (e) {
+    return Promise.reject(e)
+  }
+}
+
+async function updateChart(id, chart) {
+  try {
+    const res = await knx('test_chart_')
+      .where({ id })
+      .update(chart)
+    return Promise.resolve(res)
+  } catch (e) {
+    return Promise.reject(e)
+  }
+}
 // test()

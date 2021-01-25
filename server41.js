@@ -24,6 +24,23 @@ const knx = knex({
   }
 })
 
+async function t() {
+  try {
+    const r = await knx('foxx_operating_data')
+      .select()
+      .where({ date: 20210123 })
+    const d = Array.from(new Set(r.map(v => v.shop_id))).map(v => r.find(k => k.shop_id == v))
+    await knx('foxx_operating_data')
+      .where({ date: 20210123 })
+      .del()
+    console.log(await knx('foxx_operating_data').insert(d))
+  } catch (e) {
+    console.error(e)
+  }
+}
+
+// t()
+
 class M {
   constructor(val) {
     this.val = val
@@ -52,7 +69,7 @@ router.get('/date/:date', async ctx => {})
 router.get('/shop/:shopid', async ctx => {
   try {
     let { shopid } = ctx.params
- 
+
     if (!shopid) {
       ctx.body = { e: 'invalid params' }
       return
