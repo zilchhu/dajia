@@ -226,10 +226,13 @@ async function sum(date) {
           date: da
         })
     }
-    return new M(xs)
+    return new M({
+      xs,
+      dates
+    })
   }
 
-  function split_shop(xs) {
+  function split_shop({ xs, dates }) {
     if (!xs) return []
     let distinct_shops = distinct(xs, 'real_shop')
     let ys = distinct_shops.map(v => {
@@ -266,7 +269,10 @@ async function sum(date) {
         ...cost_sum_ratios
       }
     })
-    return new M(ys)
+    return new M({
+      dates,
+      shops: ys
+    })
   }
 }
 
