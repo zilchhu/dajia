@@ -835,7 +835,7 @@ async function updateFoodSku(id, name, price, boxPrice) {
 async function test_plan() {
   try {
     let dataSource = await readXls('plan/美团贡茶修改1-22.xlsx', '原价13.8+餐盒费1')
-    dataSource = dataSource.map((v, i) => [v.门店id, v.产品名, 13.8, 1, i])
+    dataSource = dataSource.map((v, i) => [v.门店id, v.产品名, 13.8, 1, i]).slice(dataSource.length - 583)
     await loop(updateFoodSku, dataSource, false, { test: delFoods })
 
     let dataSource2 = await readXls('plan/美团贡茶修改1-22.xlsx', '原价6.9+餐盒0.5')
@@ -872,8 +872,21 @@ async function test_updateActTime() {
 async function test_updateAct() {
   try {
     let data = await readXls('plan/美团折扣修改.xls', '折扣价12.8')
-    data = data.map(v=>[v.id, v.产品名, 12.8])
+    data = data.map(v => [v.id, v.产品名, 12.8])
     await loop(updateAct, data, false)
+  } catch (error) {
+    console.error(error)
+  }
+}
+
+async function test_createAct() {
+  try {
+    let data = await readXls('plan/活动修改(1)(1)(1)(1)(1)(1).xlsx', 'Sheet4')
+    // let data = readJson('log/log.json')
+
+    data = data.map(v => [v.id, v.name, v.折扣])
+    // data = data.map(v => v.meta)
+    await loop(createAct, data, false)
   } catch (error) {
     console.error(error)
   }
@@ -923,7 +936,7 @@ async function createDieliverAct(id, fee) {
 
 async function test_reduction2() {
   try {
-    let data = await readXls('plan/美团满减和减配调整(1).xls', '补贴')
+    let data = await readXls('plan/改满减(2)(1).xlsx', 'Sheet2')
     data = data.map(v => ({
       ...v,
       reduc: [
@@ -931,70 +944,70 @@ async function test_reduction2() {
           discounts: [
             {
               code: 1,
-              discount: v['第一档'].split('-')[1],
-              poi_charge: v['第一档'].split('-')[1],
+              discount: '15-6'.split('-')[1],
+              poi_charge: '15-6'.split('-')[1],
               agent_charge: 0,
               type: 'default',
               mt_charge: 0
             }
           ],
-          price: v['第一档'].split('-')[0]
+          price: '15-6'.split('-')[0]
         },
         {
           discounts: [
             {
               code: 1,
-              discount: v['第二档'].split('-')[1],
-              poi_charge: v['第二档'].split('-')[1],
+              discount: '30-10'.split('-')[1],
+              poi_charge: '30-10'.split('-')[1],
               agent_charge: 0,
               type: 'default',
               mt_charge: 0
             }
           ],
-          price: v['第二档'].split('-')[0]
+          price: '30-10'.split('-')[0]
         },
         {
           discounts: [
             {
               code: 1,
-              discount: v['第三档'].split('-')[1],
-              poi_charge: v['第三档'].split('-')[1],
+              discount: '45-16'.split('-')[1],
+              poi_charge: '45-16'.split('-')[1],
               agent_charge: 0,
               type: 'default',
               mt_charge: 0
             }
           ],
-          price: v['第三档'].split('-')[0]
+          price: '45-16'.split('-')[0]
         },
         {
           discounts: [
             {
               code: 1,
-              discount: v['第四档'].split('-')[1],
-              poi_charge: v['第四档'].split('-')[1],
+              discount: '60-20'.split('-')[1],
+              poi_charge: '60-20'.split('-')[1],
               agent_charge: 0,
               type: 'default',
               mt_charge: 0
             }
           ],
-          price: v['第四档'].split('-')[0]
+          price: '60-20'.split('-')[0]
         },
         {
           discounts: [
             {
               code: 1,
-              discount: v['第五档'].split('-')[1],
-              poi_charge: v['第五档'].split('-')[1],
+              discount: '100-30'.split('-')[1],
+              poi_charge: '100-30'.split('-')[1],
               agent_charge: 0,
               type: 'default',
               mt_charge: 0
             }
           ],
-          price: v['第五档'].split('-')[0]
+          price: '100-30'.split('-')[0]
         }
       ]
     }))
-    data = data.map(v => [v['wmpoiid'], null, null, v['reduc']]).slice(data.length - 27)
+    data = data.map(v => [v['id'], null, null, v['reduc']])
     await loop(saveReduction, data, false)
   } catch (error) {
     console.error(error)
@@ -1010,17 +1023,43 @@ async function test_updateTagName() {
     console.error(err)
   }
 }
+
+async function updateFoodMater(id, name) {
+  try {
+    const fallbackApp = new FallbackApp(id)
+    return fallbackApp.food.save(name, null, null, '椰果')
+  } catch (e) {
+    return Promise.reject(e)
+  }
+}
+
+async function test_updateMaterial() {
+  try {
+    const fallbackApp = new FallbackApp()
+    let data = await fallbackApp.poi.list()
+    data = data.filter(v => v.poiName.includes('茶')).map(v => [v.id, '小试“牛”刀福袋'])
+    await loop(updateFoodMater, data, true)
+  } catch (error) {
+    console.error(error)
+  }
+}
 // test_saveFood()
-test_updateAct()
-// let date = new Date(2021, 0, 23, 3, 0, 0)
+// test_updateAct()
+// test_createAct()
+
+// let date = new Date(2021, 0, 26, 3, 0, 0)
 // console.log('task wiil be exec at', date)
 // let j = schedule.scheduleJob(date, async function() {
 //   await test_plan()
 // })
 
+// test_testFood()
+
+// test_plan()
+// test_updateMaterial()
 
 // test_dieliver()
-// test_reduction2()
+test_reduction2()
 // test_plan()
 // test_delTag()
 // test_delNewCustomer()

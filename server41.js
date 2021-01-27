@@ -65,6 +65,22 @@ koa.use(
 )
 
 router.get('/date/:date', async ctx => {})
+
+// multiple dates
+router.get('/sum/:date', async ctx => {
+  try {
+    let { date } = ctx.params
+    if (!date) {
+      ctx.body = { e: 'invalid params' }
+      return
+    }
+    const res = await sum(date)
+    ctx.body = { res }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
 // all days
 router.get('/shop/:shopid', async ctx => {
   try {
@@ -150,7 +166,109 @@ koa.listen(9005, () => console.log('running at 9005'))
 const date_sql = d =>
   `SELECT * FROM test_analyse_t_ WHERE date = DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL ${d} DAY),'%Y%m%d')`
 
+const sum_sql = d =>
+  `WITH a AS(
+    SELECT city, person, real_shop, income_sum, consume_sum, consume_sum_ratio, cost_sum, cost_sum_ratio, date
+    FROM test_analyse_t_ GROUP BY real_shop, date 
+  ),
+  b AS (
+    SELECT *, SUM(income_sum) OVER w AS income_sum_sum, SUM(consume_sum) OVER w AS consume_sum_sum, SUM(cost_sum) OVER w AS cost_sum_sum    
+    FROM a
+    WINDOW w AS (PARTITION BY date)
+  )
+  SELECT *, consume_sum_sum / income_sum_sum AS consume_sum_sum_ratio, cost_sum_sum / income_sum_sum AS cost_sum_sum_ratio
+  FROM b 
+  WHERE date >= DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL ${d} DAY),'%Y%m%d')
+  ORDER BY date DESC, income_sum DESC`
 async function date(d) {}
+
+async function sum(date) {
+  try {
+    let [data, _] = await knx.raw(sum_sql(date))
+    if (!data) return Promise.reject('no data')
+    let res = new M(data)
+      .bind(format)
+      .bind(sum_)
+      .bind(split_shop)
+    return Promise.resolve(res.val)
+  } catch (e) {
+    return Promise.reject(e)
+  }
+
+  function format(xs) {
+    let ys = xs.map(v => ({
+      ...v,
+      city: empty(v.city),
+      person: empty(v.person),
+      real_shop: empty(v.real_shop),
+      consume_sum_ratio: percent(v.consume_sum_ratio),
+      cost_sum_ratio: percent(v.cost_sum_ratio),
+      consume_sum_sum_ratio: percent(v.consume_sum_sum_ratio),
+      cost_sum_sum_ratio: percent(v.cost_sum_sum_ratio)
+    }))
+    return new M(ys)
+  }
+
+  function sum_(xs) {
+    let dates = distinct(xs, 'date')
+    for (let da of dates) {
+      let data = xs.find(v => v.date == da)
+      if (data)
+        xs.push({
+          city: '总计',
+          person: '总计',
+          real_shop: '总计',
+          income_sum: data.income_sum_sum,
+          consume_sum: data.consume_sum_sum,
+          cost_sum: data.cost_sum_sum,
+          consume_sum_ratio: data.consume_sum_sum_ratio,
+          cost_sum_ratio: data.cost_sum_sum_ratio,
+          date: da
+        })
+    }
+    return new M(xs)
+  }
+
+  function split_shop(xs) {
+    if (!xs) return []
+    let distinct_shops = distinct(xs, 'real_shop')
+    let ys = distinct_shops.map(v => {
+      let city = xs.find(k => k.real_shop == v).city
+      let person = xs.find(k => k.real_shop == v).person
+      let income_sums = xs
+        .filter(k => k.real_shop == v)
+        .sort((a, b) => b.date - a.date)
+        .reduce((o, c) => ({ ...o, [`income_sum_${c.date}`]: c.income_sum }), {})
+      let consume_sums = xs
+        .filter(k => k.real_shop == v)
+        .sort((a, b) => b.date - a.date)
+        .reduce((o, c) => ({ ...o, [`consume_sum_${c.date}`]: c.consume_sum }), {})
+      let cost_sums = xs
+        .filter(k => k.real_shop == v)
+        .sort((a, b) => b.date - a.date)
+        .reduce((o, c) => ({ ...o, [`cost_sum_${c.date}`]: c.cost_sum }), {})
+      let consume_sum_ratios = xs
+        .filter(k => k.real_shop == v)
+        .sort((a, b) => b.date - a.date)
+        .reduce((o, c) => ({ ...o, [`consume_sum_ratio_${c.date}`]: c.consume_sum_ratio }), {})
+      let cost_sum_ratios = xs
+        .filter(k => k.real_shop == v)
+        .sort((a, b) => b.date - a.date)
+        .reduce((o, c) => ({ ...o, [`cost_sum_ratio_${c.date}`]: c.cost_sum_ratio }), {})
+      return {
+        city,
+        person,
+        real_shop: v,
+        ...income_sums,
+        ...consume_sums,
+        ...cost_sums,
+        ...consume_sum_ratios,
+        ...cost_sum_ratios
+      }
+    })
+    return new M(ys)
+  }
+}
 
 //////////////////
 /////////////////////
@@ -979,23 +1097,23 @@ function formatShop(data) {
     score: fixed2(v.score),
     a: v.a == null ? [] : v.a
   }))
-
-  function empty(str) {
-    if (str == null) return '-'
-    else return str
-  }
-
-  function percent(num) {
-    if (typeof num === 'string') num = parseFloat(num)
-    return `${(num * 100).toFixed(2)}%`
-  }
-
-  function fixed2(num) {
-    if (typeof num === 'string') num = parseFloat(num)
-    return num.toFixed(2)
-  }
 }
 
 function distinct(ls, k) {
   return Array.from(new Set(ls.map(v => v[k])))
+}
+
+function empty(str) {
+  if (str == null) return '-'
+  else return str
+}
+
+function percent(num) {
+  if (typeof num === 'string') num = parseFloat(num)
+  return `${(num * 100).toFixed(2)}%`
+}
+
+function fixed2(num) {
+  if (typeof num === 'string') num = parseFloat(num)
+  return num.toFixed(2)
 }

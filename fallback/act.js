@@ -109,9 +109,7 @@ export default class Act {
             startTime: dayjs()
               .startOf('day')
               .unix(),
-            endTime: dayjs()
-              .startOf('day')
-              .add(365, 'day')
+            endTime: dayjs('2021-07-31')
               .unix(),
             orderPayType: 2,
             orderLimit,

@@ -1088,6 +1088,17 @@ requests:
        
   elm:
     #活动
+    活动列表/get:
+      url: https://app-api.shop.ele.me/marketing/invoke/?method=MarketingCenterService.getActivities
+      body:
+        request:
+          page: {pageNum: 1, pageSize: 50, total: 0}
+          searchCondition: {status: "ACTIVATED", createSource: "UN_LIMIT", date: null}
+          shopId: 2073316295
+          source: "PC"
+      requires:
+        - request/shopId
+       
     吃货红包/create:
       url: https://app-api.shop.ele.me/coupon/invoke/?method=ISingleFoodieCouponActivityService.createOrUpdateCouponActivity
       body:
@@ -1141,6 +1152,52 @@ requests:
         - creation/shopId
         - creation/activityDateTime/dates
 
+    超值换购/create/activity:
+      url: https://app-api.shop.ele.me/marketing/invoke/?method=SkuActivityNcpService.createPriceActivity
+      body:
+        activity:
+          activityTime: {
+            dates: [{beginDate: "2021-01-25", endDate: "2021-04-25"}],
+            times: [{beginTime: "00:00:00", endTime: "23:59:59"}],
+            weekdays: [1, 2, 3, 4, 5, 6, 7]
+          }
+          baiduPlatform: true
+          benefit: "7.9"
+          condition: 1
+          effectTimes: 1
+          effectiveCondition: {forPeople: "ALL_CUSTOM"}
+          elePlatform: true
+          icon: {backgroud: "#FAA43C", text: "换"}
+          shopId: 501103172
+          source: "SELF_MARKETING"
+          stockDTO: {stock: 10000, stockType: "DAILY"}
+          tied: true
+      requires:
+        - activity/shopId
+        - activity/activityTime/dates
+
+    超值换购/create/foods:
+      url: https://app-api.shop.ele.me/marketing/invoke/?method=SkuActivityNcpService.participateSkuActivity
+      body:
+        activityId: 2067115035
+        shopId: 501103172
+        skus: [{foodId: 2000000090101083, stock: 10000, benefit: "7.9"}]
+      requires:
+        - shopId
+        - activityId
+        - skus
+
+    减配送费/get:
+      url: https://httpizza.ele.me/activity-tool/getPlayDetail
+      body:
+        request:
+          playInstanceId: "1936790731"
+          shopId: 2073316295
+      requires:
+        - request/shopId
+        - request/playInstanceId
+    
+     
     # 商品
     分类列表/get:
       url: https://app-api.shop.ele.me/nevermore.goods/invoke/?method=FoodService.queryCategoryWithFoodFilter
@@ -1159,6 +1216,16 @@ requests:
       requires:
         - shopId
         - categoryOrders
+
+    分类列表/update:
+      url: https://app-api.shop.ele.me/nevermore.goods/invoke/?method=FoodService.updateFirstGroup
+      body:
+        groupId: "300000008052016334"
+        shopType: "SINGLE_SHOP"
+        update: {}
+      requires:
+        - groupId
+        - update
 
     商品列表/get:
       url: https://app-api.shop.ele.me/nevermore.goods/invoke/?method=FoodService.queryFoodsByCategoryIdWithFoodFilter
@@ -1185,6 +1252,17 @@ requests:
       requires:
         - request/shopId
         - request/keyWord
+
+    商品列表2/search:  # 超值换购 
+      url: https://app-api.shop.ele.me/marketing/invoke/?method=SkuActivityNcpService.getFoodsByName
+      body:
+        conflictDTO: {activityId: 2067050467, platform: "ALL"}
+        foodName: "香芋地瓜丸"
+        shopId: 501103172
+      requires:
+        - shopId
+        - foodName
+        - conflictDTO/activityId
 
     商品描述/update:
       url: https://app-api.shop.ele.me/nevermore.goods/invoke/?method=BatchFoodService.batchUpdateFood
@@ -1256,3 +1334,34 @@ requests:
       requires:
         - shopId
         - foodsWithSpecId
+
+    折扣商品/get:
+      url: https://app-api.shop.ele.me/marketing/invoke/?method=MarketingCenterService.getFoods
+      body:
+        request:
+          page: {pageNum: 1, pageSize: 500, total: 0}
+          searchCondition: {foodName: "", status: "ACTIVATED", createSource: "UN_LIMIT", date: null}
+          shopId: 2073316295
+          source: "PC"
+      requires:
+        - request/shopId
+
+    折扣商品/get/content:
+      url: https://app-api.shop.ele.me/marketing/invoke/?method=SkuActivityNcpService.getSkuActivityContent
+      body:
+        activityId: 2059721875
+        foodId: 2013160577
+        shopId: 2073316295
+      requires:
+        - shopId
+        - foodId
+        - activityId
+        
+    # 门店
+    配送管理/get:
+      url: https://app-api.shop.ele.me/delivery/invoke/?method=ShopProductDeliveryService.getProductDeliveryView
+      body: 
+        shopId: 2073316295
+      requires:
+        - shopId
+  

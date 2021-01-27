@@ -10,6 +10,17 @@ import bodyParser from 'koa-bodyparser'
 import cors from 'koa2-cors'
 import htmlparser2 from 'htmlparser2'
 import FallbackApp, { loop, wrap, readJson, readXls } from '../fallback/fallback_app.js'
+import knex from 'knex'
+
+const knx = knex({
+  client: 'mysql',
+  connection: {
+    host: '192.168.3.112',
+    user: 'root',
+    password: '123456',
+    database: 'naicai'
+  }
+})
 
 function omit(obj, ks) {
   let newKs = Object.keys(obj).filter(v => !ks.includes(v))
@@ -54,6 +65,8 @@ const metas = {
   ksid: 'MTBJZWMTA1MjUzOTA0OTU1MTAxTlQ2YUZiZDZQ'
 }
 const ncp = '2.0.0'
+const namespace = 'elm-retry'
+
 const instanceElm = axios.create({
   responseType: 'json',
   headers: {
@@ -113,6 +126,11 @@ instanceElm.interceptors.request.use(
   config => {
     if (config.method == 'post') {
       const [service, method] = new URL(config.url).searchParams.get('method').split('.')
+
+      config[namespace] = config[namespace] || {}
+      config[namespace].data = config.data
+      config[namespace].retryCount = config[namespace].retryCount || 0
+
       config.data = {
         id,
         metas,
@@ -137,7 +155,26 @@ instanceElm.interceptors.response.use(
     }
     return res.data.result == null ? Promise.resolve(res.data) : Promise.resolve(res.data.result)
   },
-  err => Promise.reject(err)
+  error => {
+    const config = error.config
+
+    if (!config || !config[namespace]) {
+      return Promise.reject(error)
+    }
+
+    const shouldRetry = /ETIMEDOUT|ECONNRESET/.test(error.code) && config[namespace].retryCount < 3
+
+    if (shouldRetry) {
+      config[namespace].retryCount += 1
+
+      console.log('retry...', config[namespace].retryCount)
+      return new Promise(resolve =>
+        setTimeout(() => resolve(instanceElm({ ...config, data: config[namespace].data })), 600)
+      )
+    }
+
+    return Promise.reject(error)
+  }
 )
 
 function readYaml(path) {
@@ -534,13 +571,47 @@ async function a(wmPoiId) {
     //   [2073319496, 2073319496, date(), date(360), [iso(), iso(360)]],
     //   xshard(2073319496)
     // )
-    const res = await execRequest(
-      instanceElm,
-      y.requests.elm['店铺满赠/create'],
-      [501129234, [{ beginDate: date(), endDate: date(360) }]],
-      xshard(501129234)
-    )
-    console.log(res)
+    // const res = await execRequest(
+    //   instanceElm,
+    //   y.requests.elm['店铺满赠/create'],
+    //   [501129234, [{ beginDate: date(), endDate: date(360) }]],
+    //   xshard(501129234)
+    // )
+    // const res = await execRequest(
+    //   instanceElm,
+    //   y.requests.elm['超级吃货红包/create'],
+    //   [501129234, date(), date(360), [date(), date(360)]],
+    //   xshard(501129234)
+    // )
+    // const res = await execRequest(
+    //   instanceElm,
+    //   y.requests.elm['超值换购/create/activity'],
+    //   [501103172, [{ beginDate: date(), endDate: date(360) }]],
+    //   xshard(501103172)
+    // )
+    // const promises = y.rules['超值换购'].map(v =>
+    //   execRequest(instanceElm, y.requests.elm['商品列表2/search'], [wmPoiId, v, Math.random()])
+    // )
+    // const goods = await Promise.allSettled(promises)
+    // const actItems = goods
+    //   .filter(v => v.status == 'fulfilled')
+    //   .slice(0, 3)
+    //   .map(v => v.value[0].groupData[0])
+    //   .map(({ wm_poi_id, id, price, name }) => ({
+    //     list: [`${wm_poi_id}_${id}_${price}`],
+    //     dayLimit: -1,
+    //     orderLimit: '1',
+    //     mtCharge: 0,
+    //     actItemPrice: '6.9',
+    //     itemName: name
+    //   }))
+
+    let data = await readXls('plan/hh饿了么分类统一.xls', 'Sheet1')
+    data = data.filter(v => v.修改后分类名)
+      .map(v => [v.shop_id, v.category_name, v.修改后分类名])
+    data = data.slice(data.length - 880)
+    await loop(updateFoodCat, data, false)
+    // console.log(res)
   } catch (error) {
     console.error(error)
   }
@@ -587,7 +658,36 @@ async function updateShopInfo(wmPoiId, bulletin) {
   }
 }
 
-a()
+async function updateFoodCat(shopId, catName, newCatName) {
+  try {
+    const res = await execRequest(instanceElm, y.requests.elm['分类列表/get'], [shopId], xshard(shopId))
+    const cat = res.find(v => v.name == catName)
+    if (!cat) return Promise.reject({ err: 'cat not found' })
+    let update = deepmerge(
+      cat,
+      {
+        // dayPartingStick: {
+        //   beginDate: date(),
+        //   endDate: '2021-07-31',
+        //   dateRange: [
+        //     dayjs()
+        //       .startOf('day')
+        //       .toISOString(),
+        //     dayjs('2021-07-31').toISOString()
+        //   ]
+        // },
+        // isUseDayPartingStick: true
+        name: newCatName
+      },
+      { arrayMerge: (_, source) => source }
+    )
+    return execRequest(instanceElm, y.requests.elm['分类列表/update'], [cat.globalId, update], xshard(shopId))
+  } catch (e) {
+    return Promise.reject(e)
+  }
+}
+
+// a()
 
 koa.use(cors())
 koa.use(
@@ -644,7 +744,7 @@ router.post('/tests/del', async ctx => {
 })
 
 koa.use(router.routes())
-// koa.listen(9010, () => console.log('running at 9010'))
+koa.listen(9010, () => console.log('running at 9010'))
 
 async function freshMt(userTasks, userRule) {
   try {

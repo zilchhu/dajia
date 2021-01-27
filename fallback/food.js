@@ -385,7 +385,7 @@ export default class Food {
 
   async setHighBoxPrice(tagI, sell) {
     try {
-      const tagids = [214055264, 214055293, 214055327, 214055363, 214055426, 214055456, 214055473]
+      const tagids = [214055264, 216092941, 216092995, 216093049, 216093080, 216093096, 216093110]
       const highBoxPriceR = await this.getHighBoxPrice()
 
       let canSave =
@@ -490,7 +490,7 @@ export default class Food {
     return instance.post(urls.food.save, data)
   }
 
-  async save(name, minOrderCount, weightUnit) {
+  async save(name, minOrderCount, weightUnit, mainMat) {
     let that = this
     try {
       const food = await this.find(name)
@@ -520,6 +520,28 @@ export default class Food {
 
       let { ok, properties_values, unreqs } = await isPropMatchReqs(temp.propertiesKeys, temp.properties_values)
       if (!ok) return Promise.reject({ err: `properties required ${unreqs}` })
+
+      if (mainMat) {
+        let mainMatKey = temp.propertiesKeys.find(k => k.wm_product_lib_tag_name == '主料')
+        if (!mainMatKey) return Promise.reject({ err: 'mat key not found' })
+        const { property } = await this.searchProperty(mainMat)
+        let p = property.find(v => v.name == mainMat)
+        if (!p) return Promise.reject({ err: 'mainMat not found' })
+        properties_values[mainMatKey.wm_product_lib_tag_id] = [
+          {
+            id: '',
+            parent_tag_id: 0,
+            wm_product_lib_tag_id: mainMatKey.wm_product_lib_tag_id,
+            wm_product_lib_tag_name: '主料',
+            value: p.name,
+            value_id: p.wm_product_lib_tag_id,
+            level: 1,
+            is_leaf: 2,
+            sequence: mainMatKey.sequence,
+            propertyOpType: 3
+          }
+        ]
+      }
 
       let spu = keep(pageModel.wmProductSpu, [
         'id',
