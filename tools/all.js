@@ -58,12 +58,13 @@ const instance2 = axios.create({
 /////////////
 /////////////
 
-const id = 'F87A24ACA93043258B7D4AE0FD4F2246|1609236931131'
+const id = '7044BD8CBFA44539B91289386EB05347|1611798043136'
 const metas = {
   appName: 'melody',
   appVersion: '4.4.0',
-  ksid: 'MTBJZWMTA1MjUzOTA0OTU1MTAxTlQ2YUZiZDZQ'
+  ksid: 'YTJLNZMTA1MjUzOTA0OTU1MTAxTlVCMkl6dDhQ'
 }
+const ksid = metas.ksid
 const ncp = '2.0.0'
 const namespace = 'elm-retry'
 
@@ -77,6 +78,27 @@ const instanceElm = axios.create({
     'invocation-protocol': 'Napos-Communication-Protocol-2',
     origin: 'https://melody-goods.faas.ele.me',
     referer: 'https://melody-goods.faas.ele.me/',
+    'sec-ch-ua': `"Google Chrome";v="87", " Not;A Brand";v="99", "Chromium";v="87"`,
+    'sec-ch-ua-mobile': '?0',
+    'sec-fetch-dest': 'empty',
+    'sec-fetch-mode': 'cors',
+    'sec-fetch-site': 'same-site',
+    'user-agent':
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36',
+    'x-eleme-requestid': `${id}`
+  }
+})
+const instanceElm2 = axios.create({
+  baseURL: 'https://httpizza.ele.me/',
+  headers: {
+    accept: 'application/json, text/plain, */*',
+    'accept-encoding': 'gzip, deflate, br',
+    'accept-language': 'zh-CN,zh;q=0.9',
+    'content-type': 'application/json;charset=UTF-8',
+    origin: 'https://melody-goods.faas.ele.me',
+    referer: 'https://melody-goods.faas.ele.me/',
+    cookie:
+      'ubt_ssid=jjejf45i3g21gq7u9q0qsx7285p26no9_2020-07-23; cna=mN6fF0ZBfUoCAbcM883H0GeQ; _ga=GA1.2.1935531342.1595506439; perf_ssid=k8hpmuq7iwcmfh1w8uk3hlndqmjcbq5n_2020-07-24; ut_ubt_ssid=aw4uycga06hsyjzob32dq8a4qx2e3lsy_2020-08-02; UTUSER=0; crystalTab=FINANCE; ksid=YTJLNZMTA1MjUzOTA0OTU1MTAxTlVCMkl6dDhQ; _m_h5_tk=aae647ac34774822404bcd9b8a80f69c_1611554322007; _m_h5_tk_enc=17539460a6def8769d7f1f25371f91e6; xlly_s=1; tfstk=cY1PBIML37Fzo1OQBQOEV9B6RzpRZHQl-j86E9Lj6PaSaUplikopozXMuetTiLf..; l=eB_OlV6eOjYt6hkSKOfwourza77OSIRAguPzaNbMiOCP_J5p51WRW6MqPbY9C3GVh68kR3uKcXmQBeYBqIcv7r5RSC1woEDmn; isg=BNbWf12rqrO7oKEM5Sh0e-HlJ4zYdxqxLaaiH0A_wrlUA3adqAdqwTzxm5_vqxLJ',
     'sec-ch-ua': `"Google Chrome";v="87", " Not;A Brand";v="99", "Chromium";v="87"`,
     'sec-ch-ua-mobile': '?0',
     'sec-fetch-dest': 'empty',
@@ -147,7 +169,6 @@ instanceElm.interceptors.request.use(
   },
   err => Promise.reject(err)
 )
-
 instanceElm.interceptors.response.use(
   res => {
     if (res.data.error != null || res.data.error != undefined) {
@@ -170,6 +191,57 @@ instanceElm.interceptors.response.use(
       console.log('retry...', config[namespace].retryCount)
       return new Promise(resolve =>
         setTimeout(() => resolve(instanceElm({ ...config, data: config[namespace].data })), 600)
+      )
+    }
+
+    return Promise.reject(error)
+  }
+)
+instanceElm2.interceptors.request.use(
+  config => {
+    if (config.method == 'post') {
+      config[namespace] = config[namespace] || {}
+      config[namespace].data = config.data
+      config[namespace].retryCount = config[namespace].retryCount || 0
+
+      config.data = {
+        ksid,
+        ...config.data
+      }
+    } else if(config.method == 'get') {
+      config[namespace] = config[namespace] || {}
+      config[namespace].params = config.params
+      config[namespace].retryCount = config[namespace].retryCount || 0
+
+      config.params = {
+        ksid,
+        ...config.params
+      }
+    }
+    // console.log(config)
+    return config
+  },
+  err => Promise.reject(err)
+)
+instanceElm2.interceptors.response.use(
+  res => {
+    return Promise.resolve(res.data)
+  },
+  error => {
+    const config = error.config
+
+    if (!config || !config[namespace]) {
+      return Promise.reject(error)
+    }
+
+    const shouldRetry = /ETIMEDOUT|ECONNRESET/.test(error.code) && config[namespace].retryCount < 3
+
+    if (shouldRetry) {
+      config[namespace].retryCount += 1
+
+      console.log('retry...', config[namespace].retryCount)
+      return new Promise(resolve =>
+        setTimeout(() => resolve(instanceElm({ ...config, data: config[namespace].data, params: config[namespace].params })), 600)
       )
     }
 
@@ -606,11 +678,10 @@ async function a(wmPoiId) {
     //     itemName: name
     //   }))
 
-    let data = await readXls('plan/hh饿了么分类统一.xls', 'Sheet1')
-    data = data.filter(v => v.修改后分类名)
-      .map(v => [v.shop_id, v.category_name, v.修改后分类名])
-    data = data.slice(data.length - 880)
-    await loop(updateFoodCat, data, false)
+    let data = await readJson('log/log.json')
+
+    data = data.filter(v => v.err.message == '服务器异常').map(v => v.meta)
+    await loop(moveFood, data, false)
     // console.log(res)
   } catch (error) {
     console.error(error)
@@ -658,7 +729,7 @@ async function updateShopInfo(wmPoiId, bulletin) {
   }
 }
 
-async function updateFoodCat(shopId, catName, newCatName) {
+async function updateFoodCat(shopId, catName) {
   try {
     const res = await execRequest(instanceElm, y.requests.elm['分类列表/get'], [shopId], xshard(shopId))
     const cat = res.find(v => v.name == catName)
@@ -676,8 +747,9 @@ async function updateFoodCat(shopId, catName, newCatName) {
         //     dayjs('2021-07-31').toISOString()
         //   ]
         // },
-        // isUseDayPartingStick: true
-        name: newCatName
+        dayPartingStick: null,
+        isUseDayPartingStick: false
+        // name: newCatName
       },
       { arrayMerge: (_, source) => source }
     )
@@ -687,7 +759,40 @@ async function updateFoodCat(shopId, catName, newCatName) {
   }
 }
 
-// a()
+async function createFoodCat(shopId, catName) {
+  try {
+    const res = await execRequest(instanceElm, y.requests.elm['分类列表/get'], [shopId], xshard(shopId))
+    const cat = res.find(v => v.name == '店铺公告')
+    if (cat) return Promise.reject({ err: 'cat has been created' })
+    return execRequest(instanceElm, y.requests.elm['分类创建/create'], [shopId, catName], xshard(shopId))
+  } catch (e) {
+    return Promise.reject(e)
+  }
+}
+
+async function moveFood(shopId) {
+  try {
+    const res = await execRequest(instanceElm, y.requests.elm['分类列表/get'], [shopId], xshard(shopId))
+    const cat = res.find(v => v.name == '店铺公告')
+    if (!cat) return Promise.reject({ err: 'cat not found' })
+
+    let foods = await Promise.all(
+      ['0元吃', '0元购'].map(v =>
+        execRequest(instanceElm, y.requests.elm['商品列表/search'], [shopId, v], xshard(shopId))
+      )
+    )
+    foods = foods
+      .map(v => v.itemOfName.map(k => k.id).join(','))
+      .join(',')
+      .split(',')
+      .filter(v => v != '')
+    return execRequest(instanceElm, y.requests.elm['商品移动/update'], [shopId, cat.id, foods], xshard(shopId))
+  } catch (e) {
+    return Promise.reject(e)
+  }
+}
+
+a()
 
 koa.use(cors())
 koa.use(
@@ -744,7 +849,7 @@ router.post('/tests/del', async ctx => {
 })
 
 koa.use(router.routes())
-koa.listen(9010, () => console.log('running at 9010'))
+// koa.listen(9010, () => console.log('running at 9010'))
 
 async function freshMt(userTasks, userRule) {
   try {

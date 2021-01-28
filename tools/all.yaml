@@ -1197,7 +1197,36 @@ requests:
         - request/shopId
         - request/playInstanceId
     
-     
+    下单返红包/get/form:
+      url: https://httpizza.ele.me/play.everything/PlayInstanceService/getSelfPlayForm
+      body:
+        request:
+          playType: "SELF_PACKET_AFTER_ORDER"
+          shopId: 2065322800
+      requires:
+        - request/shopId
+    
+    下单返红包/create:
+      url: https://httpizza.ele.me/activity-tool/createSelfPlay
+      body:
+        request:
+          clientType: "PC"
+          playType: "SELF_PACKET_AFTER_ORDER"
+          shopId: 2065322800
+          skuIds: []
+          playRules: [
+            {id: 320, value: '"2"'},  # 红包金额
+            {id: 321, value: '"39"'},  #  
+            {id: 324, value: "15"},
+            {id: 7, value: "true"},  # 同享
+            {id: 3, value: '{"beginDate":"2021-01-28","endDate":"2022-01-01"}'},
+            {id: 322, value: '"9999"'},
+            {id: 323, value: '"39"'}
+          ]
+      requires:
+        - request/shopId
+        - request/playRules
+
     # 商品
     分类列表/get:
       url: https://app-api.shop.ele.me/nevermore.goods/invoke/?method=FoodService.queryCategoryWithFoodFilter
@@ -1226,6 +1255,21 @@ requests:
       requires:
         - groupId
         - update
+
+    分类创建/create:
+      url: https://app-api.shop.ele.me/nevermore.goods/invoke/?method=FoodService.createGroup
+      body:
+        shopId: 500976597
+        shopType: "SINGLE_SHOP"
+        sFoodCategoryWithChild:
+          categoryMode: "NORMAL"
+          dayPartingStick: null
+          description: ""
+          isUseDayPartingStick: false
+          name: "1"
+      requires:
+        - shopId
+        - sFoodCategoryWithChild/name
 
     商品列表/get:
       url: https://app-api.shop.ele.me/nevermore.goods/invoke/?method=FoodService.queryFoodsByCategoryIdWithFoodFilter
@@ -1335,6 +1379,17 @@ requests:
         - shopId
         - foodsWithSpecId
 
+    商品移动/update:
+      url: https://app-api.shop.ele.me/nevermore.goods/invoke/?method=FoodService.batchUpdateFoodsCategory
+      body:
+        categoryId: 2000000008644019
+        foodIds: [2000000063828172, 2000000063818610]
+        shopId: 500976597
+      requires:
+        - shopId
+        - categoryId
+        - foodIds
+
     折扣商品/get:
       url: https://app-api.shop.ele.me/marketing/invoke/?method=MarketingCenterService.getFoods
       body:
@@ -1356,7 +1411,7 @@ requests:
         - shopId
         - foodId
         - activityId
-        
+    
     # 门店
     配送管理/get:
       url: https://app-api.shop.ele.me/delivery/invoke/?method=ShopProductDeliveryService.getProductDeliveryView

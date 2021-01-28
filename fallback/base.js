@@ -61,7 +61,7 @@ instance.interceptors.response.use(
       return Promise.reject(error)
     }
 
-    const shouldRetry = (/ETIMEDOUT|ECONNRESET/.test(error.code) || err.msg =='服务器超时，请稍后再试') && config[namespace].retryCount < 3
+    const shouldRetry = (/ETIMEDOUT|ECONNRESET/.test(error.code) || error.msg =='服务器超时，请稍后再试') && config[namespace].retryCount < 3
 
     if (shouldRetry) {
       config[namespace].retryCount += 1

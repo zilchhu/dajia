@@ -834,6 +834,14 @@ async function updateFoodSku(id, name, price, boxPrice) {
 
 async function test_plan() {
   try {
+    let dataSource6 = await readXls('plan/福袋添加餐盒费2.xls', '美团餐品规则')
+    dataSource6 = dataSource6.map((v, i) => [v.门店id, v.品名, 2, i])
+    await loop(updateFoodBoxPrice, dataSource6, false, { test: delFoods })
+
+    let dataSource7 = await readXls('plan/美团单产品起送餐品.xls', '美团餐品规则')
+    dataSource7 = dataSource7.map((v, i) => [v.门店id, v.品名, 14.9 - parseFloat(v.餐盒费), v.餐盒费, i])
+    await loop(updateFoodSku, dataSource7, false, { test: delFoods })
+
     let dataSource = await readXls('plan/美团贡茶修改1-22.xlsx', '原价13.8+餐盒费1')
     dataSource = dataSource.map((v, i) => [v.门店id, v.产品名, 13.8, 1, i]).slice(dataSource.length - 583)
     await loop(updateFoodSku, dataSource, false, { test: delFoods })
@@ -1047,11 +1055,11 @@ async function test_updateMaterial() {
 // test_updateAct()
 // test_createAct()
 
-// let date = new Date(2021, 0, 26, 3, 0, 0)
-// console.log('task wiil be exec at', date)
-// let j = schedule.scheduleJob(date, async function() {
-//   await test_plan()
-// })
+let date = new Date(2021, 0, 28, 3, 0, 0)
+console.log('task wiil be exec at', date)
+let j = schedule.scheduleJob(date, async function() {
+  await test_plan()
+})
 
 // test_testFood()
 
@@ -1059,7 +1067,7 @@ async function test_updateMaterial() {
 // test_updateMaterial()
 
 // test_dieliver()
-test_reduction2()
+// test_reduction2()
 // test_plan()
 // test_delTag()
 // test_delNewCustomer()
