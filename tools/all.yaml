@@ -256,6 +256,16 @@ rules:
         - [招牌烧仙草(墙裂推荐), 招牌烧仙草（墙裂推荐）, 招牌烧仙草【墙裂推荐】, 招牌烧仙草]
         - [豪华台湾手抓饼(三拼), 豪华台湾手抓饼（三拼）, 豪华台湾手抓饼【三拼】, 台湾手抓饼(三拼), 台湾手抓饼（三拼）, 台湾手抓饼【三拼】, 豪华台湾手抓饼]
 
+    特色分类:
+      categoryStatus: "SHOW"
+      categoryDesc: "美味又实惠，大家快来抢"
+      categoryName: "优惠"
+      sortType: "SALES_VOLUME_DESC"
+
+    品牌故事:
+      贡茶: 百年品牌精选优质好茶
+      苏姐牛奶: 苏姐牛奶甜品（手工自作甜品）
+      喜三德: 喜三德甜品（手工自作甜品）
 
 requests:
   mt:
@@ -1623,3 +1633,73 @@ requests:
         - shopWindowEffectiveSaveReqDTO/operatedBy
         - shopWindowEffectiveSaveReqDTO/commodities
         - shopWindowEffectiveSaveReqDTO/commodityCount
+
+    特色分类/get:
+      url: https://app-api.shop.ele.me/shop_deco/invoke/?method=CategoryService.getHot
+      body:
+        shopId: 2065322800
+      requires:
+        - shopId
+
+    特色分类/update:
+      url: https://app-api.shop.ele.me/shop_deco/invoke/?method=CategoryService.saveHot
+      body:
+        requestDTO:
+          categoryDesc: "美味又实惠，大家快来抢"
+          categoryName: "优惠"
+          categoryStatus: "SHOW"
+          createdAt: "2020-12-06T10:00:01"
+          createdBy: 2065322800
+          id: 3243421
+          operateAccount: ""
+          operateShopId: 2065322800
+          shopId: 2065322800
+          shopIds: [2065322800]
+          shopName: "苏姐牛奶甜品世家(大朗店)"
+          sortType: "SALES_VOLUME_DESC"
+          updatedAt: "2020-12-06T10:00:01"
+          updatedBy: 2065322800
+      requires:
+        - requestDTO
+
+    品牌故事/get:
+      url: https://app-api.shop.ele.me/shop_deco/invoke/?method=ShopBrandStoryService.queryBrandStorys
+      body:
+        request: 
+          limit: 10
+          offset: 0
+          operateShopId: 93089700
+
+    品牌故事/get/info:
+      url: https://app-api.shop.ele.me/shop_deco/invoke/?method=ShopBrandStoryService.getBrandStoryInfo
+      body:
+        brandStoryId: 928301
+      requires:
+        - brandStoryId
+        
+    品牌故事/update:
+      url: https://app-api.shop.ele.me/shop_deco/invoke/?method=ShopBrandStoryService.updateBrandStory
+      body:
+        request:
+          brandIntroductions: [{id: 1482469, url: "https://cube.elemecdn.com/2/58/6ccc14ba4fc609a9062665b2dcedajpeg.jpeg"}]
+          cookerIntroductions: []
+          createdAt: "2020-12-22T19:59:20"
+          createdBy: 93089700
+          hasVideo: false
+          headImg: "062b16b0e9fed6eb8bb05414b590441fpng"
+          id: 897981
+          modifyFlag: false
+          operateShopId: 93089700 #
+          reviewVideo: {id: null, brandStoryId: null, reviewVideoVersionId: null, reviewVideoName: null, reviewOssName: null}
+          reviewVideoId: 0
+          shopCount: 47
+          signatureFoods: []
+          storyShopRelationIds: [171285597, 173002615, 500120975, 500124770, 500154439, 500155966, 500160568, 500161066, 500163930]
+          storyShopRelations: [{shopId: 171285597, shopName: "苏姐牛奶甜品世家(华西二路店)", itemSite: 1}]
+          title: "苏姐牛奶甜品（手工自作甜品）"
+          url: "https://cube.elemecdn.com/0/62/b16b0e9fed6eb8bb05414b590441fpng.png"
+          video: {isDelete: true}
+          videoId: 0
+          winningIntroductions: []
+      requires:
+        - request

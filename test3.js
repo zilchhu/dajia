@@ -11,25 +11,45 @@ const knx = knex({
   }
 })
 
+const dbTables = {
+  user: 'test_analyse_user_',
+  login: 'test_analyse_login_'
+}
+
+async function r_l(username, password) {
+  try {
+    if(isEmptyStr(username) || isEmptyStr(password)) {
+      return Promise.reject('empty')
+    }
+
+    const user = await knx(dbTables.user).select().where({username})
+
+    if(!user) {
+      await rigister(username, password)
+      return login(username, password)
+    }
+
+    return login(username, password)
+
+  } catch (err) {
+    return Promise.reject(err)
+  }
+}
+
+async function rigister(username, password) {
+  try {
+    const hashed_password = await bcrypt.hash(password, 8)
+    await knx(dbTables.user).insert({username, hashed_password})
+  } catch (err) {
+    return Promise.reject(err)
+  }
+}
+
 async function login(username, password) {
   try {
-    if (isEmptyStr(username) || isEmptyStr(password)) {
-      return Promise.reject('blank')
-    }
-    const hashedPass = await knx('test_analyse_user_')
-      .select()
-      .where({ username })
-    if (hashedPass.length > 0) {
-    } else {
-      const hashed_password = await bcrypt.hashSync(password, 8)
-      const res = await knx('test_analyse_user_').insert({
-        username,
-        hashed_password
-      })
-      return Promise.resolve(res)
-    }
+    
   } catch (err) {
-    console.log(err)
+    return Promise.reject(err)
   }
 }
 

@@ -55,6 +55,11 @@ content-type: application/json
 
 ###
 
+GET http://localhost:9005/sum/3
+content-type: application/json
+
+###
+
 GET http://localhost:9005/user_acts/小伍/1
 content-type: application/json
 
@@ -160,24 +165,17 @@ wmPoiId=10085676&state=0
 
 ###
 
-GET http://localhost:9020/allTableInfos
+GET http://localhost:9020/
 
 ###
 
-POST  http://localhost:9020/chart
+POST  http://localhost:9020/customs
 Content-Type: application/json
 
 {
-  "tableName": "foxx_food_manage",
-  "x": { "name": "日期", "field": "date" },
-  "ys": [
-    { "name": "销量", "field": "sellCount" },
-    { "name": "价格", "field": "price" }
-  ],
-  "conds":  [
-    { "field": "wmpoiid", "op": "=", "cond": 9963039 },
-    { "field": "name", "op": "=", "cond": "双蛋烤冷面" }
-  ]
+  "sqls": [
+    "select * from foxx_operating_data where date = 20210123", 
+    "select 2+2"]
 }
 
 
@@ -212,3 +210,4 @@ X-Requested-With: XMLHttpRequest
 "password": "gygc8888",
 "csrfToken": "/nPQUb3RVJ/dEy8NNfdlhwqbNiqj6f7Cfqap2QcbNDals1eiJfHeXe2wwHNRtzWuoNLH9PUWWbDqWIz0pr9Gl2/47jdpWPBY8GbhMd6bJJ1V2xsY8kiM3jtPcMzrN0SnS+MlTMQreu7UuVneOxPBAg=="
 }
+

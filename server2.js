@@ -51,4 +51,4 @@ async function t() {
   }
 }
 
-t()
+// name amount discount / dec 

@@ -751,6 +751,8 @@ async function a(wmPoiId) {
     //   xshard(2065322800)
     // )
 
+    metasVar.shopId = 2065322800
+
     // const sign = await execRequest(instanceElm, y.requests.elm['店铺招牌/get'], {}, xshard(93089700))
     // if (sign.shopIds.includes(parseInt(2065322800))) return Promise.reject({ err: 'signage has been binded' })
     // let chainIds = [...sign.shopIds, 2065322800]
@@ -793,6 +795,33 @@ async function a(wmPoiId) {
     //   }))
     // metasVar.shopId = 2065322800
     // const res = await execRequest(instanceElm, y.requests.elm['爆款橱窗/create'], [2065322800, 2065322800, goods, goods.length])
+
+    // const hot = await execRequest(instanceElm, y.requests.elm['特色分类/get'], [2065322800], xshard(2065322800))
+    // const res = await execRequest(
+    //   instanceElm,
+    //   y.requests.elm['特色分类/update'],
+    //   [{ ...hot, ...y.rules.elm['特色分类'], operateAccount: '', operateShopId: 2065322800, shopIds: [2065322800] }],
+    //   xshard(2065322800)
+    // )
+
+    // let storys = await execRequest(instanceElm, y.requests.elm['品牌故事/get'], {}, xshard(93089700))
+    // storys = storys.sort((a, b) => b.shopCount - a.shopCount)
+    // let {id} = storys.find(v => v.title == y.rules.elm['品牌故事']['苏姐牛奶'])
+    // let story = await execRequest(instanceElm, y.requests.elm['品牌故事/get/info'], [id], xshard(93089700))
+    // if (story.storyShopRelationIds.includes(parseInt(2065322800)))
+    //   return Promise.reject({ err: 'story has been binded' })
+    // let storyShopRelationIds = [...story.storyShopRelationIds, 2065322800]
+
+    // const hot = await execRequest(instanceElm, y.requests.elm['特色分类/get'], [2065322800], xshard(2065322800))
+    // let storyShopRelations = [
+    //   ...story.storyShopRelations,
+    //   { shopId: hot.shopId, shopName: hot.shopName }
+    // ].map((v, i) => ({ ...v, itemSite: i + 1 }))
+    // const res = await execRequest(instanceElm, y.requests.elm['品牌故事/update'], [
+    //   { ...story, operateShopId: 93089700, storyShopRelationIds, storyShopRelations, shopCount: storyShopRelationIds.length }
+    // ])
+
+    
     console.log(res)
   } catch (error) {
     console.error(error)

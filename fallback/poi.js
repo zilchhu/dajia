@@ -24,4 +24,5 @@ export default class Poi {
       return Promise.reject(err)
     }
   }
+
 }

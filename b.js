@@ -36,8 +36,24 @@ function parse(node) {
 }
 
 function transform(node) {
-  if (Array.isArray()) {
+  if(/String|Boolean|Int|Float/.test(node.type)) {
+    return node.type
+  }
+  if('KV' == node.type) {
+    if('Object' == node.value.value.type) {
+      return `type ${node.value.key} {
+        ${parse(node)}
+      }`
+    } else {
+      return `${node.value.key}: ${parse(node)}`
+    }
+  }
+  if('Object' == node.type) {
+    return node.value.map(parse)
+  }
+  if('Array' == node.type) {
+    return node.value
   }
 }
 
-console.log(parse({ obj }))
+console.log(parse({ obj }, ''))

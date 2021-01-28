@@ -1,0 +1,40 @@
+{
+  "online_pay": 0,
+  "foods": [
+    {
+      "foodKey": 1,
+      "id": 0,
+      "wmPoiId": "10085676",
+      "wmActPolicyId": "1001",
+      "actInfo": {
+        "discount": "NaN",
+        "origin_price": 12.8,
+        "act_price": "8.8"
+      },
+      "period": "00:00-23:59",
+      "wmSkuId": 4110568683,
+      "weeksTime": "1,2,3,4,5,6,7",
+      "startTime": 1610985600,
+      "endTime": 1612367999,
+      "orderPayType": 2,
+      "orderLimit": "-1",
+      "limitTimeSale": "-1",
+      "itemName": "奥利奥双皮奶【新品推荐】",
+      "sortIndex": 0,
+      "settingType": "1",
+      "chargeType": "0",
+      "wmUserType": 0,
+      "poiUserType": "0",
+      "WmActPriceVo": {
+        "originPrice": 12.8,
+        "actPrice": "8.8",
+        "mtCharge": "0",
+        "agentCharge": 0,
+        "poiCharge": "4.00"
+      },
+      "autoDelayDays": 30,
+      "spec": "",
+      "priority": 0
+    }
+  ]
+}
