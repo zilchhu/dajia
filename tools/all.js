@@ -11,6 +11,7 @@ import cors from 'koa2-cors'
 import htmlparser2 from 'htmlparser2'
 import FallbackApp, { loop, wrap, readJson, readXls } from '../fallback/fallback_app.js'
 import knex from 'knex'
+import flatten from 'flatten'
 
 const knx = knex({
   client: 'mysql',
@@ -64,6 +65,7 @@ const metas = {
   appVersion: '4.4.0',
   ksid: 'YTJLNZMTA1MjUzOTA0OTU1MTAxTlVCMkl6dDhQ'
 }
+var metasVar = { ...metas }
 const ksid = metas.ksid
 const ncp = '2.0.0'
 const namespace = 'elm-retry'
@@ -155,7 +157,7 @@ instanceElm.interceptors.request.use(
 
       config.data = {
         id,
-        metas,
+        metas: config.headers['x-shard'] == 'shopid=93089700' ? { ...metas, shopId: 93089700 } : metasVar,
         ncp,
         service,
         method,
@@ -208,7 +210,7 @@ instanceElm2.interceptors.request.use(
         ksid,
         ...config.data
       }
-    } else if(config.method == 'get') {
+    } else if (config.method == 'get') {
       config[namespace] = config[namespace] || {}
       config[namespace].params = config.params
       config[namespace].retryCount = config[namespace].retryCount || 0
@@ -241,7 +243,10 @@ instanceElm2.interceptors.response.use(
 
       console.log('retry...', config[namespace].retryCount)
       return new Promise(resolve =>
-        setTimeout(() => resolve(instanceElm({ ...config, data: config[namespace].data, params: config[namespace].params })), 600)
+        setTimeout(
+          () => resolve(instanceElm({ ...config, data: config[namespace].data, params: config[namespace].params })),
+          600
+        )
       )
     }
 
@@ -375,6 +380,18 @@ async function searchRace2(api, vs, wmPoiId) {
     if (!v) return Promise.reject('search maxed')
     let res = await execRequest(undefined, api, [wmPoiId, v])
     if (res.length == 0) return searchRace(api, vs, wmPoiId)
+    return Promise.resolve(res)
+  } catch (err) {
+    return Promise.reject(err)
+  }
+}
+
+async function searchRace3(api, vs, shopId) {
+  try {
+    let v = vs.shift()
+    if (!v) return Promise.reject('search maxed')
+    let res = await execRequest(instanceElm, api, [shopId, v], xshard(shopId))
+    if (res.itemOfName == 0) return searchRace3(api, vs, shopId)
     return Promise.resolve(res)
   } catch (err) {
     return Promise.reject(err)
@@ -678,11 +695,105 @@ async function a(wmPoiId) {
     //     itemName: name
     //   }))
 
-    let data = await readJson('log/log.json')
+    // let data = await readJson('log/log.json')
 
-    data = data.filter(v => v.err.message == '服务器异常').map(v => v.meta)
-    await loop(moveFood, data, false)
-    // console.log(res)
+    // data = data.filter(v => v.err.message == '服务器异常').map(v => v.meta)
+    // await loop(moveFood, data, false)
+
+    // const form = await execRequest(
+    //   instanceElm2,
+    //   y.requests.elm['下单返红包/get/form'],
+    //   [2065322800],
+    //   xshard(2065322800)
+    // )
+    // const temp = y.requests.elm['下单返红包/create'].body.request.playRules
+    // let newForm = flatten(
+    //   form.map(item => item.components.map(c => ({ id: c.id, fieldName: c.fieldName, value: c.value })))
+    // )
+    // newForm = temp.map(v => ({
+    //   id: newForm.find(k => k.fieldName == v.fieldName).id,
+    //   value: v.fieldName == '起止日期' ? JSON.stringify({ beginDate: date(), endDate: date(360) }) : v.value
+    // }))
+    // const res = await execRequest(
+    //   instanceElm2,
+    //   y.requests.elm['下单返红包/create'],
+    //   [2065322800, newForm],
+    //   xshard(2065322800)
+    // )
+
+    // const res = await execRequest(instanceElm2, y.requests.elm['集点返红包/create'], [2065322800], xshard(2065322800))
+
+    // const res = await execRequest(
+    //   instanceElm,
+    //   y.requests.elm['顾客下单/update'],
+    //   [2065322800, 2065322800],
+    //   xshard(2065322800)
+    // )
+
+    // const res = await execRequest(instanceElm, y.requests.elm['自动回复/update'], [2065322800], xshard(2065322800))
+
+    // const policy = y.rules['满减活动']['甜品'].map(([a, b]) => ({
+    //   benefit: { type: 'REDUCTION', content: b },
+    //   condition: { type: 'QUOTA', content: a },
+    //   subsidy: { type: 'MONEY', content: '0', subsidySource: 'SHOP' }
+    // }))
+    // const res = await execRequest(instanceElm2, y.requests.elm['满减活动/create'], [
+    //   2065322800,
+    //   2065322800,
+    //   policy,
+    //   [{ beginDate: date(), endDate: date(360) }]
+    // ], xshard(2065322800))
+
+    // const res = await execRequest(
+    //   instanceElm,
+    //   y.requests.elm['极速退款/update'],
+    //   [[{ open: true, refundType: 1, shopId: 2065322800 }]],
+    //   xshard(2065322800)
+    // )
+
+    // const sign = await execRequest(instanceElm, y.requests.elm['店铺招牌/get'], {}, xshard(93089700))
+    // if (sign.shopIds.includes(parseInt(2065322800))) return Promise.reject({ err: 'signage has been binded' })
+    // let chainIds = [...sign.shopIds, 2065322800]
+    // const res = await execRequest(instanceElm, y.requests.elm['店铺招牌/update'], [chainIds], xshard(93089700))
+
+    // const promises = y.rules.elm['老板推荐']['甜品'].map(v =>
+    //   typeof v == 'string'
+    //     ? execRequest(instanceElm, y.requests.elm['商品列表/search'], [2065322800, v], xshard(2065322800))
+    //     : searchRace3(y.requests.elm['商品列表/search'], v, 2065322800)
+    // )
+    // let goods = await Promise.allSettled(promises)
+    // goods = goods
+    //   .filter(v => v.status == 'fulfilled' && v.value.itemOfName.length > 0)
+    //   .map(v => v.value.itemOfName[0])
+    //   .map(v => ({ name: v.name, itemId: v.id, shopId: 2065322800 }))
+    // let image = y.rules.elm['店内海报']['甜品']
+    // metasVar.shopId = 2065322800
+    // const res = await execRequest(
+    //   instanceElm,
+    //   y.requests.elm['店内海报/create'],
+    //   [2065322800, image, goods, date(), date(360)],
+    //   xshard(2065322800)
+    // )
+
+    // const promises = y.rules.elm['爆款橱窗']['甜品'].map(v =>
+    //   typeof v == 'string'
+    //     ? execRequest(instanceElm, y.requests.elm['商品列表/search'], [2065322800, v], xshard(2065322800))
+    //     : searchRace3(y.requests.elm['商品列表/search'], v, 2065322800)
+    // )
+    // let goods = await Promise.allSettled(promises)
+    // goods = goods
+    //   .filter(v => v.status == 'fulfilled' && v.value.itemOfName.length > 0)
+    //   .map(v => v.value.itemOfName[0])
+    //   .map((v, i) => ({
+    //     commodityGlobalId: v.globalId,
+    //     commodityId: v.id,
+    //     commodityName: v.name,
+    //     itemType: 'NORMAL',
+    //     windowSite: i + 1
+    //   }))
+    // metasVar.shopId = 2065322800
+    // const res = await execRequest(instanceElm, y.requests.elm['爆款橱窗/create'], [2065322800, 2065322800, goods, goods.length])
+    console.log(res)
   } catch (error) {
     console.error(error)
   }

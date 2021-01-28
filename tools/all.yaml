@@ -209,6 +209,54 @@ rules:
 
   店铺招牌: http://p0.meituan.net/business/84f9b8e9eae12318ac6b32302cfbf3d0158189.png
 
+  elm:
+    店铺招牌: 14436709
+
+    店内海报: 
+      甜品: 
+        hash: "ac9f196c9a2d1113f9c6a352b6a89e97png"
+        showCancel: [1, 3]
+        url: "https://cube.elemecdn.com/a/c9/f196c9a2d1113f9c6a352b6a89e97png.png"
+      贡茶:
+        hash: "8944d86604511c61032760fcfe14b9b3png"
+        showCancel: [1, 3]
+        url: "https://cube.elemecdn.com/8/94/4d86604511c61032760fcfe14b9b3png.png"
+
+    老板推荐:  # 店内海报
+      甜品:
+        - [招牌芋圆(店长推荐), 招牌芋圆（店长推荐）, 招牌芋圆【店长推荐】, 招牌芋圆]
+        - [招牌烧仙草(超多料在里面), 招牌烧仙草（超多料在里面）, 招牌烧仙草【超多料在里面】, 招牌烧仙草]
+        - [芋圆椰奶烧仙草(不点后悔终身), 芋圆椰奶烧仙草（不点后悔终身）, 芋圆椰奶烧仙草【不点后悔终身】, 芋圆椰奶烧仙草]
+        - 绿豆沙/红豆沙
+        - [豪华台湾手抓饼(三拼), 豪华台湾手抓饼（三拼）, 豪华台湾手抓饼【三拼】, 台湾手抓饼(三拼), 台湾手抓饼（三拼）, 台湾手抓饼【三拼】, 豪华台湾手抓饼]
+        - 正宗重庆酸辣粉
+        - 日式章鱼小丸子
+        - 柠檬鸡爪
+        - 火山石
+        - 火腿烤冷面
+      贡茶:
+        - [波霸珍珠奶茶(免费升级), 波霸珍珠奶茶（免费升级）, 波霸珍珠奶茶【免费升级】, 波霸珍珠奶茶]
+        - [招牌烧仙草(墙裂推荐), 招牌烧仙草（墙裂推荐）, 招牌烧仙草【墙裂推荐】, 招牌烧仙草]
+        - 草莓脏脏茶
+        - [豪华台湾手抓饼(三拼), 豪华台湾手抓饼（三拼）, 豪华台湾手抓饼【三拼】, 台湾手抓饼(三拼), 台湾手抓饼（三拼）, 台湾手抓饼【三拼】, 豪华台湾手抓饼]
+        - 正宗重庆酸辣粉
+        - 日式章鱼小丸子
+        - 柠檬鸡爪
+        - 火山石
+        - 火腿烤冷面
+        - 长沙臭豆腐
+
+    爆款橱窗:
+      甜品:
+        - [招牌芋圆(店长推荐), 招牌芋圆（店长推荐）, 招牌芋圆【店长推荐】, 招牌芋圆]
+        - [招牌烧仙草(超多料在里面), 招牌烧仙草（超多料在里面）, 招牌烧仙草【超多料在里面】, 招牌烧仙草]
+        - [豪华台湾手抓饼(三拼), 豪华台湾手抓饼（三拼）, 豪华台湾手抓饼【三拼】, 台湾手抓饼(三拼), 台湾手抓饼（三拼）, 台湾手抓饼【三拼】, 豪华台湾手抓饼]
+      贡茶:
+        - [波霸珍珠奶茶(免费升级), 波霸珍珠奶茶（免费升级）, 波霸珍珠奶茶【免费升级】, 波霸珍珠奶茶]
+        - [招牌烧仙草(墙裂推荐), 招牌烧仙草（墙裂推荐）, 招牌烧仙草【墙裂推荐】, 招牌烧仙草]
+        - [豪华台湾手抓饼(三拼), 豪华台湾手抓饼（三拼）, 豪华台湾手抓饼【三拼】, 台湾手抓饼(三拼), 台湾手抓饼（三拼）, 台湾手抓饼【三拼】, 豪华台湾手抓饼]
+
+
 requests:
   mt:
     ### 活动
@@ -1215,17 +1263,58 @@ requests:
           shopId: 2065322800
           skuIds: []
           playRules: [
-            {id: 320, value: '"2"'},  # 红包金额
-            {id: 321, value: '"39"'},  #  
-            {id: 324, value: "15"},
-            {id: 7, value: "true"},  # 同享
-            {id: 3, value: '{"beginDate":"2021-01-28","endDate":"2022-01-01"}'},
-            {id: 322, value: '"9999"'},
-            {id: 323, value: '"39"'}
+            {id: 320, value: '"2"', fieldName: "红包金额"},  # 红包金额
+            {id: 321, value: '"39"', fieldName: "使用门槛"},  #  
+            {id: 324, value: "15", fieldName: "有效期"},
+            {id: 7, value: "true", fieldName: "同享规则"},  # 同享
+            {id: 3, value: '{"beginDate":"2021-01-28","endDate":"2022-01-01"}', fieldName: "起止日期"},
+            {id: 322, value: '"9999"', fieldName: "每日发放"},
+            {id: 323, value: '"39"', fieldName: "领取门槛"}
           ]
       requires:
         - request/shopId
         - request/playRules
+
+    集点返红包/create:
+      url: https://httpizza.ele.me/activity-tool/createActivity
+      body:
+        activityRequest:
+          money: 5
+          orderNumber: 5
+          shopId: 2065322800
+          threshold: 0
+      requires:
+        - activityRequest/shopId
+    
+    满减活动/create:
+      url: https://httpizza.ele.me/activity-tool/ShopActivityService/createShopActivity
+      body:
+        request:
+          activityContentList: 
+            - 
+              benefit: {type: "REDUCTION", content: "6"}
+              condition: {type: "QUOTA", content: "15"}
+              subsidy: {type: "MONEY", content: "0", subsidySource: "SHOP"}
+          activityDateTime: 
+            dates: [{beginDate: "2021-01-28", endDate: "2022-01-01"}]
+            times: [{beginTime: "00:00:00", endTime: "23:59:59"}]
+            weekdays: [1, 2, 3, 4, 5, 6, 7]
+          activityId: 0
+          activityType: "REDUCTION"
+          agreementDTOList: []
+          autoDelaySwitch: true
+          chainId: 2065322800
+          intelligentReduction: false
+          isChain: false
+          shareWithSkuActivity: false
+          shopId: 2065322800
+          shopIdList: []
+          subShopIds: []
+      requires:
+        - request/shopId
+        - request/chainId
+        - request/activityContentList
+        - request/activityDateTime/dates
 
     # 商品
     分类列表/get:
@@ -1420,3 +1509,117 @@ requests:
       requires:
         - shopId
   
+    顾客下单/update:
+      url: https://app-api.shop.ele.me/nevermore/invoke/?method=ShopSettingService.updateShopBookingFeature
+      body:
+        shopId: 2065322800
+        booking:
+          alertTime: 60
+          enabled: true
+          maxBookingTime: 1
+          nonBusinessTimeBooking: false
+          printWhenAlert: true
+          printWhenConfirm: true
+          shopId: 2065322800
+          showFeatureBookingButton: false
+          showNonBusinessTimeBooking: false
+      requires:
+        - shopId
+        - booking/shopId
+
+    自动回复/update:
+      url: https://app-api.shop.ele.me/ugc/invoke/?method=AutoReplyTemplateService.changeAutoReplySwitch
+      body:
+        isOpen: 1  # 0.关闭
+        shopId: 2065322800
+      requires:
+        - shopId
+      
+    极速退款/update:
+      url: https://app-api.shop.ele.me/nevermore/invoke/?method=ShopSettingService.batchSwitchQuickRefundWithType
+      body:
+        forms: [{open: true, refundType: 1, shopId: 2065322800}]
+      requires:
+        - forms
+
+    招牌列表/get:
+      url: https://app-api.shop.ele.me/shop_deco/invoke/?method=ShopSignService.getShopSigns
+      body:
+        signRequest:
+          shopId: 93089700
+    
+    店铺招牌/get:
+      url: https://app-api.shop.ele.me/shop_deco/invoke/?method=ShopSignService.getSignInfo
+      body:
+        shopId: 93089700
+        signId: 14436709
+
+    店铺招牌/update:
+      url: https://app-api.shop.ele.me/shop_deco/invoke/?method=ShopSignService.editSign
+      body:
+        shopSignEdit:
+          chainIds: [2065322800, 2062189579]
+          imageSpec1: 
+            hash: "84f9b8e9eae12318ac6b32302cfbf3d0png"
+            showCancel: [1, 3]
+            url: "https://cube.elemecdn.com/8/4f/9b8e9eae12318ac6b32302cfbf3d0png.png"
+          imageSpec2: {hash: "", url: "", showCancel: []}
+          shopId: 93089700
+          signId: 14436709
+          signType: "picture"
+      requires:
+        - shopSignEdit/chainIds
+        # - shopSignEdit/imageSpec1/hash
+        # - shopSignEdit/imageSpec1/url
+        # - shopSignEdit/imageSpec2/hash
+        # - shopSignEdit/imageSpec2/url
+
+    店内海报/create:
+      url: https://app-api.shop.ele.me/shop_deco/invoke/?method=PosterService.createPoster
+      body:
+        request:
+          activityId: null
+          commodities: [{name: "芋圆烧仙草.", itemId: 2000000058850377, shopId: 2065322800}]
+          creationDTO: null
+          effectAllDayEnd: "23:59:59"
+          effectAllDayStart: "00:00"
+          effectEndTime: "2021-01-29"
+          effectStartTime: "2021-01-28"
+          effectWeek: "1,2,3,4,5,6,7"
+          imageSourceType: "SHOP_UPLOAD"
+          imageSpec1: {hash: "ac9f196c9a2d1113f9c6a352b6a89e97png"}
+          imageSpec2: {hash: "", url: "", showCancel: []}
+          name: "特惠"
+          posterScene: "NORMAL"
+          posterType: 0
+          shopId: 2065322800
+          userGroups: []
+          video: {}
+          videoKey: null
+      requires:
+        - request/shopId
+        - request/imageSpec1
+        - request/commodities
+        - request/effectStartTime
+        - request/effectEndTime
+
+    爆款橱窗/create:
+      url: https://app-api.shop.ele.me/shop_deco/invoke/?method=IShopWindowEffectiveService.saveShopWindowEffective
+      body:
+        shopWindowEffectiveSaveReqDTO:
+          channels: []
+          commodities: [{commodityId: 2000000058850377, commodityGlobalId: "300000060292984162", commodityName: "芋圆烧仙草.", itemType: "NORMAL", windowSite: 1}]
+          commodityCount: 3
+          effectiveDTO: {dateUnlimited: true, effectDate: null, expireDate: null, times: [], allDay: true, effectWeek: "1,2,3,4,5,6,7", items: []}
+          operatedBy: 2065322800
+          shopId: 2065322800
+          sourceType: "PC"
+          themeWindowBackgroundHash: ""
+          userGroups: []
+          windowName: "商家推荐"
+          windowType: "CUSTOM_SETTING"
+      requires:
+        - shopWindowEffectiveSaveReqDTO/shopId
+        - shopWindowEffectiveSaveReqDTO/operatedBy
+        - shopWindowEffectiveSaveReqDTO/commodities
+        - shopWindowEffectiveSaveReqDTO/commodityCount
