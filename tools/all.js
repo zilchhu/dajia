@@ -812,19 +812,51 @@ async function a(wmPoiId) {
     //   return Promise.reject({ err: 'story has been binded' })
     // let storyShopRelationIds = [...story.storyShopRelationIds, 2065322800]
 
-    // const hot = await execRequest(instanceElm, y.requests.elm['特色分类/get'], [2065322800], xshard(2065322800))
+    // const shop = await execRequest(instanceElm, y.requests.elm['门店信息/get'], [2065322800], xshard(2065322800))
     // let storyShopRelations = [
     //   ...story.storyShopRelations,
-    //   { shopId: hot.shopId, shopName: hot.shopName }
+    //   { shopId: 2065322800, shopName: shop.basis.name }
     // ].map((v, i) => ({ ...v, itemSite: i + 1 }))
     // const res = await execRequest(instanceElm, y.requests.elm['品牌故事/update'], [
     //   { ...story, operateShopId: 93089700, storyShopRelationIds, storyShopRelations, shopCount: storyShopRelationIds.length }
     // ])
 
-    
-    console.log(res)
+    // const res = await execRequest(instanceElm, y.requests.elm['营业时间/update'], [2065322800], xshard(2065322800))
+
+    // const shop = await execRequest(instanceElm, y.requests.elm['门店信息/get'], [2065322800], xshard(2065322800))
+    // const phone = shop.detail.phones[0]
+    // let bulletin = y.rules.elm['店铺公告']['苏姐牛奶'].replace('xxxx', phone)
+    // const res = await execRequest(
+    //   instanceElm,
+    //   y.requests.elm['店铺公告/update'],
+    //   [2065322800, bulletin],
+    //   xshard(2065322800)
+    // )
+
+    // const res = await execRequest(instanceElm, y.requests.elm['到店自取/create'], [2065322800], xshard(2065322800))
+
+    // metasVar.shopId = 173002615
+    // const form = await execRequest(instanceElm2, y.requests.elm['减配送费/get'], [173002615], xshard(173002615))
+    // let newForm = flatten(
+    //   form.map(item =>
+    //     item.components.map(c => ({ id: c.id, fieldName: c.fieldName, value: c.value, extension: c.extension }))
+    //   )
+    // )
+    // const deliver = await execRequest(instanceElm, y.requests.elm['配送管理/get'], [173002615], xshard(173002615))
+    // let fee = 3.1
+    // if (deliver.shopProductDesc != '自配送') {
+    //   fee = Object.values(deliver.productDelivery)[0].areas[0].deliveryFeeItems[0] + 0.1
+    // }
+    // const temp = y.requests.elm['减配送费/create'].body.request.playRules
+    // newForm = temp.map(v => {
+    //   let newForm.find(k => k.fieldName == v.fieldName),
+    //   value: v.fieldName == '起止日期' ? JSON.stringify({ beginDate: date(), endDate: date(360) }) : v.value
+    // })
+    // const res = await execRequest()
+    // console.log(fee)
   } catch (error) {
     console.error(error)
+    fs.writeFileSync('log/log.json', JSON.stringify(error))
   }
 }
 

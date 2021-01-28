@@ -266,6 +266,12 @@ rules:
       贡茶: 百年品牌精选优质好茶
       苏姐牛奶: 苏姐牛奶甜品（手工自作甜品）
       喜三德: 喜三德甜品（手工自作甜品）
+    
+    店铺公告:
+      苏姐牛奶: 苏姐甜品采用新鲜的食材，每日现做，为您提供优质服务，我们的客服号码是：xxxx。有任何餐品服务和配送问题，可及时跟我们沟通
+      喜三德: 如果产品有任何问题，一定要找我们哦，我们一定会处理到你满意的，店长电话：xxxx
+      芋上: 芋上甜品采用新鲜的食材，每日现做，为您提供优质服务，我们的客服号码是：xxxx。有任何餐品服务和配送问题，可及时跟我们沟通
+      贡茶: 如果产品有任何问题，一定要找我们哦，我们一定会处理到你满意的，店长电话：xxxx
 
 requests:
   mt:
@@ -1245,16 +1251,6 @@ requests:
         - activityId
         - skus
 
-    减配送费/get:
-      url: https://httpizza.ele.me/activity-tool/getPlayDetail
-      body:
-        request:
-          playInstanceId: "1936790731"
-          shopId: 2073316295
-      requires:
-        - request/shopId
-        - request/playInstanceId
-    
     下单返红包/get/form:
       url: https://httpizza.ele.me/play.everything/PlayInstanceService/getSelfPlayForm
       body:
@@ -1326,6 +1322,35 @@ requests:
         - request/activityContentList
         - request/activityDateTime/dates
 
+    减配送费/get:
+      url: https://httpizza.ele.me/play.everything/PlayInstanceService/getSelfPlayForm
+      body:
+        request:
+          playInstanceId: null
+          playType: SELF_DELIVERY_REDUCTION
+          shopId: 2065322800
+      requires:
+        - request/shopId
+
+    减配送费/create:
+      url: https://httpizza.ele.me/activity-tool/createSelfPlay
+      body:
+        request:
+          clientType: "PC"
+          playRules: [
+            {id: 920, value: '[{"value":100,"standardId":0}]', fieldName: "配送方式"},
+            {id: 902, value: '{"type":"IMME_REDUCE","value":"3.1"}', fieldName: "优惠形式"},
+            {id: 3, value: '{"beginDate":"2021-01-28","endDate":"2022-01-01"}', fieldName: "日期"},
+            {id: 4, value: "[1,2,3,4,5,6,7]", fieldName: "循环周期"},
+            {id: 6, value: '[{"beginTime":"00:00:00","endTime":"23:59:59"}]', fieldName: "生效时段"},
+            {id: 301, value: "true", fieldName: "是否自动延期"}
+          ]
+          playType: "SELF_DELIVERY_REDUCTION"
+          shopId: 173002615
+      requires:
+        - request/shopId
+        - request/playRules
+        
     # 商品
     分类列表/get:
       url: https://app-api.shop.ele.me/nevermore.goods/invoke/?method=FoodService.queryCategoryWithFoodFilter
@@ -1519,6 +1544,13 @@ requests:
       requires:
         - shopId
   
+    门店信息/get:
+      url: https://app-api.shop.ele.me/shop/invoke/?method=queryShop.getShopView
+      body:
+        shopId: 2065322800
+      requires:
+        - shopId
+
     顾客下单/update:
       url: https://app-api.shop.ele.me/nevermore/invoke/?method=ShopSettingService.updateShopBookingFeature
       body:
@@ -1551,6 +1583,33 @@ requests:
         forms: [{open: true, refundType: 1, shopId: 2065322800}]
       requires:
         - forms
+
+    营业时间/update:
+      url: https://app-api.shop.ele.me/shop/invoke/?method=setShop.updateShopBusinessInfo
+      body:
+        shopId: 2065322800
+        update: {shopHours: [{startTime: "09:50", endTime: "01:00"}]}
+      requires:
+        - shopId
+
+    店铺公告/update:
+      url: https://app-api.shop.ele.me/shop/invoke/?method=setShop.updateShopBusinessInfo
+      body:
+        shopId: 2065322800
+        update: {promotionInfo: "苏姐甜品采用新鲜的食材，每日现做，为您提供优质服务，我们的客服号码是：18128540670。有任何餐品服务和配送问题，可及时跟我们沟通。"}
+      requires:
+        - shopId
+        - update/promotionInfo
+
+    到店自取/create:
+      url: https://app-api.shop.ele.me/packs/invoke?method=PacksContractService.signInShopContract
+      body:
+        channel: "0"
+        inShopType: "1"
+        months: 12
+        shopId: 2065322800
+      requires:
+        - shopId
 
     招牌列表/get:
       url: https://app-api.shop.ele.me/shop_deco/invoke/?method=ShopSignService.getShopSigns
@@ -1676,7 +1735,7 @@ requests:
         brandStoryId: 928301
       requires:
         - brandStoryId
-        
+
     品牌故事/update:
       url: https://app-api.shop.ele.me/shop_deco/invoke/?method=ShopBrandStoryService.updateBrandStory
       body:
