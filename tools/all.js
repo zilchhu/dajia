@@ -672,29 +672,73 @@ async function a(wmPoiId) {
     //   [501129234, date(), date(360), [date(), date(360)]],
     //   xshard(501129234)
     // )
-    // const res = await execRequest(
+    metasVar.shopId = 2065322800
+    // const actId = await execRequest(
     //   instanceElm,
     //   y.requests.elm['超值换购/create/activity'],
-    //   [501103172, [{ beginDate: date(), endDate: date(360) }]],
-    //   xshard(501103172)
+    //   [2065322800, [{ beginDate: date(), endDate: date(360) }]],
+    //   xshard(2065322800)
     // )
     // const promises = y.rules['超值换购'].map(v =>
-    //   execRequest(instanceElm, y.requests.elm['商品列表2/search'], [wmPoiId, v, Math.random()])
+    //   execRequest(instanceElm, y.requests.elm['商品列表/search'], [2065322800, v])
     // )
     // const goods = await Promise.allSettled(promises)
     // const actItems = goods
     //   .filter(v => v.status == 'fulfilled')
+    //   .filter(v => v.value.itemOfName.length > 0)
     //   .slice(0, 3)
-    //   .map(v => v.value[0].groupData[0])
-    //   .map(({ wm_poi_id, id, price, name }) => ({
-    //     list: [`${wm_poi_id}_${id}_${price}`],
-    //     dayLimit: -1,
-    //     orderLimit: '1',
-    //     mtCharge: 0,
-    //     actItemPrice: '6.9',
-    //     itemName: name
-    //   }))
+    //   .map(v => v.value.itemOfName[0])
+    //   .map(v => ({ benefit: '7.9', foodId: v.id, stock: 10000 }))
+    // const res = await execRequest(
+    //   instanceElm,
+    //   y.requests.elm['超值换购/create/foods'],
+    //   [2065322800, actId, actItems],
+    //   xshard(2065322800)
+    // )
 
+    let acts = await execRequest(instanceElm, y.requests.elm['折扣商品/get'], [500726782], xshard(500726782))
+    let actsT = await execRequest(instanceElm, y.requests.elm['折扣商品/get'], [2065322800], xshard(2065322800))
+    acts = acts.foods
+    actsT = actsT.foods
+    acts = acts.filter(item => !actsT.find(k => k.name == item.name)).reverse()
+    let results = []
+    await execRequest(instanceElm, y.requests.elm['折扣商品/update/count'], [2065322800], xshard(2065322800))
+    for (let item of acts) {
+      try {
+        const searches = await execRequest(instanceElm, y.requests.elm['商品列表/search'], [2065322800, item.name])
+        const food = searches.itemOfName.find(v => v.name == item.name)
+        if (!food) {
+          results.push({ name: item.name, status: 'fail', reason: `name not matched` })
+          continue
+        }
+        const actContent = await execRequest(
+          instanceElm,
+          y.requests.elm['折扣商品/get/content'],
+          [500726782, item.foodId, item.activityId],
+          xshard(500726782)
+        )
+        const r = await execRequest(
+          instanceElm,
+          y.requests.elm['折扣商品/create'],
+          [
+            2065322800,
+            [{ benefit: actContent.benefit, foodId: food.specs[0].id, stock: 10000 }],
+            2065322800,
+            actContent.benefit,
+            actContent.effectTimes,
+            [{ beginDate: date(), endDate: date(360) }]
+          ],
+          xshard(2065322800)
+        )
+        console.log(r)
+        results.push({ name: item.name, status: 'succ', value: r })
+      } catch (e) {
+        console.log(e)
+        results.push({ name: item.name, status: 'fail', reason: e })
+      }
+    }
+
+    let res = results
     // let data = await readJson('log/log.json')
 
     // data = data.filter(v => v.err.message == '服务器异常').map(v => v.meta)
@@ -751,7 +795,7 @@ async function a(wmPoiId) {
     //   xshard(2065322800)
     // )
 
-    metasVar.shopId = 2065322800
+    // metasVar.shopId = 2065322800
 
     // const sign = await execRequest(instanceElm, y.requests.elm['店铺招牌/get'], {}, xshard(93089700))
     // if (sign.shopIds.includes(parseInt(2065322800))) return Promise.reject({ err: 'signage has been binded' })
@@ -793,7 +837,7 @@ async function a(wmPoiId) {
     //     itemType: 'NORMAL',
     //     windowSite: i + 1
     //   }))
-    // metasVar.shopId = 2065322800
+
     // const res = await execRequest(instanceElm, y.requests.elm['爆款橱窗/create'], [2065322800, 2065322800, goods, goods.length])
 
     // const hot = await execRequest(instanceElm, y.requests.elm['特色分类/get'], [2065322800], xshard(2065322800))
@@ -989,7 +1033,7 @@ async function moveFood(shopId) {
   }
 }
 
-a()
+// a()
 
 koa.use(cors())
 koa.use(
@@ -1061,7 +1105,7 @@ router.post('/tests/del', async ctx => {
 })
 
 koa.use(router.routes())
-// koa.listen(9010, () => console.log('running at 9010'))
+koa.listen(9010, () => console.log('running at 9010'))
 
 async function freshMt(userTasks, userRule) {
   try {
@@ -1432,7 +1476,7 @@ async function freshMt(userTasks, userRule) {
 
 async function freshElm(userTasks, userRule) {
   try {
-    const { shopId, shopType, shopReducType, shopBrandType } = userRule
+    const { shopId, shopType, shopReducType, shopBrandType, sourceShopId } = userRule
 
     if (!shopId || !shopType || !shopReducType) return Promise.reject('invalid params')
 
@@ -1680,12 +1724,7 @@ async function freshElm(userTasks, userRule) {
                 item.components.map(c => ({ id: c.id, fieldName: c.fieldName, value: c.value, extension: c.extension }))
               )
             )
-            const deliver = await execRequest(
-              instanceElm,
-              y.requests.elm['配送管理/get'],
-              [shopId],
-              xshard(shopId)
-            )
+            const deliver = await execRequest(instanceElm, y.requests.elm['配送管理/get'], [shopId], xshard(shopId))
             let fee = 3.1
             if (deliver.shopProductDesc != '自配送') {
               fee = Object.values(deliver.productDelivery)[0].areas[0].deliveryFeeItems[0] + 0.1
@@ -1715,12 +1754,97 @@ async function freshElm(userTasks, userRule) {
                 value: v.value
               }
             })
-            return execRequest(
-              instanceElm2,
-              y.requests.elm['减配送费/create'],
-              [shopId, newForm],
+            return execRequest(instanceElm2, y.requests.elm['减配送费/create'], [shopId, newForm], xshard(shopId))
+          } catch (e) {
+            return Promise.reject(e)
+          }
+        }
+      },
+      {
+        name: '超值换购',
+        fn: async function() {
+          try {
+            const actId = await execRequest(
+              instanceElm,
+              y.requests.elm['超值换购/create/activity'],
+              [shopId, [{ beginDate: date(), endDate: date(360) }]],
               xshard(shopId)
             )
+            const promises = y.rules['超值换购'].map(v =>
+              execRequest(instanceElm, y.requests.elm['商品列表/search'], [shopId, v])
+            )
+            const goods = await Promise.allSettled(promises)
+            const actItems = goods
+              .filter(v => v.status == 'fulfilled')
+              .filter(v => v.value.itemOfName.length > 0)
+              .slice(0, 3)
+              .map(v => v.value.itemOfName[0])
+              .map(v => ({ benefit: '7.9', foodId: v.id, stock: 10000 }))
+            return execRequest(
+              instanceElm,
+              y.requests.elm['超值换购/create/foods'],
+              [shopId, actId, actItems],
+              xshard(shopId)
+            )
+          } catch (e) {
+            return Promise.reject(e)
+          }
+        }
+      },
+      {
+        name: '折扣商品',
+        fn: async function() {
+          try {
+            if(!sourceShopId) return Promise.reject({err: 'no sourceShopId'})
+            let acts = await execRequest(instanceElm, y.requests.elm['折扣商品/get'], [sourceShopId], xshard(sourceShopId))
+            let actsT = await execRequest(instanceElm, y.requests.elm['折扣商品/get'], [shopId], xshard(shopId))
+            acts = acts.foods
+            actsT = actsT.foods
+            acts = acts.filter(item => !actsT.find(k => k.name == item.name)).reverse()
+            let results = []
+            await execRequest(instanceElm, y.requests.elm['折扣商品/update/count'], [shopId], xshard(shopId))
+            for (let item of acts) {
+              try {
+                const searches = await execRequest(instanceElm, y.requests.elm['商品列表/search'], [
+                  shopId,
+                  item.name
+                ])
+                const food = searches.itemOfName.find(v => v.name == item.name)
+                if (!food) {
+                  results.push({ name: item.name, status: 'fail', reason: `name not matched` })
+                  continue
+                }
+                const actContent = await execRequest(
+                  instanceElm,
+                  y.requests.elm['折扣商品/get/content'],
+                  [sourceShopId, item.foodId, item.activityId],
+                  xshard(sourceShopId)
+                )
+                if (!actContent) {
+                  results.push({ name: item.name, status: 'fail', reason: `act not found` })
+                  continue
+                }
+                const r = await execRequest(
+                  instanceElm,
+                  y.requests.elm['折扣商品/create'],
+                  [
+                    shopId,
+                    [{ benefit: actContent.benefit, foodId: food.specs[0].id, stock: 10000 }],
+                    shopId,
+                    actContent.benefit,
+                    actContent.effectTimes,
+                    [{ beginDate: date(), endDate: date(360) }]
+                  ],
+                  xshard(shopId)
+                )
+                console.log(r)
+                results.push({ name: item.name, status: 'succ', value: r })
+              } catch (e) {
+                console.log(e)
+                results.push({ name: item.name, status: 'fail', reason: e })
+              }
+            }
+            return Promise.resolve(results)
           } catch (e) {
             return Promise.reject(e)
           }

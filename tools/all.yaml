@@ -1350,7 +1350,7 @@ requests:
       requires:
         - request/shopId
         - request/playRules
-        
+
     # 商品
     分类列表/get:
       url: https://app-api.shop.ele.me/nevermore.goods/invoke/?method=FoodService.queryCategoryWithFoodFilter
@@ -1536,6 +1536,45 @@ requests:
         - foodId
         - activityId
     
+    折扣商品/create:
+      url: https://app-api.shop.ele.me/marketing/invoke/?method=SkuActivityNcpService.createAndParticipatePriceActivity
+      body:
+        shopId: 2065322800
+        skus: [{benefit: 8.8, foodId: "2000000171572949", stock: 10000}]
+        activity:
+          activityTime: 
+            dates: [{beginDate: "2021-01-29", endDate: "2021-04-29"}]
+            times: [{beginTime: "00:00:00", endTime: "23:59:59"}]
+            weekdays: [1, 2, 3, 4, 5, 6, 7]
+          autoDelaySwitch: true
+          baiduPlatform: true
+          benefit: 8.8
+          condition: 1
+          conditionType: "ONLY"
+          effectTimes: 10000
+          effectiveCondition: {forPeople: "ALL_CUSTOM"}
+          elePlatform: true
+          icon: {backgroud: "#FAA43C", text: "特"}
+          shopId: 2065322800
+          source: "SELF_MARKETING"
+          stockDTO: {stock: 10000, stockType: "DAILY"}
+          tied: false
+      requires:
+        - shopId
+        - skus
+        - activity/shopId
+        - activity/benefit
+        - activity/effectTimes
+        - activity/activityTime/dates
+    
+    折扣商品/update/count:
+      url: https://app-api.shop.ele.me/marketing/invoke/?method=ActivityShowService.updateShopShareMaxCount
+      body:
+        maxCount: -1
+        shopId: 2065322800
+      requires:
+        - shopId
+
     # 门店
     配送管理/get:
       url: https://app-api.shop.ele.me/delivery/invoke/?method=ShopProductDeliveryService.getProductDeliveryView
