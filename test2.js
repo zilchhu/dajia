@@ -832,6 +832,68 @@ async function updateFoodSku(id, name, price, boxPrice) {
   }
 }
 
+async function updatePlan(id, name, minOrder, price, boxPrice, actPrice, orderLimit) {
+  const fallbackApp = new FallbackApp(id)
+  let results = {}
+  try {
+    const { ok } = await fallbackApp.food.setHighBoxPrice(0, true)
+    if (ok) {
+      if (price) {
+        let skus = [
+          {
+            price,
+            wmProductLadderBoxPrice: boxPrice ? { ladder_num: 1, ladder_price: boxPrice, status: 1 } : null
+          }
+        ]
+        const delActRes = await delAct(id, name)
+        const minOrderCount = await fallbackApp.food.getMinOrderCount(name)
+        const updateSkusRes = await batchUpdateFoodSkus(id, name, skus)
+
+        results.priceRes = {
+          delActRes,
+          updateSkusRes
+        }
+
+        if (minOrderCount != 1) {
+          const saveRes = await fallbackApp.food.save(name, minOrder)
+          results.priceRes.saveRes = saveRes
+        }
+
+        if (!delActRes.noAct) {
+          const createActRes = await createAct(id, name, delActRes.actPrice, delActRes.orderLimit)
+          results.createActRes.createActRes = createActRes
+        }
+      }
+
+      if (boxPrice) {
+        const boxPriceRes = await updateFoodBoxPrice(id, name, boxPrice)
+        results.boxPriceRes = boxPriceRes
+      }
+
+      if (actPrice) {
+        const delActRes = await delAct(id, name)
+        const actPriceRes = await createAct(id, name, actPrice, delActRes.orderLimit)
+        results.actPriceRes = actPriceRes
+      }
+
+      if (orderLimit) {
+        const delActRes = await delAct(id, name)
+        const orderLimitRes = await createAct(id, name, delActRes.actPrice, orderLimit)
+        results.orderLimitRes = orderLimitRes
+      }
+
+      if (minOrder) {
+        const minOrderRes = await fallbackApp.food.save(name, minOrder)
+        results.minOrderCount = minOrderRes
+      }
+
+      return Promise.resolve(results)
+    } else return Promise.reject({ err: 'sync failed' })
+  } catch (err) {
+    return Promise.reject(err)
+  }
+}
+
 async function test_plan() {
   try {
     let dataSource6 = await readXls('plan/福袋添加餐盒费2.xls', '美团餐品规则')
@@ -1051,17 +1113,170 @@ async function test_updateMaterial() {
     console.error(error)
   }
 }
+
+async function test_autotask() {
+  try {
+    let tasks = {
+      薯饼虾饼鸡柳无起购: async function() {
+        try {
+          console.log('薯饼虾饼鸡柳无起购')
+          let task = await knx('test_task_')
+            .select()
+            .where({ title: '薯饼虾饼鸡柳无起购', platform: '美团' })
+          if (!task) return
+          let [data, _] = await knx.raw(task[0].sql)
+          data = data.map((v, i) => [v.门店id, v.品名, 2, null, null, 0.99, 1, i])
+          await loop(updatePlan, data, false, { test: delFoods })
+        } catch (e) {
+          console.error(e)
+        }
+      },
+      两份起购餐盒费: async function() {
+        try {
+          console.log('两份起购餐盒费')
+          let task = await knx('test_task_')
+            .select()
+            .where({ title: '两份起购餐盒费', platform: '饿了么' })
+          if (!task) return
+          let [data, _] = await knx.raw(task[0].sql)
+          data = data.map(v => [v.门店id, v.品名, null, 1.5, null, null])
+          await loop(updatePlan, data, false)
+        } catch (e) {
+          console.error(e)
+        }
+      },
+      两份起购无餐盒费: async function() {
+        try {
+          console.log('两份起购无餐盒费')
+          let task = await knx('test_task_')
+            .select()
+            .where({ title: '两份起购无餐盒费', platform: '饿了么' })
+          if (!task) return
+          let [data, _] = await knx.raw(task[0].sql)
+          data = data.map(v => [v.门店id, v.品名, null, 0.5, null, null])
+          await loop(updatePlan, data, false)
+        } catch (e) {
+          console.error(e)
+        }
+      },
+      常规产品无餐盒费: async function() {
+        try {
+          console.log('常规产品无餐盒费')
+          let task = await knx('test_task_')
+            .select()
+            .where({ title: '常规产品无餐盒费', platform: '饿了么' })
+          if (!task) return
+          let [data, _] = await knx.raw(task[0].sql)
+          data = data.map(v => [v.门店id, v.品名, null, 1, null, null])
+          await loop(updatePlan, data, false)
+        } catch (e) {
+          console.error(e)
+        }
+      },
+      非: async function() {
+        try {
+          console.log('非')
+          let task = await knx('test_task_')
+            .select()
+            .where({ title: '≠6.9+0.5', platform: '饿了么' })
+          if (!task) return
+          let [data, _] = await knx.raw(task[0].sql)
+          data = data.map(v => [v.shop_id, v.name, null, 0.5, 6.9, null])
+          await loop(updatePlan, data, false)
+        } catch (e) {
+          console.error(e)
+        }
+      },
+      原价餐盒凑起送: async function() {
+        try {
+          console.log('原价餐盒凑起送')
+          let task = await knx('test_task_')
+            .select()
+            .where({ title: '原价餐盒凑起送', platform: '饿了么' })
+          if (!task) return
+          let [data, _] = await knx.raw(task[0].sql)
+          data = data.map(v => [v.门店id, v.品名, null, 1, 13.8, null])
+          await loop(updatePlan, data, false)
+        } catch (e) {
+          console.error(e)
+        }
+      },
+      甜品粉面套餐: async function() {
+        try {
+          console.log('甜品粉面套餐')
+          let task = await knx('test_task_')
+            .select()
+            .where({ title: '甜品粉面套餐', platform: '饿了么' })
+          if (!task) return
+          let [data, _] = await knx.raw(task[0].sql)
+          data = data.map(v => [v.门店id, v.品名, null, 2, 27.8, 15.8])
+          await loop(updatePlan, data, false)
+        } catch (e) {
+          console.error(e)
+        }
+      },
+      贡茶粉面套餐: async function() {
+        try {
+          console.log('贡茶粉面套餐')
+          let task = await knx('test_task_')
+            .select()
+            .where({ title: '贡茶粉面套餐', platform: '饿了么' })
+          if (!task) return
+          let [data, _] = await knx.raw(task[0].sql)
+          data = data.map(v => [v.门店id, v.品名, null, 2, 29.6, 15.8])
+          await loop(updatePlan, data, false)
+        } catch (e) {
+          console.error(e)
+        }
+      },
+      除原价扣点加料价格: async function() {
+        try {
+          console.log('除原价扣点加料价格')
+          let task = await knx('test_task_')
+            .select()
+            .where({ title: '除原价扣点加料价格', platform: '饿了么' })
+          if (!task) return
+          let [data, _] = await knx.raw(task[0].sql)
+          data = data.map(v => [v.门店id, v.品名, null, 0, 6, null])
+          await loop(updatePlan, data, false)
+        } catch (e) {
+          console.error(e)
+        }
+      },
+      两份起购起购数: async function() {
+        try {
+          console.log('两份起购起购数')
+          let task = await knx('test_task_')
+            .select()
+            .where({ title: '两份起购起购数', platform: '饿了么' })
+          if (!task) return
+          let [data, _] = await knx.raw(task[0].sql)
+          data = data.map(v => [v.门店id, v.品名, 2, null, null, null])
+          await loop(updatePlan, data, false)
+        } catch (e) {
+          console.error(e)
+        }
+      }
+    }
+    // await tasks['薯饼虾饼鸡柳无起购']()
+    const fallbackApp = new FallbackApp(10085676)
+    console.log(await fallbackApp.food.save('双蛋烤冷面', 2, '1人份', '鸡蛋'))
+  } catch (error) {
+    console.error(error)
+  }
+}
 // test_saveFood()
 // test_updateAct()
 // test_createAct()
 
-let date = new Date(2021, 0, 28, 3, 0, 0)
-console.log('task wiil be exec at', date)
-let j = schedule.scheduleJob(date, async function() {
-  await test_plan()
-})
+// let date = new Date(2021, 0, 28, 3, 0, 0)
+// console.log('task wiil be exec at', date)
+// let j = schedule.scheduleJob(date, async function() {
+//   await test_plan()
+// })
 
 // test_testFood()
+test_autotask()
 
 // test_plan()
 // test_updateMaterial()
