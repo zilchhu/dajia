@@ -849,11 +849,36 @@ async function a(wmPoiId) {
     // }
     // const temp = y.requests.elm['减配送费/create'].body.request.playRules
     // newForm = temp.map(v => {
-    //   let newForm.find(k => k.fieldName == v.fieldName),
-    //   value: v.fieldName == '起止日期' ? JSON.stringify({ beginDate: date(), endDate: date(360) }) : v.value
+    //   let f = newForm.find(k => k.fieldName == v.fieldName)
+    //   if (v.fieldName == '配送方式')
+    //     return {
+    //       id: f.id,
+    //       value: JSON.stringify(
+    //         JSON.parse(f.extension).configOptions.map(j => ({ value: j.value, standardId: j.standardId }))
+    //       )
+    //     }
+    //   if (v.fieldName == '优惠形式')
+    //     return {
+    //       id: f.id,
+    //       value: JSON.stringify({ type: 'IMME_REDUCE', value: fee })
+    //     }
+    //   if (v.fieldName == '日期')
+    //     return {
+    //       id: f.id,
+    //       value: JSON.stringify({ beginDate: date(), endDate: date(360) })
+    //     }
+    //   return {
+    //     id: f.id,
+    //     value: v.value
+    //   }
     // })
-    // const res = await execRequest()
-    // console.log(fee)
+    // const res = await execRequest(
+    //   instanceElm2,
+    //   y.requests.elm['减配送费/create'],
+    //   [173002615, newForm],
+    //   xshard(173002615)
+    // )
+    console.log(res)
   } catch (error) {
     console.error(error)
     fs.writeFileSync('log/log.json', JSON.stringify(error))
@@ -983,6 +1008,21 @@ router.post('/fresh/mt', async ctx => {
       return
     }
     const res = await freshMt(userTasks, userRule)
+    ctx.body = { res }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
+
+router.post('/fresh/elm', async ctx => {
+  try {
+    let { userTasks, userRule } = ctx.request.body
+    if (!userTasks || !userRule) {
+      ctx.body = { e: 'invalid params' }
+      return
+    }
+    const res = await freshElm(userTasks, userRule)
     ctx.body = { res }
   } catch (e) {
     console.log(e)
@@ -1390,13 +1430,319 @@ async function freshMt(userTasks, userRule) {
   }
 }
 
-async function freshElm() {
+async function freshElm(userTasks, userRule) {
   try {
-    const y = readYaml('tools/all.yaml')
+    const { shopId, shopType, shopReducType, shopBrandType } = userRule
 
-    const res = await execRequest(instanceElm, y.requests.elm['分类列表/get'])
+    if (!shopId || !shopType || !shopReducType) return Promise.reject('invalid params')
+
+    metasVar.shopId = shopId
+
+    const allTasks = [
+      {
+        name: '吃货红包',
+        fn: b(
+          instanceElm,
+          y.requests.elm['吃货红包/create'],
+          [shopId, shopId, date(), date(360), [iso(), iso(360)]],
+          xshard(shopId)
+        )
+      },
+      {
+        name: '店铺满赠',
+        fn: b(
+          instanceElm,
+          y.requests.elm['店铺满赠/create'],
+          [shopId, [{ beginDate: date(), endDate: date(360) }]],
+          xshard(shopId)
+        )
+      },
+      {
+        name: '超级吃货红包',
+        fn: b(
+          instanceElm,
+          y.requests.elm['超级吃货红包/create'],
+          [shopId, date(), date(360), [date(), date(360)]],
+          xshard(shopId)
+        )
+      },
+      {
+        name: '下单返红包',
+        fn: async function() {
+          try {
+            const form = await execRequest(
+              instanceElm2,
+              y.requests.elm['下单返红包/get/form'],
+              [shopId],
+              xshard(shopId)
+            )
+            const temp = y.requests.elm['下单返红包/create'].body.request.playRules
+            let newForm = flatten(
+              form.map(item => item.components.map(c => ({ id: c.id, fieldName: c.fieldName, value: c.value })))
+            )
+            newForm = temp.map(v => ({
+              id: newForm.find(k => k.fieldName == v.fieldName).id,
+              value: v.fieldName == '起止日期' ? JSON.stringify({ beginDate: date(), endDate: date(360) }) : v.value
+            }))
+            return execRequest(instanceElm2, y.requests.elm['下单返红包/create'], [shopId, newForm], xshard(shopId))
+          } catch (e) {
+            return Promise.reject(e)
+          }
+        }
+      },
+      {
+        name: '集点返红包',
+        fn: b(instanceElm2, y.requests.elm['集点返红包/create'], [shopId], xshard(shopId))
+      },
+      {
+        name: '顾客下单',
+        fn: b(instanceElm, y.requests.elm['顾客下单/update'], [shopId, shopId], xshard(shopId))
+      },
+      {
+        name: '自动回复',
+        fn: b(instanceElm, y.requests.elm['自动回复/update'], [shopId], xshard(shopId))
+      },
+      {
+        name: '满减活动',
+        fn: async function() {
+          try {
+            const policy = y.rules['满减活动'][shopReducType].map(([a, b]) => ({
+              benefit: { type: 'REDUCTION', content: b },
+              condition: { type: 'QUOTA', content: a },
+              subsidy: { type: 'MONEY', content: '0', subsidySource: 'SHOP' }
+            }))
+            return execRequest(
+              instanceElm2,
+              y.requests.elm['满减活动/create'],
+              [shopId, shopId, policy, [{ beginDate: date(), endDate: date(360) }]],
+              xshard(shopId)
+            )
+          } catch (e) {
+            return Promise.reject(e)
+          }
+        }
+      },
+      {
+        name: '极速退款',
+        fn: b(instanceElm, y.requests.elm['极速退款/update'], [[{ open: true, refundType: 1, shopId }]], xshard(shopId))
+      },
+      {
+        name: '店铺招牌',
+        fn: async function() {
+          try {
+            const sign = await execRequest(instanceElm, y.requests.elm['店铺招牌/get'], {}, xshard(93089700))
+            if (sign.shopIds.includes(parseInt(shopId))) return Promise.reject({ err: 'signage has been binded' })
+            let chainIds = [...sign.shopIds, shopId]
+            return execRequest(instanceElm, y.requests.elm['店铺招牌/update'], [chainIds], xshard(93089700))
+          } catch (e) {
+            return Promise.reject(e)
+          }
+        }
+      },
+      {
+        name: '店内海报',
+        fn: async function() {
+          try {
+            const promises = y.rules.elm['老板推荐'][shopType].map(v =>
+              typeof v == 'string'
+                ? execRequest(instanceElm, y.requests.elm['商品列表/search'], [shopId, v], xshard(shopId))
+                : searchRace3(y.requests.elm['商品列表/search'], v, shopId)
+            )
+            let goods = await Promise.allSettled(promises)
+            goods = goods
+              .filter(v => v.status == 'fulfilled' && v.value.itemOfName.length > 0)
+              .map(v => v.value.itemOfName[0])
+              .map(v => ({ name: v.name, itemId: v.id, shopId: shopId }))
+            let image = y.rules.elm['店内海报']['甜品']
+
+            return execRequest(
+              instanceElm,
+              y.requests.elm['店内海报/create'],
+              [shopId, image, goods, date(), date(360)],
+              xshard(shopId)
+            )
+          } catch (e) {
+            return Promise.reject(e)
+          }
+        }
+      },
+      {
+        name: '爆款橱窗',
+        fn: async function() {
+          try {
+            const promises = y.rules.elm['爆款橱窗'][shopType].map(v =>
+              typeof v == 'string'
+                ? execRequest(instanceElm, y.requests.elm['商品列表/search'], [shopId, v], xshard(shopId))
+                : searchRace3(y.requests.elm['商品列表/search'], v, shopId)
+            )
+            let goods = await Promise.allSettled(promises)
+            goods = goods
+              .filter(v => v.status == 'fulfilled' && v.value.itemOfName.length > 0)
+              .map(v => v.value.itemOfName[0])
+              .map((v, i) => ({
+                commodityGlobalId: v.globalId,
+                commodityId: v.id,
+                commodityName: v.name,
+                itemType: 'NORMAL',
+                windowSite: i + 1
+              }))
+
+            return execRequest(instanceElm, y.requests.elm['爆款橱窗/create'], [shopId, shopId, goods, goods.length])
+          } catch (e) {
+            return Promise.reject(e)
+          }
+        }
+      },
+      {
+        name: '特色分类',
+        fn: async function() {
+          try {
+            const hot = await execRequest(instanceElm, y.requests.elm['特色分类/get'], [shopId], xshard(shopId))
+            return execRequest(
+              instanceElm,
+              y.requests.elm['特色分类/update'],
+              [
+                {
+                  ...hot,
+                  ...y.rules.elm['特色分类'],
+                  operateAccount: '',
+                  operateShopId: shopId,
+                  shopIds: [shopId]
+                }
+              ],
+              xshard(shopId)
+            )
+          } catch (e) {
+            return Promise.reject(e)
+          }
+        }
+      },
+      {
+        name: '品牌故事',
+        fn: async function() {
+          try {
+            if (!shopBrandType) return Promise.reject({ err: 'no brand' })
+            let storys = await execRequest(instanceElm, y.requests.elm['品牌故事/get'], {}, xshard(93089700))
+            storys = storys.sort((a, b) => b.shopCount - a.shopCount)
+            let { id } = storys.find(v => v.title == y.rules.elm['品牌故事'][shopBrandType])
+            let story = await execRequest(instanceElm, y.requests.elm['品牌故事/get/info'], [id], xshard(93089700))
+            if (story.storyShopRelationIds.includes(parseInt(shopId)))
+              return Promise.reject({ err: 'story has been binded' })
+            let storyShopRelationIds = [...story.storyShopRelationIds, shopId]
+            const shop = await execRequest(instanceElm, y.requests.elm['门店信息/get'], [shopId], xshard(shopId))
+            let storyShopRelations = [
+              ...story.storyShopRelations,
+              { shopId: shopId, shopName: shop.basis.name }
+            ].map((v, i) => ({ ...v, itemSite: i + 1 }))
+            return execRequest(instanceElm, y.requests.elm['品牌故事/update'], [
+              {
+                ...story,
+                operateShopId: 93089700,
+                storyShopRelationIds,
+                storyShopRelations,
+                shopCount: storyShopRelationIds.length
+              }
+            ])
+          } catch (e) {
+            return Promise.reject(e)
+          }
+        }
+      },
+      {
+        name: '营业时间',
+        fn: b(instanceElm, y.requests.elm['营业时间/update'], [shopId], xshard(shopId))
+      },
+      {
+        name: '店铺公告',
+        fn: async function() {
+          try {
+            if (!shopBrandType) return Promise.reject({ err: 'no brand' })
+            const shop = await execRequest(instanceElm, y.requests.elm['门店信息/get'], [shopId], xshard(shopId))
+            const phone = shop.detail.phones[0]
+            let bulletin = y.rules.elm['店铺公告'][shopBrandType].replace('xxxx', phone)
+            return execRequest(instanceElm, y.requests.elm['店铺公告/update'], [shopId, bulletin], xshard(shopId))
+          } catch (e) {
+            return Promise.reject(e)
+          }
+        }
+      },
+      {
+        name: '到店自取',
+        fn: b(instanceElm, y.requests.elm['到店自取/create'], [shopId], xshard(shopId))
+      },
+      {
+        name: '减配送费',
+        fn: async function() {
+          try {
+            const form = await execRequest(instanceElm2, y.requests.elm['减配送费/get'], [shopId], xshard(shopId))
+            let newForm = flatten(
+              form.map(item =>
+                item.components.map(c => ({ id: c.id, fieldName: c.fieldName, value: c.value, extension: c.extension }))
+              )
+            )
+            const deliver = await execRequest(
+              instanceElm,
+              y.requests.elm['配送管理/get'],
+              [shopId],
+              xshard(shopId)
+            )
+            let fee = 3.1
+            if (deliver.shopProductDesc != '自配送') {
+              fee = Object.values(deliver.productDelivery)[0].areas[0].deliveryFeeItems[0] + 0.1
+            }
+            const temp = y.requests.elm['减配送费/create'].body.request.playRules
+            newForm = temp.map(v => {
+              let f = newForm.find(k => k.fieldName == v.fieldName)
+              if (v.fieldName == '配送方式')
+                return {
+                  id: f.id,
+                  value: JSON.stringify(
+                    JSON.parse(f.extension).configOptions.map(j => ({ value: j.value, standardId: j.standardId }))
+                  )
+                }
+              if (v.fieldName == '优惠形式')
+                return {
+                  id: f.id,
+                  value: JSON.stringify({ type: 'IMME_REDUCE', value: fee })
+                }
+              if (v.fieldName == '日期')
+                return {
+                  id: f.id,
+                  value: JSON.stringify({ beginDate: date(), endDate: date(360) })
+                }
+              return {
+                id: f.id,
+                value: v.value
+              }
+            })
+            return execRequest(
+              instanceElm2,
+              y.requests.elm['减配送费/create'],
+              [shopId, newForm],
+              xshard(shopId)
+            )
+          } catch (e) {
+            return Promise.reject(e)
+          }
+        }
+      }
+    ]
+
+    let tasks = allTasks.filter(t => userTasks.map(u => u.name).includes(t.name))
+    let results = []
+    for (let t of tasks) {
+      try {
+        let value = await t.fn()
+        results.push({ name: t.name, status: 'succ', value })
+      } catch (e) {
+        results.push({ name: t.name, status: 'fail', reason: e })
+      }
+    }
+
+    console.log(results)
+    return Promise.resolve(results)
   } catch (e) {
-    console.error(e)
+    return Promise.reject(e)
   }
 }
 
