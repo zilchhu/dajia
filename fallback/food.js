@@ -248,12 +248,12 @@ export default class Food {
     return instance.post(urls.food.updateImg, data)
   }
 
-  async batchUpdateStock(skuIds, stock = 10000) {
+  async batchUpdateStock(skuIds, stock = -1) {
     let data = {
       wmPoiId: this.wmPoiId,
       skuIds: skuIds.join(','),
       stock,
-      maxStock: 10000,
+      // maxStock: 10000,
       autoRefresh: 1,
       v2: 1,
       viewStyle: 0,
@@ -490,7 +490,7 @@ export default class Food {
     return instance.post(urls.food.save, data)
   }
 
-  async save(name, minOrderCount, weightUnit, mainMat) {
+  async save(name, minOrderCount, weightUnit, mainMat, prodStock = {}) {
     let that = this
     try {
       const food = await this.find(name)
@@ -578,7 +578,7 @@ export default class Food {
           ...sku,
           weight: -2,
           weight_unit: weightUnit || sku.weight_unit,
-          wmProductStock: sku.wmProductStock || {
+          wmProductStock: { ...sku.wmProductStock, ...prodStock } || {
             max_stock: 10000,
             auto_refresh: 0
           }

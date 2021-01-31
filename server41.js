@@ -28,12 +28,12 @@ async function t() {
   try {
     const r = await knx('foxx_operating_data')
       .select()
-      .where({ date: 20210123 })
+      .where({ date: 20210130 })
     const d = Array.from(new Set(r.map(v => v.shop_id))).map(v => r.find(k => k.shop_id == v))
     await knx('foxx_operating_data')
-      .where({ date: 20210123 })
+      .where({ date: 20210130 })
       .del()
-    console.log(await knx('foxx_operating_data').insert(d))
+    // console.log(await knx('foxx_operating_data').insert(d))
   } catch (e) {
     console.error(e)
   }
@@ -75,6 +75,16 @@ router.get('/sum/:date', async ctx => {
       return
     }
     const res = await sum(date)
+    ctx.body = { res }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
+
+router.get('/fresh', async ctx => {
+  try {
+    const res = await fresh()
     ctx.body = { res }
   } catch (e) {
     console.log(e)
@@ -180,6 +190,15 @@ const sum_sql = d =>
   FROM b 
   WHERE date >= DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL ${d} DAY),'%Y%m%d')
   ORDER BY date DESC, income_sum DESC`
+
+const fresh_sql = `SELECT a.*, IFNULL(b.shop_name, c.reptile_type) AS name from foxx_new_shop_track a
+  LEFT JOIN ele_info_manage b ON a.wmpoiid = b.shop_id 
+  LEFT JOIN foxx_shop_reptile c USING(wmpoiid)
+  LEFT JOIN foxx_new_shop d ON a.wmpoiid = d.shop_id
+  WHERE (b.shop_name IS NOT NULL OR c.reptile_type IS NOT NULL)
+  AND d.status <> 9 AND DATEDIFF(a.date, d.shop_start_date) BETWEEN 1 AND 30
+  ORDER BY a.wmpoiid, a.date`
+
 async function date(d) {}
 
 async function sum(date) {
@@ -279,6 +298,69 @@ async function sum(date) {
       dates,
       shops: ys
     })
+  }
+}
+///////////////////////////
+/////////////////////////////
+//name field 20210101 20210102
+async function fresh() {
+  try {
+    let [data, _] = await knx.raw(fresh_sql)
+    if (!data) return Promise.reject('no data')
+    let res = new M(data).bind(format).bind(split_all)
+
+    return Promise.resolve(res.val)
+  } catch (e) {
+    return Promise.reject(e)
+  }
+
+  function format(xs) {
+    let ys = xs.map(v => ({
+      ...v,
+      Entryrate: percent(v.Entryrate),
+      Orderrate: percent(v.Orderrate)
+    }))
+    return new M(ys)
+  }
+
+  function split_all(xs) {
+    let names = distinct(xs, 'name')
+    let fields = {
+      evaluate: '评论数',
+      order: '单量',
+      bizScore: '评分',
+      moment: '推广',
+      turnover: '营业额',
+      unitPrice: '客单价',
+      overview: '曝光量',
+      Entryrate: '进店率',
+      Orderrate: '下单率',
+      specific_rate: '非议率',
+      off_shelf: '下架产品量',
+      over_due_date: '特权有效期',
+      kangaroo_name: '袋鼠店长',
+      red_packet_recharge: '高拥返现',
+      ranknum: '商圈排名',
+      bad_order: '差评数',
+      extend: '延迟发单'
+    }
+    let dates = distinct(xs, 'date').sort((a, b) => a - b)
+    let ys = names.map(name =>
+      Object.keys(fields).map(field => {
+        let values = dates.reduce((o, d) => {
+          let v = xs.find(x => x.name == name && x.date == d)
+          return { ...o, [d]: v ? v[field] : null }
+        }, {})
+        return {
+          key: `${name}-${field}`,
+          name,
+          field: fields[field],
+          ...values
+        }
+      })
+    )
+    ys = flatten(ys)
+    return new M({ shops: ys, dates })
   }
 }
 

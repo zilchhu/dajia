@@ -484,13 +484,13 @@ async function test_saveFood() {
   }
 }
 
-async function updateFoodStock(id, name, stock = 10000) {
+async function updateFoodStock(id, name, stock = -1) {
   const fallbackApp = await new FallbackApp(id)
 
   try {
     const food = await fallbackApp.food.find(name)
     let skuIds = food.wmProductSkus.map(v => v.id)
-    const foodUpdateStockRes = await fallbackApp.food.batchUpdateStock(skuIds)
+    const foodUpdateStockRes = await fallbackApp.food.batchUpdateStock(skuIds, stock)
     return Promise.resolve({ foodUpdateStockRes, skuIds })
   } catch (err) {
     return Promise.reject(err)
@@ -1259,12 +1259,27 @@ async function test_autotask() {
       }
     }
     // await tasks['薯饼虾饼鸡柳无起购']()
-    const fallbackApp = new FallbackApp(10085676)
-    console.log(await fallbackApp.food.save('双蛋烤冷面', 2, '1人份', '鸡蛋'))
+    const fallbackApp = new FallbackApp(9999888)
+
+    console.log(await fallbackApp.food.save('招牌芋圆【店长推荐】', 1, null, null))
   } catch (error) {
     console.error(error)
   }
 }
+
+async function test_stock(id) {
+  try {
+    let [data, _] = await knx.raw(`SELECT f.wmpoiid, reptile_type, name, stock FROM foxx_food_manage f 
+    LEFT JOIN foxx_shop_reptile s ON f.wmpoiid = s.wmpoiid
+    WHERE f.date = CURDATE()`)
+    data = data.filter(v => v.wmpoiid != 10085676 && v.stock != -1).map(v => [v.wmpoiid, v.name, -1])
+    await loop(updateFoodStock, data, false)
+  } catch (e) {
+    console.log(e)
+  }
+}
+
+test_stock()
 // test_saveFood()
 // test_updateAct()
 // test_createAct()
@@ -1276,7 +1291,7 @@ async function test_autotask() {
 // })
 
 // test_testFood()
-test_autotask()
+// test_autotask()
 
 // test_plan()
 // test_updateMaterial()
