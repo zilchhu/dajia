@@ -46,9 +46,11 @@ const urls = {
     highBoxPrice: '/reuse/product/food/r/highBoxPriceProductCount',
     syncFood: '/reuse/product/sync_food/w/submit',
     editView: 'reuse/product/food/r/editView',
+    editView2: 'reuse/product/food/r/editView/v2',
     searchProp: 'reuse/product/properties/r/property/sug',
     delTag: '/reuse/product/food/w/deleteTagById',
-    getTemp: 'reuse/product/properties/r/template'
+    getTemp: 'reuse/product/properties/r/template',
+    getProperties: 'reuse/product/properties/r/properties'
   },
   poi: {
     list: '/v2/shop/businessStatus/r/poiListSearch'

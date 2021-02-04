@@ -7,6 +7,7 @@ import xls2Json from 'xls-to-json'
 import util from 'util'
 import htmlparser2 from 'htmlparser2'
 import fs from 'fs'
+import flatten from 'flatten'
 
 const axls2Json = util.promisify(xls2Json)
 
@@ -441,6 +442,16 @@ export default class Food {
     return instance2.get(urls.food.editView, { params })
   }
 
+  async getEditView2(spuId) {
+    let params = {
+      spuId,
+      wmPoiId: this.wmPoiId,
+      clientId: 2,
+      v2: 1
+    }
+    return instance.get(urls.food.editView2, { params })
+  }
+
   async searchProperty(tagName, wm_product_lib_tag_id = 1000000015) {
     let params = {
       tagName,
@@ -450,12 +461,21 @@ export default class Food {
     return instance.get(urls.food.searchProp, { params })
   }
 
-  async getTemplate(spuId) {
+  async getTemplate(spuId, isNew = null) {
     let params = {
       spuId,
-      wmPoiId: this.wmPoiId
+      wmPoiId: this.wmPoiId,
+      isNew
     }
     return instance.get(urls.food.getTemp, { params })
+  }
+
+  async getProperties(categoryId) {
+    let params = {
+      categoryId,
+      needAll: 1
+    }
+    return instance.get(urls.food.getProperties, { params })
   }
 
   async getMinOrderCount(name) {
@@ -490,7 +510,7 @@ export default class Food {
     return instance.post(urls.food.save, data)
   }
 
-  async save(name, minOrderCount, weightUnit, mainMat, prodStock = {}) {
+  async save(name, minOrderCount, weightUnit, mainMat, attrList, prodStock = {}) {
     let that = this
     try {
       const food = await this.find(name)
@@ -510,9 +530,6 @@ export default class Food {
       pageModel = JSON.parse(pageModel)
 
       pageModel.wmProductSpu.attrList = pageModel.wmProductSpu.attrList || []
-      let attrList = pageModel.wmProductSpu.attrList.map(v =>
-        keep(v, ['id', 'wm_product_spu_id', 'no', 'name', 'value'])
-      )
 
       const temp = await this.getTemplate(food.id)
       let category_id = temp.categoryId
@@ -565,7 +582,9 @@ export default class Food {
 
       spu = {
         ...spu,
-        attrList,
+        attrList:
+          attrList ||
+          pageModel.wmProductSpu.attrList.map(v => keep(v, ['id', 'wm_product_spu_id', 'no', 'name', 'value'])),
         labelList: spu.labelList || [],
         search_terms: spu.search_terms || [],
         labelValues: spu.labelValues || [],
@@ -659,93 +678,185 @@ export default class Food {
       }
     }
   }
-}
 
-let skuT = {
-  spec: '1',
-  weight_unit: '1人份',
-  weight: -2,
-  price: '88',
-  stock: '10000',
-  wmProductStock: { max_stock: '10000', auto_refresh: 1 },
-  wmProductLadderBoxPrice: { ladder_num: 1, ladder_price: '2', status: 1 }
-}
+  async save2(name, attrs) {
+    let that = this
+    try {
+      const food = await this.find(name)
+      let { wmProductSpu } = await this.getEditView2(food.id)
 
-let foodT = [
-  {
-    // wm_poi_id: '8221674',
-    // tag_id: 124781406,
-    // tag_name: '┏ 🙈 ┓店铺公告',
-    // name: '饺子、冬至、汤圆',
-    description: '说明产品，请勿下单',
-    isShippingTimeSyncPoi: 2,
-    shipping_time_x: '-',
-    attrList: [],
-    wmProductSkus: [
-      {
-        spec: '',
-        price: '88',
-        stock: 10000,
-        wmProductStock: {
-          max_stock: 10000,
+      const temp = await this.getTemplate(food.id, 1)
+      let category_id = temp.categoryId
+      let wm_product_property_template_id = temp.wm_product_property_template_id
+
+      let { ok, properties_values, unreqs } = await isPropMatchReqs(temp.propertiesKeys, temp.properties_values)
+      if (!ok) return Promise.reject({ err: `properties required ${unreqs}` })
+
+      if (ok) {
+        properties_values = Object.keys(properties_values).reduce((a, c) => {
+          let values = properties_values[c].map(cv => {
+            let r = temp.propertiesKeys.find(k => k.wm_product_lib_tag_name == cv.wm_product_lib_tag_name)
+            return {
+              ...r,
+              wm_product_property_template_id,
+              level: 2,
+              is_leaf: 1,
+              value: cv.value,
+              value_id: cv.value_id,
+              child: null
+            }
+          })
+          return { ...a, [c]: values }
+        }, {})
+      }
+
+      const props = await this.getProperties(category_id)
+      let no = props.saleAttrs.length + 1
+
+      // console.log(wmProductSpu.newSpuAttrs.map(a => a.name == '份量').concat(getNewSpuAttrs(attrs, no)))
+
+      let model = {
+        id: wmProductSpu.id,
+        wm_poi_id: wmProductSpu.wm_poi_id,
+        tag_id: wmProductSpu.tag_id,
+        tag_name: wmProductSpu.tag_name,
+        category_id: category_id, //选中的品类id
+        name: wmProductSpu.name,
+        isShippingTimeSyncPoi: wmProductSpu.isShippingTimeSyncPoi || 2,
+        shipping_time_x: wmProductSpu.shipping_time_x,
+        min_order_count: wmProductSpu.min_order_count,
+        wmProductPics: wmProductSpu.wmProductPics,
+        specialEffectPic: getSpecialEffectPic(wmProductSpu.wmProductPics),
+        properties_values: properties_values,
+        description: wmProductSpu.description,
+        labelValues: wmProductSpu.labelValues || [],
+        labelList: wmProductSpu.labelList || [],
+        newSpuAttrs: attrs
+          ? wmProductSpu.newSpuAttrs.filter(a => a.name == '份量').concat(getNewSpuAttrs(attrs, no))
+          : wmProductSpu.newSpuAttrs,
+        stockAndBoxPriceSkus: wmProductSpu.wmProductSkus.map(sku => ({
+          price: sku.price,
+          unit: sku.unit,
+          box_price: sku.box_price,
+          spec: sku.spec || `（${sku.unit}）`,
+          weight: sku.weight,
+          wmProductLadderBoxPrice: sku.wmProductLadderBoxPrice,
+          wmProductStock: sku.wmProductStock || {
+            id: '0',
+            stock: -1,
+            max_stock: -1,
+            auto_refresh: 1
+          },
+          attrList: sku.attrList.find(a => a.name == '份量')
+            ? sku.attrList.find(a => a.name == '份量').value
+              ? sku.attrList
+              : [
+                  {
+                    name: '份量',
+                    name_id: 0,
+                    value: `${sku.unit}__默认`,
+                    value_id: 0,
+                    no: 0
+                  }
+                ]
+            : sku.attrList
+        })),
+        unifiedPackagingFee: wmProductSpu.unifiedPackagingFee,
+        wmProductLadderBoxPrice: wmProductSpu.wmProductLadderBoxPrice,
+        wmProductStock: wmProductSpu.wmProductStock || {
+          id: '0',
+          stock: -1,
+          max_stock: -1,
           auto_refresh: 1
         },
-        box_price: '0',
-        wmProductLadderBoxPrice: {
-          status: 2,
-          ladder_num: 1,
-          ladder_price: ''
-        },
-        upc_code: '',
-        source_food_code: '',
-        locator_code: '',
-        weight: '1',
-        weight_unit: '克',
-        id: '',
-        wm_food_spu_id: '',
-        wmProductPics: [
-          {
-            pic_large_url: 'http://p0.meituan.net/wmproduct/97c3420cd5f99ec6aab53f37c61c55af72119.jpg',
-            pic_small_url: 'http://p0.meituan.net/wmproduct/97c3420cd5f99ec6aab53f37c61c55af72119.jpg',
-            sequence: 1,
-            is_quality_low: false,
-            quality_score: 1
-          }
-        ],
-        tag_name: '',
-        description: ''
+        productCardDisplayContent: wmProductSpu.productCardDisplayContent || ''
       }
-    ],
-    labelList: [],
-    specialEffectPic: null,
-    min_order_count: 1,
-    wmProductVideo: null,
-    search_terms: [],
-    labelValues: [],
-    category_id: 115250,
-    properties_values: {},
-    customPropertiesValues: [],
-    productCardDisplayContent: null,
-    suggestTraceInfoList: [
-      {
-        traceId: '-1701480564776619457',
-        traceType: 100003,
-        setTraceType: true,
-        setTraceId: true
-      },
-      {
-        traceId: '149910698955644605',
-        traceType: 100002,
-        setTraceId: true,
-        setTraceType: true
+
+      fs.writeFileSync('log/logE2.json', JSON.stringify(model))
+      return this.save_(model)
+    } catch (e) {
+      return Promise.reject(e)
+    }
+
+    function getSpecialEffectPic(wmProductPics) {
+      let specialEffectPic = null
+      if (wmProductPics && wmProductPics[0] && wmProductPics[0].specialEffectEnable !== 0) {
+        const mainPic = wmProductPics[0]
+        const { specialEffectEnable, specialEffectUrl, content } = mainPic
+        specialEffectPic = {
+          specialEffectEnable,
+          specialEffectUrl: specialEffectUrl,
+          content: content,
+          isMaster: 1,
+          specialEffectPicBase64: ''
+        }
       }
-    ]
+      return specialEffectPic
+    }
+
+    function getNewSpuAttrs(attrs, no) {
+      let r = attrs.map((item, i) =>
+        item.values.map((v, j) => ({
+          name: item.name,
+          name_id: 0,
+          value: v,
+          value_id: 0,
+          price: 0,
+          no: no + i,
+          mode: 1,
+          value_sequence: j + 1,
+          weight: 0,
+          weightUnit: null,
+          sell_status: 0
+        }))
+      )
+      return flatten(r)
+    }
+
+    async function isPropMatchReqs(propertiesKeys, properties_values, wm_product_property_template_id) {
+      let unreqs = propertiesKeys
+        .filter(k => k.is_required == 1) // 1.require 2.not
+        .filter(k => !properties_values[k.wm_product_lib_tag_id])
+
+      if (unreqs.length == 0) {
+        return Promise.resolve({ ok: true, properties_values })
+      } else {
+        let r = unreqs.find(k => k.wm_product_lib_tag_name == '茶底')
+
+        if (r) {
+          let c = r.child.find(c => c.wm_product_lib_tag_name == '其他茶型')
+          return isPropMatchReqs(
+            propertiesKeys,
+            {
+              ...properties_values,
+              [r.wm_product_lib_tag_id]: [
+                {
+                  ...r,
+                  wm_product_property_template_id,
+                  level: c.level,
+                  is_leaf: c.is_leaf,
+                  value: c.wm_product_lib_tag_name,
+                  value_id: c.wm_product_lib_tag_id,
+                  child: null
+                }
+              ]
+            },
+            wm_product_property_template_id
+          )
+        }
+        return Promise.reject({ ok: false, unreqs })
+      }
+    }
   }
-]
+}
 
 async function test() {
   try {
-    const res = await new Food(10549708).save('桂圆红枣生姜茶')
+    let attrs = [
+      { name: '温度', values: ['温热', '常温', '正常冰', '多冰', '少冰', '去冰'] },
+      { name: '甜度', values: ['正常糖', '少糖', '半糖', '多糖'] }
+    ]
+    const res = await new Food(10177204).save2('奥利奥奶茶')
     console.log(res)
   } catch (error) {
     console.error(error)

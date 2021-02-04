@@ -1893,7 +1893,7 @@ async function testsDel(wmPoiId) {
     let results = []
     for (let tag of tags) {
       try {
-        if (wmPoiId == 9470231) continue
+        if (wmPoiId == 10085676) continue
         if (!/店铺公告\d+/.test(tag.name)) continue
         const tests = await fallbackApp.food.listFoods(tag.id)
         if (tests.length > 0) {

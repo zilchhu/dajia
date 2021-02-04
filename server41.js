@@ -14,6 +14,7 @@ function omit(obj, ks) {
 }
 
 import knex from 'knex'
+import { readXls } from './fallback/fallback_app.js'
 const knx = knex({
   client: 'mysql',
   connection: {
@@ -26,14 +27,24 @@ const knx = knex({
 
 async function t() {
   try {
-    const r = await knx('foxx_operating_data')
-      .select()
-      .where({ date: 20210130 })
-    const d = Array.from(new Set(r.map(v => v.shop_id))).map(v => r.find(k => k.shop_id == v))
-    await knx('foxx_operating_data')
-      .where({ date: 20210130 })
-      .del()
+    // const r = await knx('foxx_operating_data')
+    //   .select()
+    //   .where({ date: 20210202 })
+
+    // const d = Array.from(new Set(r.map(v => v.shop_name))).map(v => r.find(k => k.shop_name == v))
+    // await knx('foxx_operating_data')
+    //   .where({ date: 20210202 })
+    //   .del()
     // console.log(await knx('foxx_operating_data').insert(d))
+
+    const r = await readXls('plan/test_analyse_t_(2).xlsx', 'test_analyse_t_')
+    for (let r0 of r) {
+      try {
+        await knx('test_analyse_t_')
+          .where({ shop_name: r0.shop_name, date: r0.date })
+          .update({ a: r0.a })
+      } catch (e) {}
+    }
   } catch (e) {
     console.error(e)
   }
@@ -191,13 +202,15 @@ const sum_sql = d =>
   WHERE date >= DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL ${d} DAY),'%Y%m%d')
   ORDER BY date DESC, income_sum DESC`
 
-const fresh_sql = `SELECT a.*, IFNULL(b.shop_name, c.reptile_type) AS name from foxx_new_shop_track a
-  LEFT JOIN ele_info_manage b ON a.wmpoiid = b.shop_id 
-  LEFT JOIN foxx_shop_reptile c USING(wmpoiid)
-  LEFT JOIN foxx_new_shop d ON a.wmpoiid = d.shop_id
-  WHERE (b.shop_name IS NOT NULL OR c.reptile_type IS NOT NULL)
-  AND d.status <> 9 AND DATEDIFF(a.date, d.shop_start_date) BETWEEN 1 AND 30
-  ORDER BY a.wmpoiid, a.date`
+const fresh_sql = `SELECT a.*, e.cost_ratio, IFNULL(b.shop_name, c.reptile_type) AS name, IF(ISNULL(b.shop_name),'美团', '饿了么') AS platform
+FROM foxx_new_shop_track a
+LEFT JOIN ele_info_manage b ON a.wmpoiid = b.shop_id 
+LEFT JOIN foxx_shop_reptile c USING(wmpoiid)
+LEFT JOIN foxx_new_shop d ON a.wmpoiid = d.shop_id
+LEFT JOIN foxx_operating_data e ON a.wmpoiid = e.shop_id AND a.date = e.date
+WHERE (b.shop_name IS NOT NULL OR c.reptile_type IS NOT NULL)
+AND d.status <> 9 AND DATEDIFF(a.date, d.shop_start_date) BETWEEN 1 AND 30
+ORDER BY a.wmpoiid, a.date`
 
 async function date(d) {}
 
@@ -317,8 +330,11 @@ async function fresh() {
   function format(xs) {
     let ys = xs.map(v => ({
       ...v,
+      name: v.platform == '美团' ? `${v.name}\t${v.platform}` : v.name,
       Entryrate: percent(v.Entryrate),
-      Orderrate: percent(v.Orderrate)
+      Orderrate: percent(v.Orderrate),
+      evaluate_over_order: percent(v.evaluate / v.order),
+      cost_ratio: percent(v.cost_ratio)
     }))
     return new M(ys)
   }
@@ -327,7 +343,9 @@ async function fresh() {
     let names = distinct(xs, 'name')
     let fields = {
       evaluate: '评论数',
+      bad_order: '差评数',
       order: '单量',
+      evaluate_over_order: '评论/单量',
       bizScore: '评分',
       moment: '推广',
       turnover: '营业额',
@@ -335,16 +353,15 @@ async function fresh() {
       overview: '曝光量',
       Entryrate: '进店率',
       Orderrate: '下单率',
-      specific_rate: '非议率',
+      cost_ratio: '成本比例',
       off_shelf: '下架产品量',
       over_due_date: '特权有效期',
       kangaroo_name: '袋鼠店长',
       red_packet_recharge: '高拥返现',
       ranknum: '商圈排名',
-      bad_order: '差评数',
       extend: '延迟发单'
     }
-    let dates = distinct(xs, 'date').sort((a, b) => a - b)
+    let dates = distinct(xs, 'date').sort((a, b) => b - a)
     let ys = names.map(name =>
       Object.keys(fields).map(field => {
         let values = dates.reduce((o, d) => {
@@ -354,6 +371,7 @@ async function fresh() {
         return {
           key: `${name}-${field}`,
           name,
+          wmPoiId: xs.find(x => name.includes(x.name)).wmPoiId,
           field: fields[field],
           ...values
         }
@@ -1203,6 +1221,7 @@ function empty(str) {
 }
 
 function percent(num) {
+  if (num == null) return num
   if (typeof num === 'string') num = parseFloat(num)
   return `${(num * 100).toFixed(2)}%`
 }

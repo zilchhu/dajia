@@ -464,6 +464,32 @@ async function updateUnit(id, name, unit) {
   }
 }
 
+async function updateAttrs(id, name, attrs) {
+  const fallbackApp = new FallbackApp(id)
+  try {
+    const { ok } = await fallbackApp.food.setHighBoxPrice(0, true)
+    if (ok) {
+      const res = await fallbackApp.food.save(name, null, null, null, attrs)
+      return Promise.resolve(res)
+    } else return Promise.reject({ err: 'sync failed' })
+  } catch (err) {
+    return Promise.reject(err)
+  }
+}
+
+async function updateAttrs2(id, name, attrs) {
+  const fallbackApp = new FallbackApp(id)
+  try {
+    const { ok } = await fallbackApp.food.setHighBoxPrice(0, true)
+    if (ok) {
+      const res = await fallbackApp.food.save2(name, attrs)
+      return Promise.resolve(res)
+    } else return Promise.reject({ err: 'sync failed' })
+  } catch (err) {
+    return Promise.reject(err)
+  }
+}
+
 async function test_testFood() {
   let data = [1, 2, 3, 4, 5, 6, 7].map(v => [10085676, v])
   await loop(createTest, data, false)
@@ -471,14 +497,29 @@ async function test_testFood() {
 
 async function test_saveFood() {
   try {
-    let data = await readXls('plan/美团低质量产品1.18.xlsx', 'Sheet1')
-    data = data
-      .filter(v => v.份量 != '')
-      .slice(45)
-      .map((v, i) => [v.wmPoiId, v.name, v.份量, i])
+    let data = await readXls('plan/e5438b9c07eebfd888c4b82f29fbe61961952.xls', '门店商品')
+    // const attrs = [
+    //   { name: '温度', values: ['正常冰', '多冰', '少冰', '去冰'] },
+    //   { name: '甜度', values: ['正常糖', '少糖', '半糖', '多糖'] }
+    // ]
+    const attrs = [
+      { id: null, wm_product_spu_id: null, no: 0, name: '温度', value: '热' },
+      { id: null, wm_product_spu_id: null, no: 0, name: '温度', value: '常温' },
+      { id: null, wm_product_spu_id: null, no: 0, name: '温度', value: '正常冰' },
+      { id: null, wm_product_spu_id: null, no: 0, name: '温度', value: '多冰' },
+      { id: null, wm_product_spu_id: null, no: 0, name: '温度', value: '少冰' },
+      { id: null, wm_product_spu_id: null, no: 0, name: '温度', value: '去冰' },
+      { id: null, wm_product_spu_id: null, no: 1, name: '甜度', value: '正常糖' },
+      { id: null, wm_product_spu_id: null, no: 1, name: '甜度', value: '多糖' },
+      { id: null, wm_product_spu_id: null, no: 1, name: '甜度', value: '7分糖' },
+      { id: null, wm_product_spu_id: null, no: 1, name: '甜度', value: '半糖' },
+      { id: null, wm_product_spu_id: null, no: 1, name: '甜度', value: '3分糖' },
+      { id: null, wm_product_spu_id: null, no: 1, name: '甜度', value: '无糖' }
+    ]
+    data = data.map((v, i) => [v.门店ID, v.商品名称, attrs.map(a => ({ ...a, wm_product_spu_id: v.商品ID })), i])
     // let data = readJson('log/log.json')
     // data = data.map(v => v.meta)
-    await loop(updateUnit, data, true, { test: delFoods })
+    await loop(updateAttrs, data, true, { test: delFoods })
   } catch (err) {
     console.error(err)
   }
@@ -513,31 +554,7 @@ async function updateFoodName(id, tagName, spuId, foodName, spuName) {
 
 async function test_rename() {
   try {
-    const poiList = `8981943
-    9153911
-    9391341
-    9470147
-    8981890
-    9258295
-    9620939
-    9492674
-    8981920
-    9636784
-    9703463
-    9732198
-    9776028
-    9927233
-    9997882
-    10038920
-    10056855
-    10096784
-    10093423
-    10076509
-    10106799
-    10372220
-    10700120`
-      .split('\n')
-      .map(v => v.trim())
+    const poiList = `8981943`.split('\n').map(v => v.trim())
 
     let cnt = poiList.length
 
@@ -677,7 +694,8 @@ async function moveFood(id, name) {
 
   try {
     const tags = await fallbackApp.food.listTags()
-    const tag = tags.find(v => /.*店铺公告|门店公告|不要下单|别点了.*/.test(v.name))
+    // const tag = tags.find(v => /.*店铺公告|门店公告|不要下单|别点了.*/.test(v.name))
+    const tag = tags.find(v => /.*豆沙系列.*/.test(v.name))
     if (!tag) return Promise.reject({ err: 'tag not found' })
     const food = await fallbackApp.food.find(name)
     const res = await fallbackApp.food.batchUpdateTag(tag.id, [food.id])
@@ -689,8 +707,10 @@ async function moveFood(id, name) {
 
 async function test_move() {
   try {
-    let data = await readXls('plan/雪花球重上.xlsm', '美团雪花球重上')
-    data = data.map(v => [v.门店id, v.品名])
+    let [data, _] = await knx.raw(`SELECT * from foxx_food_manage WHERE date = CURRENT_DATE 
+    AND wmpoiid in (10456106,7779873,6950373,9014461,9236042,8751302,9411146,10014983,9411129,7673028,7740255,9355348,10083564,8051354,8670629,7968147,7351446,8890748,9100878,6434760,9596488,9842782,9224233,9249572,8911549,10427603,7735904,8221674,10603386,10156945)
+    AND name LIKE '%豆沙%' AND tagName LIKE '%福利社%'`)
+    data = data.map(v => [v.wmpoiid, v.name])
     await loop(moveFood, data, false)
   } catch (error) {
     console.error(error)
@@ -728,7 +748,7 @@ async function delFoods(id) {
 async function delTag(id) {
   const fallbackApp = new FallbackApp(id)
   try {
-    let tag = await fallbackApp.food.searchTag('❣️腊八专享套餐')
+    let tag = await fallbackApp.food.searchTag('牛年套餐')
     return fallbackApp.food.delTag(tag.id)
   } catch (e) {
     return Promise.reject(e)
@@ -737,9 +757,34 @@ async function delTag(id) {
 
 async function test_delTag() {
   try {
-    const fallbackApp = new FallbackApp()
-    let data = await fallbackApp.poi.list()
-    data = data.map(v => [v.id])
+    let data = `8828359
+   9842782
+   8751302
+   8890748
+   7673028
+   9411129
+   7779873
+   7735904
+   9014461
+   8670629
+   9411146
+   8221674
+   6434760
+   6950373
+   7968147
+   7740255
+   10014983
+   9100878
+   9224233
+   9249572
+   10693363
+   9355348
+   10083564
+   9861088
+   9236042`
+      .split('\n')
+      .map(v => v.trim())
+    data = data.map(v => [v])
     await loop(delTag, data, false)
   } catch (error) {
     console.error(error)
@@ -861,7 +906,7 @@ async function updatePlan(id, name, minOrder, price, boxPrice, actPrice, orderLi
 
         if (!delActRes.noAct) {
           const createActRes = await createAct(id, name, delActRes.actPrice, delActRes.orderLimit)
-          results.createActRes.createActRes = createActRes
+          results.createActRes = createActRes
         }
       }
 
@@ -896,33 +941,9 @@ async function updatePlan(id, name, minOrder, price, boxPrice, actPrice, orderLi
 
 async function test_plan() {
   try {
-    let dataSource6 = await readXls('plan/福袋添加餐盒费2.xls', '美团餐品规则')
-    dataSource6 = dataSource6.map((v, i) => [v.门店id, v.品名, 2, i])
-    await loop(updateFoodBoxPrice, dataSource6, false, { test: delFoods })
-
-    let dataSource7 = await readXls('plan/美团单产品起送餐品.xls', '美团餐品规则')
-    dataSource7 = dataSource7.map((v, i) => [v.门店id, v.品名, 14.9 - parseFloat(v.餐盒费), v.餐盒费, i])
-    await loop(updateFoodSku, dataSource7, false, { test: delFoods })
-
-    let dataSource = await readXls('plan/美团贡茶修改1-22.xlsx', '原价13.8+餐盒费1')
-    dataSource = dataSource.map((v, i) => [v.门店id, v.产品名, 13.8, 1, i]).slice(dataSource.length - 583)
-    await loop(updateFoodSku, dataSource, false, { test: delFoods })
-
-    let dataSource2 = await readXls('plan/美团贡茶修改1-22.xlsx', '原价6.9+餐盒0.5')
-    dataSource2 = dataSource2.map((v, i) => [v.门店id, v.产品名, 6.9, 0.5, i])
-    await loop(updateFoodSku, dataSource2, false, { test: delFoods })
-
-    let dataSource3 = await readXls('plan/美团甜品修改1-22.xlsx', '原价6.4+餐盒1')
-    dataSource3 = dataSource3.map((v, i) => [v.门店id, v.产品名, 6.4, 1, i])
-    await loop(updateFoodSku, dataSource3, false, { test: delFoods })
-
-    let dataSource4 = await readXls('plan/美团甜品修改1-22.xlsx', '原价12.8+餐盒1')
-    dataSource4 = dataSource4.map((v, i) => [v.门店id, v.产品名, 12.8, 1, i])
-    await loop(updateFoodSku, dataSource4, false, { test: delFoods })
-
-    let dataSource5 = await readXls('plan/美团甜品修改1-22.xlsx', '原价6.9+餐盒0.5')
-    dataSource5 = dataSource5.map((v, i) => [v.门店id, v.产品名, 6.9, 0.5, i])
-    await loop(updateFoodSku, dataSource5, false, { test: delFoods })
+    let dataSource = await readXls('plan/美团修改.xls', '美团餐品规则')
+    dataSource = dataSource.map((v, i) => [v.门店id, v.品名, 2, 6.9, 0.5, 0.99, 1, i]).slice(2)
+    await loop(updatePlan, dataSource, false, { test: delFoods })
   } catch (error) {
     console.error(error)
   }
@@ -941,8 +962,8 @@ async function test_updateActTime() {
 
 async function test_updateAct() {
   try {
-    let data = await readXls('plan/美团折扣修改.xls', '折扣价12.8')
-    data = data.map(v => [v.id, v.产品名, 12.8])
+    let data = await readXls('plan/美团折扣价.xls', '修改折扣12.8')
+    data = data.map(v => [v.门店id, v.品名, 12.8]).slice(data.length - 53)
     await loop(updateAct, data, false)
   } catch (error) {
     console.error(error)
@@ -951,11 +972,64 @@ async function test_updateAct() {
 
 async function test_createAct() {
   try {
-    let data = await readXls('plan/活动修改(1)(1)(1)(1)(1)(1).xlsx', 'Sheet4')
-    // let data = readJson('log/log.json')
+    // let data = `9663962
+    // 8135116
+    // 7180353
+    // 10304111
+    // 2924399
+    // 9976196
+    // 9306217
+    // 9718661
+    // 7735455
+    // 10039526
+    // 8600359
+    // 8591999
+    // 7449372
+    // 8939455
+    // 6914754
+    // 9412662
+    // 9718295
+    // 9365870
+    // 8195644
+    // 9771558
+    // 7918815
+    // 8195835
+    // 6119122
+    // 4799060
+    // 10065090
+    // 7552065
+    // 9155621
+    // 7973175
+    // 10711763
+    // 7439647
+    // 9271561
+    // 10085036
+    // 8953861
+    // 10159750
+    // 10049050
+    // 10096975
+    // 9760354
+    // 8025493
+    // 9134834
+    // 9820232
+    // 10028591
+    // 9622013
+    // 7494614
+    // 9062221
+    // 8996740
+    // 9808200
+    // 10376620
+    // 9927170
+    // 9481181
+    // 9959091
+    // 9947800
+    // 9899410`
+    //   .split('\n')
+    //   .map(v => v.trim())
+    let data = readJson('log/log.json')
 
-    data = data.map(v => [v.id, v.name, v.折扣])
-    // data = data.map(v => v.meta)
+    // data = data.map(v => [v, '五福临门年夜饭套餐', 99.9])
+    data = data.map(v => v.meta)
     await loop(createAct, data, false)
   } catch (error) {
     console.error(error)
@@ -995,10 +1069,10 @@ async function delDieliverAct(id) {
 async function createDieliverAct(id, fee) {
   const fallbackApp = new FallbackApp(id)
   try {
-    const res = await delDieliverAct(id)
+    // const res = await delDieliverAct(id)
     const policy = [{ discount: fee, shipping_charge: '0', mt_charge: '0', poi_charge: fee, agent_charge: '0' }]
     const res2 = await fallbackApp.act.dieliver.save(policy)
-    return Promise.resolve({ res, res2 })
+    return Promise.resolve({ res2 })
   } catch (e) {
     return Promise.reject(e)
   }
@@ -1081,6 +1155,16 @@ async function test_reduction2() {
     await loop(saveReduction, data, false)
   } catch (error) {
     console.error(error)
+  }
+}
+
+async function test_delivery() {
+  try {
+    let data = await readXls('plan/2.1减配活动配置.xlsx', 'Sheet1')
+    data = data.map(v => [v.shop_id, 7.1])
+    await loop(createDieliverAct, data, false)
+  } catch (e) {
+    console.error(e)
   }
 }
 
@@ -1273,30 +1357,46 @@ async function test_stock(id) {
     LEFT JOIN foxx_shop_reptile s ON f.wmpoiid = s.wmpoiid
     WHERE f.date = CURDATE()`)
     data = data.filter(v => v.wmpoiid != 10085676 && v.stock != -1).map(v => [v.wmpoiid, v.name, -1])
+
     await loop(updateFoodStock, data, false)
   } catch (e) {
     console.log(e)
   }
 }
 
-test_stock()
-// test_saveFood()
+async function test_boxPrice() {
+  try {
+    let data = await readXls('plan/添加餐盒费1.xls', '美团餐品规则')
+    data = data.map((v, i) => [v.门店id, v.品名, 1, i])
+
+    await loop(updateFoodBoxPrice, data, false, { test: delFoods })
+  } catch (e) {
+    console.log(e)
+  }
+}
+
+// test_stock()
+test_saveFood()
 // test_updateAct()
 // test_createAct()
+// test_move()
+// test_delTag()
 
-// let date = new Date(2021, 0, 28, 3, 0, 0)
+// let date = new Date(2021, 1, 4, 3, 0, 0)
 // console.log('task wiil be exec at', date)
 // let j = schedule.scheduleJob(date, async function() {
-//   await test_plan()
+//   // await test_boxPrice()
+//   await test_saveFood()
 // })
 
 // test_testFood()
 // test_autotask()
 
+// test_boxPrice()
 // test_plan()
 // test_updateMaterial()
 
-// test_dieliver()
+// test_delivery()
 // test_reduction2()
 // test_plan()
 // test_delTag()
