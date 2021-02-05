@@ -672,7 +672,6 @@ async function a(wmPoiId) {
     //   [501129234, date(), date(360), [date(), date(360)]],
     //   xshard(501129234)
     // )
-    metasVar.shopId = 2065322800
     // const actId = await execRequest(
     //   instanceElm,
     //   y.requests.elm['超值换购/create/activity'],
@@ -696,49 +695,6 @@ async function a(wmPoiId) {
     //   xshard(2065322800)
     // )
 
-    let acts = await execRequest(instanceElm, y.requests.elm['折扣商品/get'], [500726782], xshard(500726782))
-    let actsT = await execRequest(instanceElm, y.requests.elm['折扣商品/get'], [2065322800], xshard(2065322800))
-    acts = acts.foods
-    actsT = actsT.foods
-    acts = acts.filter(item => !actsT.find(k => k.name == item.name)).reverse()
-    let results = []
-    await execRequest(instanceElm, y.requests.elm['折扣商品/update/count'], [2065322800], xshard(2065322800))
-    for (let item of acts) {
-      try {
-        const searches = await execRequest(instanceElm, y.requests.elm['商品列表/search'], [2065322800, item.name])
-        const food = searches.itemOfName.find(v => v.name == item.name)
-        if (!food) {
-          results.push({ name: item.name, status: 'fail', reason: `name not matched` })
-          continue
-        }
-        const actContent = await execRequest(
-          instanceElm,
-          y.requests.elm['折扣商品/get/content'],
-          [500726782, item.foodId, item.activityId],
-          xshard(500726782)
-        )
-        const r = await execRequest(
-          instanceElm,
-          y.requests.elm['折扣商品/create'],
-          [
-            2065322800,
-            [{ benefit: actContent.benefit, foodId: food.specs[0].id, stock: 10000 }],
-            2065322800,
-            actContent.benefit,
-            actContent.effectTimes,
-            [{ beginDate: date(), endDate: date(360) }]
-          ],
-          xshard(2065322800)
-        )
-        console.log(r)
-        results.push({ name: item.name, status: 'succ', value: r })
-      } catch (e) {
-        console.log(e)
-        results.push({ name: item.name, status: 'fail', reason: e })
-      }
-    }
-
-    let res = results
     // let data = await readJson('log/log.json')
 
     // data = data.filter(v => v.err.message == '服务器异常').map(v => v.meta)
@@ -922,7 +878,11 @@ async function a(wmPoiId) {
     //   [173002615, newForm],
     //   xshard(173002615)
     // )
-    console.log(res)
+    let data = await knx('elm_shops_')
+      .select()
+      .where({ restaurantType: 'LEAF' })
+    data = data.map(v => [v.id])
+    await loop(updateCoupon, data, true)
   } catch (error) {
     console.error(error)
     fs.writeFileSync('log/log.json', JSON.stringify(error))
@@ -1033,7 +993,27 @@ async function moveFood(shopId) {
   }
 }
 
-// a()
+async function updateCoupon(id) {
+  try {
+    const { activities } = await execRequest(instanceElm, y.requests.elm['活动列表/get'], [id], xshard(id))
+    const act = activities.find(v => v.title == '吃货红包')
+    if (!act) return Promise.reject({ err: 'act not found' })
+    const actDetail = await execRequest(instanceElm, y.requests.elm['吃货红包/get'], [id, act.activityId], xshard(id))
+    const reduction = actDetail.activityRuleVO.subsidyVOS[0].reduction
+    return execRequest(instanceElm, y.requests.elm['test/吃货红包/create'], [
+      id,
+      id,
+      reduction,
+      date(),
+      date(360),
+      [iso(), iso(360)]
+    ])
+  } catch (e) {
+    return Promise.reject(e)
+  }
+}
+
+a()
 
 koa.use(cors())
 koa.use(
@@ -1105,7 +1085,7 @@ router.post('/tests/del', async ctx => {
 })
 
 koa.use(router.routes())
-koa.listen(9010, () => console.log('running at 9010'))
+// koa.listen(9010, () => console.log('running at 9010'))
 
 async function freshMt(userTasks, userRule) {
   try {
@@ -1795,8 +1775,13 @@ async function freshElm(userTasks, userRule) {
         name: '折扣商品',
         fn: async function() {
           try {
-            if(!sourceShopId) return Promise.reject({err: 'no sourceShopId'})
-            let acts = await execRequest(instanceElm, y.requests.elm['折扣商品/get'], [sourceShopId], xshard(sourceShopId))
+            if (!sourceShopId) return Promise.reject({ err: 'no sourceShopId' })
+            let acts = await execRequest(
+              instanceElm,
+              y.requests.elm['折扣商品/get'],
+              [sourceShopId],
+              xshard(sourceShopId)
+            )
             let actsT = await execRequest(instanceElm, y.requests.elm['折扣商品/get'], [shopId], xshard(shopId))
             acts = acts.foods
             actsT = actsT.foods
@@ -1805,10 +1790,7 @@ async function freshElm(userTasks, userRule) {
             await execRequest(instanceElm, y.requests.elm['折扣商品/update/count'], [shopId], xshard(shopId))
             for (let item of acts) {
               try {
-                const searches = await execRequest(instanceElm, y.requests.elm['商品列表/search'], [
-                  shopId,
-                  item.name
-                ])
+                const searches = await execRequest(instanceElm, y.requests.elm['商品列表/search'], [shopId, item.name])
                 const food = searches.itemOfName.find(v => v.name == item.name)
                 if (!food) {
                   results.push({ name: item.name, status: 'fail', reason: `name not matched` })

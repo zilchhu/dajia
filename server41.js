@@ -37,7 +37,7 @@ async function t() {
     //   .del()
     // console.log(await knx('foxx_operating_data').insert(d))
 
-    const r = await readXls('plan/test_analyse_t_(2).xlsx', 'test_analyse_t_')
+    const r = await readXls('plan/test_analyse_t_.xlsx', 'test_analyse_t_')
     for (let r0 of r) {
       try {
         await knx('test_analyse_t_')

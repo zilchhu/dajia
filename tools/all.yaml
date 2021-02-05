@@ -1162,7 +1162,18 @@ requests:
           source: "PC"
       requires:
         - request/shopId
-       
+
+    吃货红包/get:
+      url: https://app-api.shop.ele.me/coupon/invoke/?method=ISingleFoodieCouponActivityService.queryCouponActivityDetail
+      body:
+        request:
+          activityId: 676097595
+          chainId: 93089700
+          shopId: 500120975
+      requires:
+        - request/shopId
+        - request/activityId
+
     吃货红包/create:
       url: https://app-api.shop.ele.me/coupon/invoke/?method=ISingleFoodieCouponActivityService.createOrUpdateCouponActivity
       body:
@@ -1179,6 +1190,27 @@ requests:
       requires:
         - request/shopId
         - request/chainId
+        - request/beginDate
+        - request/endDate
+        - request/date
+    
+    test/吃货红包/create:
+      url: https://app-api.shop.ele.me/coupon/invoke/?method=ISingleFoodieCouponActivityService.createOrUpdateCouponActivity
+      body:
+        request:
+          activityStockCount: "9999"
+          autoRenewalFlag: true
+          beginDate: "2021-01-25"
+          chainId: 2073319496
+          channel: [2, 1]
+          date: ["2021-01-25T03:16:42.333Z", "2022-01-01T03:16:42.333Z"]
+          endDate: "2022-01-01"
+          reduction: "3"
+          shopId: 2073319496
+      requires:
+        - request/shopId
+        - request/chainId
+        - request/reduction
         - request/beginDate
         - request/endDate
         - request/date
