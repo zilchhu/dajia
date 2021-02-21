@@ -45,6 +45,7 @@ router.get('/elm/flow/distribution', async ctx => {
 router.post('/custom', async ctx => {
   try {
     let { sql } = ctx.request.body
+    console.log(sql)
     if (!sql) {
       ctx.body = { err: 'invalid params' }
       return
@@ -63,6 +64,19 @@ router.post('/customs', async ctx => {
       return
     }
     ctx.body = await customs(sqls)
+  } catch (e) {
+    ctx.body = { e }
+  }
+})
+
+router.post('/customs2', async ctx => {
+  try {
+    let { sqls } = ctx.request.body
+    if (!sqls) {
+      ctx.body = { err: 'invalid params' }
+      return
+    }
+    ctx.body = await customs2(sqls)
   } catch (e) {
     ctx.body = { e }
   }
@@ -95,6 +109,15 @@ router.get('/charts', async ctx => {
   }
 })
 
+router.get('/menus', async ctx => {
+  try {
+    ctx.body = await menus()
+  } catch (e) {
+    console.error(e)
+    ctx.body = { e }
+  }
+})
+
 router.post('/chart/add', async ctx => {
   try {
     let { chart } = ctx.request.body
@@ -118,6 +141,21 @@ router.post('/chart/update', async ctx => {
       return
     }
     ctx.body = await updateChart(id, chart)
+  } catch (e) {
+    console.error(e)
+    ctx.body = { e }
+  }
+})
+
+router.post('/menu/update', async ctx => {
+  try {
+    let { menu } = ctx.request.body
+
+    if (menu == null || menu == undefined) {
+      ctx.body = { err: 'invalid params' }
+      return
+    }
+    ctx.body = await updateMenus(menu)
   } catch (e) {
     console.error(e)
     ctx.body = { e }
@@ -177,6 +215,19 @@ async function customs(sqls) {
   }
 }
 
+async function customs2(sqls) {
+  let results = []
+  for (let sql of sqls) {
+    try {
+      let [data, _] = await knx.raw(sql.sql)
+      results.push({ id: sql.id, data })
+    } catch (e) {
+      return Promise.reject(e)
+    }
+  }
+  return Promise.resolve(results)
+}
+
 async function shops() {
   try {
     const elms = await knx('ele_info_manage').select()
@@ -202,6 +253,24 @@ async function charts() {
   try {
     const charts = await knx('test_chart_').select()
     return Promise.resolve(charts)
+  } catch (e) {
+    return Promise.reject(e)
+  }
+}
+
+async function menus() {
+  try {
+    const menu = await knx('test_chart_menu_').first('menu')
+    return Promise.resolve(menu)
+  } catch (e) {
+    return Promise.reject(e)
+  }
+}
+
+async function updateMenus(menu) {
+  try {
+    const res = await knx('test_chart_menu_').update({ menu })
+    return Promise.resolve(res)
   } catch (e) {
     return Promise.reject(e)
   }

@@ -878,11 +878,74 @@ async function a(wmPoiId) {
     //   [173002615, newForm],
     //   xshard(173002615)
     // )
-    let data = await knx('elm_shops_')
-      .select()
-      .where({ restaurantType: 'LEAF' })
-    data = data.map(v => [v.id])
-    await loop(updateCoupon, data, true)
+    // let data = await knx('elm_shops_')
+    //   .select()
+    //   .where({ restaurantType: 'LEAF' })
+    // data = data.map(v => [v.id])
+    // await loop(updateCoupon, data, true)
+    let data = [
+      7486501,
+      8195835,
+      7973175,
+      9014461,
+      9392676,
+      9876250,
+      9920776,
+      9963039,
+      10014983,
+      10061444,
+      10096784,
+      10156945,
+      10231556,
+      9457484,
+      10285968,
+      9236042,
+      7373263,
+      9802089,
+      4799060,
+      6950373,
+      8135116,
+      9314533,
+      9576423,
+      9901167,
+      10083564,
+      7740255,
+      9724838,
+      2924399,
+      7673028,
+      8996740,
+      9271561,
+      10093423,
+      10096753,
+      10148964,
+      10479865,
+      10549708,
+      8670629,
+      9153911,
+      9812382,
+      9820648,
+      9725155,
+      9391341,
+      9481181,
+      9483822,
+      10480104,
+      9199827,
+      7882136,
+      9230108,
+      9249572,
+      9355348,
+      10373360,
+      9206400,
+      8540299,
+      8999546,
+      9123504,
+      9134834,
+      9921225,
+      10603386,
+      9435009
+    ]
+    data = data.map(v => [v])
+    await loop(closeBj, data, false)
   } catch (error) {
     console.error(error)
     fs.writeFileSync('log/log.json', JSON.stringify(error))
@@ -1013,7 +1076,18 @@ async function updateCoupon(id) {
   }
 }
 
-a()
+async function closeBj(wmPoiId) {
+  try {
+    return execRequest(undefined, y.requests.mt['铂金推广/close'], [wmPoiId], {
+      ...y.headers['铂金推广'],
+      Cookie: updateCookie(y.headers['铂金推广'].Cookie, { wmPoiId })
+    })
+  } catch (e) {
+    return Promise.reject(e)
+  }
+}
+
+// a()
 
 koa.use(cors())
 koa.use(
@@ -1085,7 +1159,7 @@ router.post('/tests/del', async ctx => {
 })
 
 koa.use(router.routes())
-// koa.listen(9010, () => console.log('running at 9010'))
+koa.listen(9010, () => console.log('running at 9010'))
 
 async function freshMt(userTasks, userRule) {
   try {

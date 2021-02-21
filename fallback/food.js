@@ -31,7 +31,7 @@ export default class Food {
   constructor(wmPoiId) {
     this.wmPoiId = wmPoiId
     this.csrfToken =
-      '8vjN4GQ0dy+3r/2egPwt3f/06vLCiESYIGdh0yymkl9AQN4PbtrSO4FeWG9/du3Q8kk+qjovX8grmkmLjVMQh/EZj7zftJ+dcMxvBAfAMMmwznxmYQ76etl+dHSPcK8AXDaIBEReBkPk7sD0EaEk0Q=='
+      'C2iobKssxvX9gcPZkIbkXDPP5Mls9/1Y7xe4KetV2Iw9Z7np//UnX+hQJO5D4tnEotlScBQEVGWqJ1nKFWbIeAmD6TrLkFGVtjOy2ufHno+WF9T0BAJhAlUs5WXTUF71+Syw8PmPhWqSdtV7ppIqEw=='
   }
 
   async search_(name) {
@@ -510,7 +510,7 @@ export default class Food {
     return instance.post(urls.food.save, data)
   }
 
-  async save(name, minOrderCount, weightUnit, mainMat, attrList, prodStock = {}) {
+  async save(name, minOrderCount, weight, weightUnit, mainMat, attrList, prodStock = {}) {
     let that = this
     try {
       const food = await this.find(name)
@@ -532,7 +532,7 @@ export default class Food {
       pageModel.wmProductSpu.attrList = pageModel.wmProductSpu.attrList || []
 
       const temp = await this.getTemplate(food.id)
-      let category_id = temp.categoryId
+      let category_id = temp. categoryId
       let wm_product_property_template_id = temp.wm_product_property_template_id
 
       let { ok, properties_values, unreqs } = await isPropMatchReqs(temp.propertiesKeys, temp.properties_values)
@@ -595,8 +595,8 @@ export default class Food {
         min_order_count: minOrderCount || spu.min_order_count,
         wmProductSkus: spu.wmProductSkus.map(sku => ({
           ...sku,
-          weight: -2,
-          weight_unit: weightUnit || sku.weight_unit,
+          weight: weight || -2,
+          weight_unit: weightUnit || sku.weight_unit || '1人份',
           wmProductStock: { ...sku.wmProductStock, ...prodStock } || {
             max_stock: 10000,
             auto_refresh: 0

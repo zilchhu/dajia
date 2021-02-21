@@ -92,7 +92,7 @@ async function insertTableFromMysql(day_from_today = 1) {
   let sql = `
   WITH a1 AS (
     SELECT id, real_shop, shop_id, shop_name, platform, 
-      (settlea - IFNULL(third_send, 0)) AS income, third_send, orders,
+      (settlea - IFNULL(third_send, 0)) AS income, third_send, unit_price, orders,
       price AS cost, cost_ratio,
       consume, 
       promotion_rate AS consume_ratio, 
@@ -144,7 +144,7 @@ async function insertTableFromMysql(day_from_today = 1) {
     FROM foxx_real_shop_info
   )
   SELECT id, city, person,
-    a1.real_shop, a1.shop_id, a1.shop_name, platform, third_send, orders,
+    a1.real_shop, a1.shop_id, a1.shop_name, platform, third_send, unit_price, orders,
     income, income_avg, income_sum,
     a1.cost, cost_avg, cost_sum, cost_ratio, cost_sum_ratio,
     consume, consume_avg, consume_sum, consume_ratio, consume_sum_ratio,
@@ -164,7 +164,7 @@ async function insertTableFromMysql(day_from_today = 1) {
     console.log(...arguments)
     await knx.raw(`SET @last_day = DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL ${day_from_today} DAY),'%Y%m%d');`)
     let [data, _] = await knx.raw(sql)
-    if (data.length < 330 || data.length > 500 || data.every(v => v.third_send == 0)) return Promise.reject('no data')
+    if (data.length < 1 || data.length > 500 || data.every(v => v.third_send == 0)) return Promise.reject('no data')
     const res = await knx('test_analyse_t_')
       .insert(data)
       .onConflict('id')

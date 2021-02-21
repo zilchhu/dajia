@@ -55,7 +55,7 @@ content-type: application/json
 
 ###
 
-GET http://localhost:9005/sum/3
+GET http://localhost:9005/fresh
 content-type: application/json
 
 ###

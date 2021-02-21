@@ -106,6 +106,24 @@ headers:
     User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36
     X-Requested-With: XMLHttpRequest
 
+  铂金推广:
+    Accept: application/json, text/plain, */*
+    Accept-Encoding: gzip, deflate, br
+    Accept-Language: zh-CN,zh;q=0.9
+    Connection: keep-alive
+    Content-Length: 180
+    Content-Type: application/x-www-form-urlencoded; charset=UTF-8
+    Cookie: acctId=23262521; _source=PC; bsid=IkuK4w3u1sgGWZWfMf1kCTboJJuA-VgfcfmILhN1pHTxJV-mqvVC9WDWzEfiqXe02dwUdOs3GiBDPgxu1gWBuw; virtual=0; vacctId=0; acctName=null; platform=0; JSESSIONID=tjcw0ppkvfv6146oq9t5u233e; _lxsdk_cuid=1775b772fbac8-0ee0aab2fb3d09-c791039-1fa400-1775b772fba57; _lxsdk=1775b772fbac8-0ee0aab2fb3d09-c791039-1fa400-1775b772fba57; uuid=899f93173acef791d886.1612921512.1.0.0; token=0W3TxK_HBq9NfYgc8QSfiM10zJmWPGtAGSbfwo66HYO8*; logan_session_token=f7iggzdp66o2p93nuces; logan_custom_report=%7B%22unionId%22%3A%227486501%22%2C%22biz%22%3A%22waimai_ad_pc_vue%22%7D; wmPoiId=7486501; bizad_cityId=440306; bizad_second_city_id=440300; bizad_third_city_id=440306; wmPoiName=%E8%B4%A1%E8%8C%B6%E2%80%A2%E6%89%8B%E6%8A%93%E9%A5%BC%E2%80%A2%E5%B0%8F%E5%90%83%EF%BC%88%E5%AE%9D%E5%AE%89%E7%A6%8F%E6%B0%B8%E5%BA%97%EF%BC%89; _lxsdk_s=177899d26e1-ef7-8c3-eeb%7C%7C374
+    Host: waimaieapp.meituan.com
+    Origin: https://waimaieapp.meituan.com
+    Referer: https://waimaieapp.meituan.com/ad/v1/rpc?&region_id=&device_uuid=!93be5d46-1201-4ccb-af5d-fc7911ec8970&bsid=IkuK4w3u1sgGWZWfMf1kCTboJJuA-VgfcfmILhN1pHTxJV-mqvVC9WDWzEfiqXe02dwUdOs3GiBDPgxu1gWBuw&appType=3&region_id=&device_uuid=!93be5d46-1201-4ccb-af5d-fc7911ec8970&bsid=IkuK4w3u1sgGWZWfMf1kCTboJJuA-VgfcfmILhN1pHTxJV-mqvVC9WDWzEfiqXe02dwUdOs3GiBDPgxu1gWBuw&appType=3&region_id=&device_uuid=!93be5d46-1201-4ccb-af5d-fc7911ec8970&bsid=IkuK4w3u1sgGWZWfMf1kCTboJJuA-VgfcfmILhN1pHTxJV-mqvVC9WDWzEfiqXe02dwUdOs3GiBDPgxu1gWBuw&appType=3&region_id=&device_uuid=!93be5d46-1201-4ccb-af5d-fc7911ec8970&bsid=IkuK4w3u1sgGWZWfMf1kCTboJJuA-VgfcfmILhN1pHTxJV-mqvVC9WDWzEfiqXe02dwUdOs3GiBDPgxu1gWBuw&appType=3&region_id=&device_uuid=!93be5d46-1201-4ccb-af5d-fc7911ec8970&bsid=IkuK4w3u1sgGWZWfMf1kCTboJJuA-VgfcfmILhN1pHTxJV-mqvVC9WDWzEfiqXe02dwUdOs3GiBDPgxu1gWBuw&appType=3&_source=PC&token=0W3TxK_HBq9NfYgc8QSfiM10zJmWPGtAGSbfwo66HYO8*&acctId=23262521&wmPoiId=7486501&region_id=&device_uuid=!93be5d46-1201-4ccb-af5d-fc7911ec8970&bsid=IkuK4w3u1sgGWZWfMf1kCTboJJuA-VgfcfmILhN1pHTxJV-mqvVC9WDWzEfiqXe02dwUdOs3GiBDPgxu1gWBuw&appType=3&fromPoiChange=false
+    sec-ch-ua: '"Google Chrome";v="87", " Not;A Brand";v="99", "Chromium";v="87"'
+    sec-ch-ua-mobile: ?0
+    Sec-Fetch-Dest: empty
+    Sec-Fetch-Mode: cors
+    Sec-Fetch-Site: same-origin
+    User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.104 Safari/537.36
+  
   总店:
     Accept: application/json, text/plain, */*
     Accept-Encoding: gzip, deflate, br
@@ -207,7 +225,7 @@ rules:
     甜品: 89016
     贡茶: 169026
 
-  店铺招牌: http://p0.meituan.net/business/84f9b8e9eae12318ac6b32302cfbf3d0158189.png
+  店铺招牌: http://p0.meituan.net/business/433dc89983bafac0f4e525cf69635765140960.png
 
   elm:
     店铺招牌: 14436709
@@ -1150,6 +1168,20 @@ requests:
         - originPoiIds
         - signageIds
        
+    铂金推广/close:
+      url: https://waimaieapp.meituan.com/ad/v4/plan/bjcpm/w/status
+      body:
+        acctId: 23262521
+        wmPoiId: 7486501
+        token: 0W3TxK_HBq9NfYgc8QSfiM10zJmWPGtAGSbfwo66HYO8*
+        platform: 0
+        bizad_cityId: 440306
+        bizad_second_city_id: 440300
+        bizad_third_city_id: 440306
+        status: 1
+      requires:
+        - wmPoiId
+
   elm:
     #活动
     活动列表/get:

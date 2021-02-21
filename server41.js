@@ -27,24 +27,29 @@ const knx = knex({
 
 async function t() {
   try {
-    // const r = await knx('foxx_operating_data')
-    //   .select()
-    //   .where({ date: 20210202 })
+    const r = await knx('foxx_operating_data')
+      .select()
+      .where({ date: 20210202 })
 
-    // const d = Array.from(new Set(r.map(v => v.shop_name))).map(v => r.find(k => k.shop_name == v))
-    // await knx('foxx_operating_data')
-    //   .where({ date: 20210202 })
-    //   .del()
-    // console.log(await knx('foxx_operating_data').insert(d))
+    const d = Array.from(new Set(r.map(v => v.shop_name))).map(v => r.find(k => k.shop_name == v))
+    await knx('foxx_operating_data')
+      .where({ date: 20210219 })
+      .del()
+    console.log(await knx('foxx_operating_data').insert(d))
 
-    const r = await readXls('plan/test_analyse_t_.xlsx', 'test_analyse_t_')
-    for (let r0 of r) {
-      try {
-        await knx('test_analyse_t_')
-          .where({ shop_name: r0.shop_name, date: r0.date })
-          .update({ a: r0.a })
-      } catch (e) {}
-    }
+    // const r = await knx('foxx_operating_data').select()
+    // let cnt = r.length
+    // for (let r0 of r) {
+    //   console.log(cnt)
+    //   try {
+    //     await knx('test_analyse_t_')
+    //       .where({ shop_name: r0.shop_name, date: r0.date, platform: r0.platform })
+    //       .update({ unit_price: r0.unit_price })
+    //   } catch (e) {
+    //     console.error(e)
+    //   }
+    //   cnt -= 1
+    // }
   } catch (e) {
     console.error(e)
   }
@@ -77,15 +82,26 @@ koa.use(
 
 router.get('/date/:date', async ctx => {})
 
+router.get('/ts', async ctx => {
+  try {
+    const res = await ts()
+    ctx.body = res
+  } catch (e) {
+    console.log(e)
+    ctx.body = e
+  }
+})
 // multiple dates
 router.get('/sum/:date', async ctx => {
   try {
     let { date } = ctx.params
+    let { raw } = ctx.query
+
     if (!date) {
       ctx.body = { e: 'invalid params' }
       return
     }
-    const res = await sum(date)
+    const res = await sum(date, raw)
     ctx.body = { res }
   } catch (e) {
     console.log(e)
@@ -193,9 +209,10 @@ const sum_sql = d =>
     FROM test_analyse_t_ GROUP BY real_shop, date 
   ),
   b AS (
-    SELECT *, SUM(income_sum) OVER w AS income_sum_sum, SUM(consume_sum) OVER w AS consume_sum_sum, SUM(cost_sum) OVER w AS cost_sum_sum    
+    SELECT *, SUM(income_sum) OVER w AS income_sum_sum, SUM(consume_sum) OVER w AS consume_sum_sum, SUM(cost_sum) OVER w AS cost_sum_sum, 
+      SUM(income_sum) OVER (w2 ROWS BETWEEN  CURRENT ROW AND 14 FOLLOWING) AS income_sum_15    
     FROM a
-    WINDOW w AS (PARTITION BY date)
+    WINDOW w AS (PARTITION BY date), w2 AS (PARTITION BY real_shop ORDER BY date DESC)
   )
   SELECT *, consume_sum_sum / income_sum_sum AS consume_sum_sum_ratio, cost_sum_sum / income_sum_sum AS cost_sum_sum_ratio
   FROM b 
@@ -212,12 +229,57 @@ WHERE (b.shop_name IS NOT NULL OR c.reptile_type IS NOT NULL)
 AND d.status <> 9 AND DATEDIFF(a.date, d.shop_start_date) BETWEEN 1 AND 30
 ORDER BY a.wmpoiid, a.date`
 
+const ts_sql = `SELECT city, person, real_shop, shop_id, shop_name, platform, income, third_send, consume, consume_ratio, income_sum, consume_sum, consume_sum_ratio, 
+cost, cost_ratio, orders, unit_price, settlea_30, settlea_1, settlea_7, settlea_7_3, date
+FROM test_analyse_t_ ORDER BY date`
+
 async function date(d) {}
 
-async function sum(date) {
+async function ts() {
+  try {
+    let [data, _] = await knx.raw(ts_sql)
+    let res = new M(data)
+    return Promise.resolve(res.val)
+  } catch (e) {
+    return Promise.reject(e)
+  }
+
+  function matrix(xs) {
+    let ys = xs.map(x => [
+      x.city,
+      x.person,
+      x.real_shop,
+      x.shop_id,
+      x.shop_name,
+      x.platform,
+      x.income,
+      x.third_send,
+      x.consume,
+      x.consume_ratio,
+      x.income_sum,
+      x.consume_sum,
+      x.consume_sum_ratio,
+      x.cost,
+      x.cost_ratio,
+      x.orders,
+      x.unit_price,
+      x.settlea_30,
+      x.settlea_1,
+      x.settlea_7,
+      x.settlea_7_3,
+      x.date
+    ])
+    return new M(ys)
+  }
+}
+
+async function sum(date, raw) {
   try {
     let [data, _] = await knx.raw(sum_sql(date))
     if (!data) return Promise.reject('no data')
+
+    if (raw) return data
+
     let res = new M(data)
       .bind(format)
       .bind(sum_)
@@ -236,13 +298,18 @@ async function sum(date) {
       income_sum: fixed2(v.income_sum),
       consume_sum: fixed2(v.consume_sum),
       cost_sum: fixed2(v.cost_sum),
+      income_sum_15: fixed2(v.income_sum_15),
       income_sum_sum: fixed2(v.income_sum_sum),
       consume_sum_sum: fixed2(v.consume_sum_sum),
       cost_sum_sum: fixed2(v.cost_sum_sum),
       consume_sum_ratio: percent(v.consume_sum_ratio),
       cost_sum_ratio: percent(v.cost_sum_ratio),
       consume_sum_sum_ratio: percent(v.consume_sum_sum_ratio),
-      cost_sum_sum_ratio: percent(v.cost_sum_sum_ratio)
+      cost_sum_sum_ratio: percent(v.cost_sum_sum_ratio),
+      labor_cost: fixed2((Math.max(4, Math.round((v.income_sum_15 * 2) / 30000)) * 4500) / 30),
+      water_electr_cost: fixed2(v.income_sum * 0.05),
+      cashback_cost: fixed2(v.income_sum * 0.015),
+      oper_cost: fixed2(v.income_sum * 0.06)
     }))
     return new M(ys)
   }
@@ -261,6 +328,10 @@ async function sum(date) {
           cost_sum: data.cost_sum_sum,
           consume_sum_ratio: data.consume_sum_sum_ratio,
           cost_sum_ratio: data.cost_sum_sum_ratio,
+          labor_cost: data.labor_cost,
+          water_electr_cost: data.water_electr_cost,
+          cashback_cost: data.cashback_cost,
+          oper_cost: data.oper_cost,
           date: da
         })
     }
@@ -296,6 +367,22 @@ async function sum(date) {
         .filter(k => k.real_shop == v)
         .sort((a, b) => b.date - a.date)
         .reduce((o, c) => ({ ...o, [`cost_sum_ratio_${c.date}`]: c.cost_sum_ratio }), {})
+      let labor_costs = xs
+        .filter(k => k.real_shop == v)
+        .sort((a, b) => b.date - a.date)
+        .reduce((o, c) => ({ ...o, [`labor_cost_${c.date}`]: c.labor_cost }), {})
+      let water_electr_costs = xs
+        .filter(k => k.real_shop == v)
+        .sort((a, b) => b.date - a.date)
+        .reduce((o, c) => ({ ...o, [`water_electr_cost_${c.date}`]: c.water_electr_cost }), {})
+      let cashback_costs = xs
+        .filter(k => k.real_shop == v)
+        .sort((a, b) => b.date - a.date)
+        .reduce((o, c) => ({ ...o, [`cashback_cost_${c.date}`]: c.cashback_cost }), {})
+      let oper_costs = xs
+        .filter(k => k.real_shop == v)
+        .sort((a, b) => b.date - a.date)
+        .reduce((o, c) => ({ ...o, [`oper_cost_${c.date}`]: c.oper_cost }), {})
       return {
         city,
         person,
@@ -304,7 +391,11 @@ async function sum(date) {
         ...consume_sums,
         ...cost_sums,
         ...consume_sum_ratios,
-        ...cost_sum_ratios
+        ...cost_sum_ratios,
+        ...labor_costs,
+        ...water_electr_costs,
+        ...cashback_costs,
+        ...oper_costs
       }
     })
     return new M({

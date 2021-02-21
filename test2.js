@@ -1187,12 +1187,50 @@ async function updateFoodMater(id, name) {
   }
 }
 
-async function test_updateMaterial() {
+async function updateFoodWeight(id, name, weight, unit) {
+  const fallbackApp = new FallbackApp(id)
   try {
-    const fallbackApp = new FallbackApp()
-    let data = await fallbackApp.poi.list()
-    data = data.filter(v => v.poiName.includes('茶')).map(v => [v.id, '小试“牛”刀福袋'])
-    await loop(updateFoodMater, data, true)
+    const { ok } = await fallbackApp.food.setHighBoxPrice(0, true)
+    if (ok) {
+      const res = await fallbackApp.food.save(name, null, weight, unit)
+      return Promise.resolve(res)
+    } else return Promise.reject({ err: 'sync failed' })
+  } catch (err) {
+    return Promise.reject(err)
+  }
+}
+
+async function test_updateWeight() {
+  try {
+    let [data, _] = await knx.raw(
+      `select * from foxx_food_manage where date=curdate() and name LIKE '%杨枝甘露%' AND minOrderCount <> 2 AND weightUnit <> '2人份'`
+    )
+    data = data.slice(8).map((v, i) => [v.wmpoiid, v.name, '500', '毫升', i])
+    await loop(updateFoodWeight, data, true, { test: delFoods })
+  } catch (error) {
+    console.error(error)
+  }
+}
+
+async function updateFoodMinOrder(id, name, minOrder) {
+  const fallbackApp = new FallbackApp(id)
+  try {
+    const { ok } = { ok: true } // await fallbackApp.food.setHighBoxPrice(0, true)
+
+    if (ok) {
+      const res = await fallbackApp.food.save(name, minOrder)
+      return Promise.resolve(res)
+    } else return Promise.reject({ err: 'sync failed' })
+  } catch (err) {
+    return Promise.reject(err)
+  }
+}
+
+async function test_updateMinOrder() {
+  try {
+    let data = await readXls('plan/公告商品18-00-02.xlsx', 'Sheet')
+    data = data.slice(1564).map((v, i) => [v.店铺id, v.商品名, 50, i])
+    await loop(updateFoodMinOrder, data, false)
   } catch (error) {
     console.error(error)
   }
@@ -1366,8 +1404,8 @@ async function test_stock(id) {
 
 async function test_boxPrice() {
   try {
-    let data = await readXls('plan/添加餐盒费1.xls', '美团餐品规则')
-    data = data.map((v, i) => [v.门店id, v.品名, 1, i])
+    let data = await readXls('plan/导表.xls', '导表')
+    data = data.map((v, i) => [v.did, v.实付, 0, i])
 
     await loop(updateFoodBoxPrice, data, false, { test: delFoods })
   } catch (e) {
@@ -1376,17 +1414,19 @@ async function test_boxPrice() {
 }
 
 // test_stock()
-test_saveFood()
+// test_saveFood()
 // test_updateAct()
 // test_createAct()
 // test_move()
 // test_delTag()
+// test_updateWeight()
+test_updateMinOrder()
 
-// let date = new Date(2021, 1, 4, 3, 0, 0)
+// let date = new Date(2021, 1, 22, 3, 0, 0)
 // console.log('task wiil be exec at', date)
 // let j = schedule.scheduleJob(date, async function() {
 //   // await test_boxPrice()
-//   await test_saveFood()
+//   await test_updateWeight()
 // })
 
 // test_testFood()
