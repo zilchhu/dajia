@@ -4,6 +4,10 @@ import bodyParser from 'koa-bodyparser'
 import cors from 'koa2-cors'
 import flatten from 'flatten'
 import dayjs from 'dayjs'
+import fs from 'fs'
+
+import Poi from './fallback/poi.js'
+import { getAllElmShops } from './tools/all.js'
 
 function omit(obj, ks) {
   let newKs = Object.keys(obj).filter(v => !ks.includes(v))
@@ -196,6 +200,41 @@ router.post('/plans', async ctx => {
   }
 })
 
+router.get('/shops/mt', async ctx => {
+  try {
+    const res = await new Poi().list()
+    ctx.body = { res }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
+
+router.get('/shops/elm', async ctx => {
+  try {
+    const res = await getAllElmShops()
+    ctx.body = { res }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
+
+router.post('/addNewShop', async ctx => {
+  try {
+    let { platform, shopId, shopName, roomId, realName, city, person, bd, phone, isD, isM } = ctx.request.body
+    if (platform == null || shopId == null || shopName == null || roomId == null || realName == null) {
+      ctx.body = { e: 'invalid params' }
+      return
+    }
+    const res = await addNewShop(platform, shopId, shopName, roomId, realName, city, person, bd, phone, isD, isM)
+    ctx.body = { res }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
+
 koa.use(router.routes())
 
 koa.listen(9005, () => console.log('running at 9005'))
@@ -203,21 +242,52 @@ koa.listen(9005, () => console.log('running at 9005'))
 const date_sql = d =>
   `SELECT * FROM test_analyse_t_ WHERE date = DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL ${d} DAY),'%Y%m%d')`
 
-const sum_sql = d =>
-  `WITH a AS(
-    SELECT city, person, real_shop, income_sum, consume_sum, consume_sum_ratio, cost_sum, cost_sum_ratio, date
-    FROM test_analyse_t_ GROUP BY real_shop, date 
+const sum_sql0 = `
+  WITH a AS(
+    SELECT t.city, t.person, t.real_shop, t.income_sum, t.consume_sum, t.consume_sum_ratio, t.cost_sum, t.cost_sum_ratio, t.date, IFNULL(r.rent / 30, 0) AS rent_cost
+    FROM test_analyse_t_ t
+    LEFT JOIN foxx_real_shop_info r ON t.real_shop = r.real_shop_name
+    GROUP BY real_shop, date 
   ),
   b AS (
-    SELECT *, SUM(income_sum) OVER w AS income_sum_sum, SUM(consume_sum) OVER w AS consume_sum_sum, SUM(cost_sum) OVER w AS cost_sum_sum, 
-      SUM(income_sum) OVER (w2 ROWS BETWEEN  CURRENT ROW AND 14 FOLLOWING) AS income_sum_15    
+    SELECT *, SUM(income_sum) OVER w AS income_sum_sum, 
+      SUM(consume_sum) OVER w AS consume_sum_sum, 
+      SUM(cost_sum) OVER w AS cost_sum_sum,
+      SUM(income_sum) OVER (w2 ROWS BETWEEN  CURRENT ROW AND 14 FOLLOWING) AS income_sum_15
     FROM a
-    WINDOW w AS (PARTITION BY date), w2 AS (PARTITION BY real_shop ORDER BY date DESC)
-  )
-  SELECT *, consume_sum_sum / income_sum_sum AS consume_sum_sum_ratio, cost_sum_sum / income_sum_sum AS cost_sum_sum_ratio
-  FROM b 
+    WINDOW w AS (PARTITION BY date),
+      w2 AS (PARTITION BY real_shop ORDER BY date DESC)
+  ),
+  c AS (
+    SELECT *, 
+      GREATEST(ROUND(income_sum_15 * 2 / 30000), 4) * 4500 / 30 AS labor_cost,
+      income_sum * 0.05 AS water_electr_cost,
+      income_sum * 0.015 AS cashback_cost,
+      income_sum * 0.06 AS oper_cost
+      FROM b
+  ),
+  d AS (
+    SELECT *,
+      income_sum - consume_sum - cost_sum - rent_cost - labor_cost - water_electr_cost - cashback_cost - oper_cost AS profit
+    FROM c
+  ),
+  e AS (
+    SELECT *, SUM(profit) OVER w AS profit_month
+    FROM d
+    WINDOW w AS (PARTITION BY real_shop, MONTH(date))
+  )`
+
+const sum_sql = d =>
+  `${sum_sql0}  
+  SELECT * FROM e
   WHERE date >= DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL ${d} DAY),'%Y%m%d')
   ORDER BY date DESC, income_sum DESC`
+
+const sum_sql2 = `
+  ${sum_sql0}
+  SELECT city, person, real_shop, profit_month, YEAR(date) AS year, MONTH(date) AS month  FROM e 
+  GROUP BY real_shop, MONTH(date) ORDER BY year DESC, month DESC
+`
 
 const fresh_sql = `SELECT a.*, e.cost_ratio, IFNULL(b.shop_name, c.reptile_type) AS name, IF(ISNULL(b.shop_name),'美团', '饿了么') AS platform
 FROM foxx_new_shop_track a
@@ -234,6 +304,44 @@ cost, cost_ratio, orders, unit_price, settlea_30, settlea_1, settlea_7, settlea_
 FROM test_analyse_t_ ORDER BY date`
 
 async function date(d) {}
+
+async function addNewShop(platform, shopId, shopName, roomId, realName, city, person, bd, phone, isD, isM) {
+  try {
+    let results = {}
+    if (platform == 2) {
+      const { ks_id } = knx(`ele_info_manage`).first('ks_id')
+      const res1 = await knx(`ele_info_manage`)
+        .insert({ shop_id: shopId, shop_name: shopName, ks_id })
+        .onConflict('shop_id')
+        .merge()
+      results.res1 = res1
+    }
+    const res2 = await knx(`foxx_message_room`)
+      .insert({ wmpoiid: shopId, roomName: shopName, roomId })
+      .onConflict('wmpoiid', 'roomName')
+      .merge()
+    results.res2 = res2
+    const res3 = await knx(`foxx_real_shop_info`)
+      .insert({
+        real_shop_name: realName,
+        shop_id: shopId,
+        room_id: roomId,
+        platform,
+        city,
+        person,
+        bd,
+        shop_phone: phone,
+        is_original_price_deduction_point: isD,
+        is_merit_based_activity: isM
+      })
+      .onConflict('shop_id', 'platform')
+      .merge()
+    results.res3 = res3
+    return Promise.resolve(results)
+  } catch (e) {
+    return Promise.reject(e)
+  }
+}
 
 async function ts() {
   try {
@@ -274,8 +382,10 @@ async function ts() {
 }
 
 async function sum(date, raw) {
+  let data2 = { shops: [] }
   try {
     let [data, _] = await knx.raw(sum_sql(date))
+    data2 = await sum2()
     if (!data) return Promise.reject('no data')
 
     if (raw) return data
@@ -284,6 +394,7 @@ async function sum(date, raw) {
       .bind(format)
       .bind(sum_)
       .bind(split_shop)
+      .bind(extend)
     return Promise.resolve(res.val)
   } catch (e) {
     return Promise.reject(e)
@@ -306,10 +417,13 @@ async function sum(date, raw) {
       cost_sum_ratio: percent(v.cost_sum_ratio),
       consume_sum_sum_ratio: percent(v.consume_sum_sum_ratio),
       cost_sum_sum_ratio: percent(v.cost_sum_sum_ratio),
-      labor_cost: fixed2((Math.max(4, Math.round((v.income_sum_15 * 2) / 30000)) * 4500) / 30),
-      water_electr_cost: fixed2(v.income_sum * 0.05),
-      cashback_cost: fixed2(v.income_sum * 0.015),
-      oper_cost: fixed2(v.income_sum * 0.06)
+      rent_cost: fixed2(v.rent_cost),
+      labor_cost: fixed2(v.labor_cost),
+      water_electr_cost: fixed2(v.water_electr_cost),
+      cashback_cost: fixed2(v.cashback_cost),
+      oper_cost: fixed2(v.oper_cost),
+      profit: fixed2(v.profit),
+      profit_month: fixed2(v.profit_month)
     }))
     return new M(ys)
   }
@@ -328,10 +442,15 @@ async function sum(date, raw) {
           cost_sum: data.cost_sum_sum,
           consume_sum_ratio: data.consume_sum_sum_ratio,
           cost_sum_ratio: data.cost_sum_sum_ratio,
-          labor_cost: data.labor_cost,
-          water_electr_cost: data.water_electr_cost,
-          cashback_cost: data.cashback_cost,
-          oper_cost: data.oper_cost,
+          rent_cost: fixed2(xs.filter(x => x.date == da).reduce((s, v) => s + parseFloat(v.rent_cost), 0)),
+          labor_cost: fixed2(xs.filter(x => x.date == da).reduce((s, v) => s + parseFloat(v.labor_cost), 0)),
+          water_electr_cost: fixed2(
+            xs.filter(x => x.date == da).reduce((s, v) => s + parseFloat(v.water_electr_cost), 0)
+          ),
+          cashback_cost: fixed2(xs.filter(x => x.date == da).reduce((s, v) => s + parseFloat(v.cashback_cost), 0)),
+          oper_cost: fixed2(xs.filter(x => x.date == da).reduce((s, v) => s + parseFloat(v.oper_cost), 0)),
+          profit: fixed2(xs.filter(x => x.date == da).reduce((s, v) => s + parseFloat(v.profit), 0)),
+          profit_month: fixed2(xs.filter(x => x.date == da).reduce((s, v) => s + parseFloat(v.profit_month), 0)),
           date: da
         })
     }
@@ -367,6 +486,10 @@ async function sum(date, raw) {
         .filter(k => k.real_shop == v)
         .sort((a, b) => b.date - a.date)
         .reduce((o, c) => ({ ...o, [`cost_sum_ratio_${c.date}`]: c.cost_sum_ratio }), {})
+      let rent_costs = xs
+        .filter(k => k.real_shop == v)
+        .sort((a, b) => b.date - a.date)
+        .reduce((o, c) => ({ ...o, [`rent_cost_${c.date}`]: c.rent_cost }), {})
       let labor_costs = xs
         .filter(k => k.real_shop == v)
         .sort((a, b) => b.date - a.date)
@@ -383,6 +506,14 @@ async function sum(date, raw) {
         .filter(k => k.real_shop == v)
         .sort((a, b) => b.date - a.date)
         .reduce((o, c) => ({ ...o, [`oper_cost_${c.date}`]: c.oper_cost }), {})
+      let profits = xs
+        .filter(k => k.real_shop == v)
+        .sort((a, b) => b.date - a.date)
+        .reduce((o, c) => ({ ...o, [`profit_${c.date}`]: c.profit }), {})
+      let profit_months = xs
+        .filter(k => k.real_shop == v)
+        .sort((a, b) => b.date - a.date)
+        .reduce((o, c) => ({ ...o, [`profit_month_${c.date}`]: c.profit_month }), {})
       return {
         city,
         person,
@@ -392,10 +523,104 @@ async function sum(date, raw) {
         ...cost_sums,
         ...consume_sum_ratios,
         ...cost_sum_ratios,
+        ...rent_costs,
         ...labor_costs,
         ...water_electr_costs,
         ...cashback_costs,
-        ...oper_costs
+        ...oper_costs,
+        ...profits
+        // ...profit_months
+      }
+    })
+    return new M({
+      dates,
+      shops: ys
+    })
+  }
+
+  function extend({ dates, shops }) {
+    let y_shops = shops.map(shop => {
+      let d = data2.shops.find(v => v.real_shop == shop.real_shop)
+      return {
+        ...shop,
+        ...d
+      }
+    })
+    return new M({
+      dates,
+      months: data2.dates,
+      shops: y_shops
+    })
+  }
+}
+
+async function sum2() {
+  try {
+    let [data, _] = await knx.raw(sum_sql2)
+    if (!data) return Promise.reject('no data')
+
+    let res = new M(data)
+      .bind(format)
+      .bind(sum_)
+      .bind(split_shop)
+    return Promise.resolve(res.val)
+  } catch (e) {
+    return Promise.reject(e)
+  }
+
+  function format(xs) {
+    let ys = xs.map(v => ({
+      ...v,
+      city: empty(v.city),
+      person: empty(v.person),
+      real_shop: empty(v.real_shop),
+      profit_month: fixed2(v.profit_month),
+      year_month: dayjs(`${v.year}${v.month}`, 'YYYYM').format('YYYYMM')
+    }))
+    return new M(ys)
+  }
+
+  function sum_(xs) {
+    let dates = distinct(xs, 'year_month')
+    for (let da of dates) {
+      let data = xs.find(v => v.year_month == da)
+      if (data)
+        xs.push({
+          city: '总计',
+          person: '总计',
+          real_shop: '总计',
+          profit_month: fixed2(xs.filter(x => x.year_month == da).reduce((s, v) => s + parseFloat(v.profit_month), 0)),
+          year: data.year,
+          month: data.month,
+          year_month: da
+        })
+    }
+    // fs.writeFileSync('log/sum.json', JSON.stringify(xs))
+    return new M({
+      xs,
+      dates
+    })
+  }
+
+  function split_shop({ xs, dates }) {
+    if (!xs) return []
+    let distinct_shops = distinct(xs, 'real_shop')
+    let ys = distinct_shops.map(v => {
+      let city = xs.find(k => k.real_shop == v).city
+      let person = xs.find(k => k.real_shop == v).person
+      let profit_months = xs
+        .filter(k => k.real_shop == v)
+        .sort((a, b) => {
+          if (dayjs(`${a.year}${a.month}`, 'YYYYM').isBefore(dayjs(`${b.year}${b.month}`, 'YYYYM'))) {
+            return -1
+          } else return 1
+        })
+        .reduce((o, c) => ({ ...o, [`profit_month_${c.year_month}`]: c.profit_month }), {})
+      return {
+        city,
+        person,
+        real_shop: v,
+        ...profit_months
       }
     })
     return new M({

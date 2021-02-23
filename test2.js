@@ -695,8 +695,14 @@ async function moveFood(id, name) {
   try {
     const tags = await fallbackApp.food.listTags()
     // const tag = tags.find(v => /.*店铺公告|门店公告|不要下单|别点了.*/.test(v.name))
-    const tag = tags.find(v => /.*豆沙系列.*/.test(v.name))
-    if (!tag) return Promise.reject({ err: 'tag not found' })
+    const tag = tags.find(v => /鲜奶系列/.test(v.name))
+    if (!tag) {
+      const oldTag = tags.find(v => v.name == '双皮奶类')
+      if (!oldTag) return Promise.reject({ err: 'old tag null' })
+      console.log(await fallbackApp.food.saveFoodCat('鲜奶系列', oldTag.sequence))
+      await sleep(600)
+      await moveFood(id, name)
+    }
     const food = await fallbackApp.food.find(name)
     const res = await fallbackApp.food.batchUpdateTag(tag.id, [food.id])
     return res
@@ -707,10 +713,8 @@ async function moveFood(id, name) {
 
 async function test_move() {
   try {
-    let [data, _] = await knx.raw(`SELECT * from foxx_food_manage WHERE date = CURRENT_DATE 
-    AND wmpoiid in (10456106,7779873,6950373,9014461,9236042,8751302,9411146,10014983,9411129,7673028,7740255,9355348,10083564,8051354,8670629,7968147,7351446,8890748,9100878,6434760,9596488,9842782,9224233,9249572,8911549,10427603,7735904,8221674,10603386,10156945)
-    AND name LIKE '%豆沙%' AND tagName LIKE '%福利社%'`)
-    data = data.map(v => [v.wmpoiid, v.name])
+    let data = await readJson('log/log.json')
+    data = data.map(v => v.meta)
     await loop(moveFood, data, false)
   } catch (error) {
     console.error(error)
@@ -881,6 +885,7 @@ async function updatePlan(id, name, minOrder, price, boxPrice, actPrice, orderLi
   const fallbackApp = new FallbackApp(id)
   let results = {}
   try {
+    const minOrderCount = await fallbackApp.food.getMinOrderCount(name)
     const { ok } = await fallbackApp.food.setHighBoxPrice(0, true)
     if (ok) {
       if (price) {
@@ -890,8 +895,8 @@ async function updatePlan(id, name, minOrder, price, boxPrice, actPrice, orderLi
             wmProductLadderBoxPrice: boxPrice ? { ladder_num: 1, ladder_price: boxPrice, status: 1 } : null
           }
         ]
+
         const delActRes = await delAct(id, name)
-        const minOrderCount = await fallbackApp.food.getMinOrderCount(name)
         const updateSkusRes = await batchUpdateFoodSkus(id, name, skus)
 
         results.priceRes = {
@@ -900,7 +905,7 @@ async function updatePlan(id, name, minOrder, price, boxPrice, actPrice, orderLi
         }
 
         if (minOrderCount != 1) {
-          const saveRes = await fallbackApp.food.save(name, minOrder)
+          const saveRes = await fallbackApp.food.save2(name, null, minOrder)
           results.priceRes.saveRes = saveRes
         }
 
@@ -917,7 +922,10 @@ async function updatePlan(id, name, minOrder, price, boxPrice, actPrice, orderLi
 
       if (actPrice) {
         const delActRes = await delAct(id, name)
-        const actPriceRes = await createAct(id, name, actPrice, delActRes.orderLimit)
+        let ol = -1
+        if(delActRes.noAct && actPrice < 8) ol = 1 
+        if(!delActRes.noAct) ol = delActRes.orderLimit
+        const actPriceRes = await createAct(id, name, actPrice, ol)
         results.actPriceRes = actPriceRes
       }
 
@@ -928,7 +936,7 @@ async function updatePlan(id, name, minOrder, price, boxPrice, actPrice, orderLi
       }
 
       if (minOrder) {
-        const minOrderRes = await fallbackApp.food.save(name, minOrder)
+        const minOrderRes = await fallbackApp.food.save2(name, null, minOrder)
         results.minOrderCount = minOrderRes
       }
 
@@ -941,8 +949,13 @@ async function updatePlan(id, name, minOrder, price, boxPrice, actPrice, orderLi
 
 async function test_plan() {
   try {
-    let dataSource = await readXls('plan/美团修改.xls', '美团餐品规则')
-    dataSource = dataSource.map((v, i) => [v.门店id, v.品名, 2, 6.9, 0.5, 0.99, 1, i]).slice(2)
+    let dataSource = await readXls(
+      'plan/美团择优门店折扣力度小于满减的商品(2).xlsx',
+      '美团择优门店折扣力度小于满减的商品'
+    )
+    let fails = await readJson('log/log.json')
+    dataSource = dataSource.filter(v => fails.find(k => k.meta[0] == v.id && k.meta[1] == v.itemName))
+    dataSource = dataSource.map((v, i) => [v.id, v.itemName, null, v.原价修改为, null, v.折扣价, null, i])
     await loop(updatePlan, dataSource, false, { test: delFoods })
   } catch (error) {
     console.error(error)
@@ -1170,8 +1183,8 @@ async function test_delivery() {
 
 async function test_updateTagName() {
   try {
-    let data = await readXls('plan/hh美团店铺分类更改.xlsx', 'hh美团店铺id')
-    data = data.filter(v => v.修改后 != '').map(v => [v.店铺ID, v.tagname.replace(/—.*—|┏.*┓|\?|╭.*╮/, ''), v.修改后])
+    let data = await readXls('plan/分类名称改为：元宵汤圆.xlsx', '2美团商品查询')
+    data = data.map(v => [v.店铺id, v.tagName, '元宵汤圆'])
     await loop(updateFoodCatName, data, false)
   } catch (err) {
     console.error(err)
@@ -1218,7 +1231,8 @@ async function updateFoodMinOrder(id, name, minOrder) {
     const { ok } = { ok: true } // await fallbackApp.food.setHighBoxPrice(0, true)
 
     if (ok) {
-      const res = await fallbackApp.food.save(name, minOrder)
+      // const res = await fallbackApp.food.save(name, minOrder)
+      const res = await fallbackApp.food.save2(name, null, minOrder)
       return Promise.resolve(res)
     } else return Promise.reject({ err: 'sync failed' })
   } catch (err) {
@@ -1228,8 +1242,8 @@ async function updateFoodMinOrder(id, name, minOrder) {
 
 async function test_updateMinOrder() {
   try {
-    let data = await readXls('plan/公告商品18-00-02.xlsx', 'Sheet')
-    data = data.slice(1564).map((v, i) => [v.店铺id, v.商品名, 50, i])
+    let data = await readJson('log/log.json')
+    data = data.filter(v => v.err.err == 'pageModel null').map(v => v.meta)
     await loop(updateFoodMinOrder, data, false)
   } catch (error) {
     console.error(error)
@@ -1420,10 +1434,10 @@ async function test_boxPrice() {
 // test_move()
 // test_delTag()
 // test_updateWeight()
-test_updateMinOrder()
-
+// test_updateMinOrder()
+test_updateTagName()
 // let date = new Date(2021, 1, 22, 3, 0, 0)
-// console.log('task wiil be exec at', date)
+// console.log('task wiil be exec at', dayjs(date).format('YYYY-MM-DD HH:mm:ss'))
 // let j = schedule.scheduleJob(date, async function() {
 //   // await test_boxPrice()
 //   await test_updateWeight()

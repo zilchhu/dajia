@@ -302,6 +302,22 @@ export default class Food {
     return instance.post(urls.food.updateFoodCatName, data)
   }
 
+  async saveFoodCat(tagName, seq) {
+    let data = {
+      wmPoiId: this.wmPoiId,
+      tagInfo: JSON.stringify({
+        id: '',
+        name: tagName,
+        description: '',
+        top_flag: 0,
+        tag_type: 0,
+        time_zone: {},
+        sequence: seq
+      })
+    }
+    return instance.post(urls.food.updateFoodCatName, data)
+  }
+
   async updateFoodCatName(tagName, newTagName) {
     try {
       const tag = await this.searchTag(tagName)
@@ -494,9 +510,19 @@ export default class Food {
       parser.write(editView)
       parser.end()
 
-      if (pageModel == '') return Promise.reject({ err: 'pageModel null' })
+      if (pageModel == '') return this.getMinOrderCount2(name)
       pageModel = JSON.parse(pageModel)
       return Promise.resolve(pageModel.wmProductSpu.min_order_count)
+    } catch (e) {
+      return Promise.reject(e)
+    }
+  }
+
+  async getMinOrderCount2(name) {
+    try {
+      const food = await this.find(name)
+      let { wmProductSpu } = await this.getEditView2(food.id)
+      return Promise.resolve(wmProductSpu.min_order_count)
     } catch (e) {
       return Promise.reject(e)
     }
@@ -532,7 +558,7 @@ export default class Food {
       pageModel.wmProductSpu.attrList = pageModel.wmProductSpu.attrList || []
 
       const temp = await this.getTemplate(food.id)
-      let category_id = temp. categoryId
+      let category_id = temp.categoryId
       let wm_product_property_template_id = temp.wm_product_property_template_id
 
       let { ok, properties_values, unreqs } = await isPropMatchReqs(temp.propertiesKeys, temp.properties_values)
@@ -679,7 +705,7 @@ export default class Food {
     }
   }
 
-  async save2(name, attrs) {
+  async save2(name, attrs, minOrder) {
     let that = this
     try {
       const food = await this.find(name)
@@ -724,7 +750,7 @@ export default class Food {
         name: wmProductSpu.name,
         isShippingTimeSyncPoi: wmProductSpu.isShippingTimeSyncPoi || 2,
         shipping_time_x: wmProductSpu.shipping_time_x,
-        min_order_count: wmProductSpu.min_order_count,
+        min_order_count: minOrder || wmProductSpu.min_order_count,
         wmProductPics: wmProductSpu.wmProductPics,
         specialEffectPic: getSpecialEffectPic(wmProductSpu.wmProductPics),
         properties_values: properties_values,
@@ -856,11 +882,19 @@ async function test() {
       { name: '温度', values: ['温热', '常温', '正常冰', '多冰', '少冰', '去冰'] },
       { name: '甜度', values: ['正常糖', '少糖', '半糖', '多糖'] }
     ]
-    const res = await new Food(10177204).save2('奥利奥奶茶')
+    const res = await new Food(10177204).save2('奥利奥奶茶', null, 1)
     console.log(res)
   } catch (error) {
     console.error(error)
   }
 }
 
+let skuT = {
+  weight_unit: '1人份',
+  weight: -2,
+  price: '13.8',
+  stock: '-1',
+  wmProductStock: { max_stock: '-1', auto_refresh: 1 },
+  wmProductLadderBoxPrice: { ladder_num: 1, ladder_price: '1', status: 1 }
+}
 // test()

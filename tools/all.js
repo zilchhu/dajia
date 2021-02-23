@@ -59,11 +59,11 @@ const instance2 = axios.create({
 /////////////
 /////////////
 
-const id = '7044BD8CBFA44539B91289386EB05347|1611798043136'
+const id = '63E97155736E4E70B1C744053F1C66E3|1613881907344'
 const metas = {
   appName: 'melody',
   appVersion: '4.4.0',
-  ksid: 'YTJLNZMTA1MjUzOTA0OTU1MTAxTlVCMkl6dDhQ'
+  ksid: 'OTA3YJMTA1MjUzOTA0OTU1MTAxTlhJSldrazJQ'
 }
 var metasVar = { ...metas }
 const ksid = metas.ksid
@@ -883,69 +883,73 @@ async function a(wmPoiId) {
     //   .where({ restaurantType: 'LEAF' })
     // data = data.map(v => [v.id])
     // await loop(updateCoupon, data, true)
-    let data = [
-      7486501,
-      8195835,
-      7973175,
-      9014461,
-      9392676,
-      9876250,
-      9920776,
-      9963039,
-      10014983,
-      10061444,
-      10096784,
-      10156945,
-      10231556,
-      9457484,
-      10285968,
-      9236042,
-      7373263,
-      9802089,
-      4799060,
-      6950373,
-      8135116,
-      9314533,
-      9576423,
-      9901167,
-      10083564,
-      7740255,
-      9724838,
-      2924399,
-      7673028,
-      8996740,
-      9271561,
-      10093423,
-      10096753,
-      10148964,
-      10479865,
-      10549708,
-      8670629,
-      9153911,
-      9812382,
-      9820648,
-      9725155,
-      9391341,
-      9481181,
-      9483822,
-      10480104,
-      9199827,
-      7882136,
-      9230108,
-      9249572,
-      9355348,
-      10373360,
-      9206400,
-      8540299,
-      8999546,
-      9123504,
-      9134834,
-      9921225,
-      10603386,
-      9435009
-    ]
-    data = data.map(v => [v])
-    await loop(closeBj, data, false)
+    // let data = [
+    //   7486501,
+    //   8195835,
+    //   7973175,
+    //   9014461,
+    //   9392676,
+    //   9876250,
+    //   9920776,
+    //   9963039,
+    //   10014983,
+    //   10061444,
+    //   10096784,
+    //   10156945,
+    //   10231556,
+    //   9457484,
+    //   10285968,
+    //   9236042,
+    //   7373263,
+    //   9802089,
+    //   4799060,
+    //   6950373,
+    //   8135116,
+    //   9314533,
+    //   9576423,
+    //   9901167,
+    //   10083564,
+    //   7740255,
+    //   9724838,
+    //   2924399,
+    //   7673028,
+    //   8996740,
+    //   9271561,
+    //   10093423,
+    //   10096753,
+    //   10148964,
+    //   10479865,
+    //   10549708,
+    //   8670629,
+    //   9153911,
+    //   9812382,
+    //   9820648,
+    //   9725155,
+    //   9391341,
+    //   9481181,
+    //   9483822,
+    //   10480104,
+    //   9199827,
+    //   7882136,
+    //   9230108,
+    //   9249572,
+    //   9355348,
+    //   10373360,
+    //   9206400,
+    //   8540299,
+    //   8999546,
+    //   9123504,
+    //   9134834,
+    //   9921225,
+    //   10603386,
+    //   9435009
+    // ]
+    // data = data.map(v => [v])
+    // await loop(closeBj, data, false)
+    let data = await readXls('plan/饿了么分类名称改为：元宵汤圆(1).xlsx', 'Sheet1')
+    data = data.map(v=>[v.店铺id, v.分类])
+    await loop(updateFoodCat, data, false)
+
   } catch (error) {
     console.error(error)
     fs.writeFileSync('log/log.json', JSON.stringify(error))
@@ -1011,11 +1015,11 @@ async function updateFoodCat(shopId, catName) {
         //     dayjs('2021-07-31').toISOString()
         //   ]
         // },
-        dayPartingStick: null,
-        isUseDayPartingStick: false
-        // name: newCatName
-      },
-      { arrayMerge: (_, source) => source }
+        // dayPartingStick: null,
+        // isUseDayPartingStick: false
+        name: '元宵汤圆'
+      }
+      // { arrayMerge: (_, source) => source }
     )
     return execRequest(instanceElm, y.requests.elm['分类列表/update'], [cat.globalId, update], xshard(shopId))
   } catch (e) {
@@ -1085,6 +1089,10 @@ async function closeBj(wmPoiId) {
   } catch (e) {
     return Promise.reject(e)
   }
+}
+
+export async function getAllElmShops() {
+  return execRequest(instanceElm, y.requests.elm['所有门店/get'], {}, xshard(93089700))
 }
 
 // a()
@@ -1159,7 +1167,9 @@ router.post('/tests/del', async ctx => {
 })
 
 koa.use(router.routes())
-koa.listen(9010, () => console.log('running at 9010'))
+
+export let koae = koa;
+// koa.listen(9010, () => console.log('running at 9010'))
 
 async function freshMt(userTasks, userRule) {
   try {

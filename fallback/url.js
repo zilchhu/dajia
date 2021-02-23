@@ -50,7 +50,8 @@ const urls = {
     searchProp: 'reuse/product/properties/r/property/sug',
     delTag: '/reuse/product/food/w/deleteTagById',
     getTemp: 'reuse/product/properties/r/template',
-    getProperties: 'reuse/product/properties/r/properties'
+    getProperties: 'reuse/product/properties/r/properties',
+    saveTag: 'reuse/product/food/w/saveTagInfo'
   },
   poi: {
     list: '/v2/shop/businessStatus/r/poiListSearch'

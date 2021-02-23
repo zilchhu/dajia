@@ -1640,6 +1640,16 @@ requests:
         - shopId
 
     # 门店
+    所有门店/get:
+      url: https://app-api.shop.ele.me/shop/invoke/?method=relationShop.queryChildShops
+      body:
+        query:
+          fuzzy: ""
+          layerLimit: 100
+          parentIds: [93089700]
+          returnType: "LEAFS"
+          systemType: "CHAIN"
+
     配送管理/get:
       url: https://app-api.shop.ele.me/delivery/invoke/?method=ShopProductDeliveryService.getProductDeliveryView
       body: 

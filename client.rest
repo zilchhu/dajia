@@ -26,6 +26,11 @@ content-type: application/json
 
 ###
 
+GET http://localhost:9020/menus
+content-type: application/json
+
+###
+
 POST http://localhost:9004/plan
 content-type: application/json
 
