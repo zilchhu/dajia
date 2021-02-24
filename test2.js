@@ -467,8 +467,8 @@ async function updateUnit(id, name, unit) {
 async function updateAttrs(id, name, attrs) {
   const fallbackApp = new FallbackApp(id)
   try {
-    const { ok } = await fallbackApp.food.setHighBoxPrice(0, true)
-    if (ok) {
+    // const { ok } = await fallbackApp.food.setHighBoxPrice(0, true)
+    if (true) {
       const res = await fallbackApp.food.save(name, null, null, null, attrs)
       return Promise.resolve(res)
     } else return Promise.reject({ err: 'sync failed' })
@@ -810,8 +810,14 @@ async function renameFood(id, spuId, oldName, newName) {
   const fallbackApp = new FallbackApp(id)
 
   try {
-    const res = await fallbackApp.food.updateName(spuId, newName)
-    return Promise.resolve({ res, newName })
+    if (spuId) {
+      const res = await fallbackApp.food.updateName(spuId, newName)
+      return Promise.resolve({ res, newName })
+    } else {
+      const food = await fallbackApp.food.find(oldName)
+      const res = await fallbackApp.food.updateName(food.id, newName)
+      return Promise.resolve({ res, newName })
+    }
   } catch (err) {
     return Promise.reject(err)
   }
@@ -819,8 +825,8 @@ async function renameFood(id, spuId, oldName, newName) {
 
 async function test_rename2() {
   try {
-    let data = await readJson('log/log.json')
-    data = data.filter(v => v.err.message == 'read ECONNRESET').map(v => v.meta)
+    let data = await readXls('plan/2-24批量修改产品名不挂杯.xlsx', '美团')
+    data = data.map(v => [v.店铺id, null, v.name, v.修改为])
     await loop(renameFood, data, false)
   } catch (error) {
     console.error(error)
@@ -923,8 +929,8 @@ async function updatePlan(id, name, minOrder, price, boxPrice, actPrice, orderLi
       if (actPrice) {
         const delActRes = await delAct(id, name)
         let ol = -1
-        if(delActRes.noAct && actPrice < 8) ol = 1 
-        if(!delActRes.noAct) ol = delActRes.orderLimit
+        if (delActRes.noAct && actPrice < 8) ol = 1
+        if (!delActRes.noAct) ol = delActRes.orderLimit
         const actPriceRes = await createAct(id, name, actPrice, ol)
         results.actPriceRes = actPriceRes
       }
@@ -1418,8 +1424,8 @@ async function test_stock(id) {
 
 async function test_boxPrice() {
   try {
-    let data = await readXls('plan/导表.xls', '导表')
-    data = data.map((v, i) => [v.did, v.实付, 0, i])
+    let data = await readXls('plan/折扣价0.01的商品餐盒费.xls', 'Sheet1')
+    data = data.map((v, i) => [v.门店id, v.品名, 1.5, i])
 
     await loop(updateFoodBoxPrice, data, false, { test: delFoods })
   } catch (e) {
@@ -1435,7 +1441,7 @@ async function test_boxPrice() {
 // test_delTag()
 // test_updateWeight()
 // test_updateMinOrder()
-test_updateTagName()
+// test_updateTagName()
 // let date = new Date(2021, 1, 22, 3, 0, 0)
 // console.log('task wiil be exec at', dayjs(date).format('YYYY-MM-DD HH:mm:ss'))
 // let j = schedule.scheduleJob(date, async function() {
@@ -1446,7 +1452,7 @@ test_updateTagName()
 // test_testFood()
 // test_autotask()
 
-// test_boxPrice()
+test_boxPrice()
 // test_plan()
 // test_updateMaterial()
 

@@ -122,6 +122,22 @@ router.get('/fresh', async ctx => {
     ctx.body = { e }
   }
 })
+
+router.get('/perf/:date', async ctx => {
+  try {
+    let { date } = ctx.params
+
+    if (!date) {
+      ctx.body = { e: 'invalid params' }
+      return
+    }
+    const res = await perf(date)
+    ctx.body = { res }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
 // all days
 router.get('/shop/:shopid', async ctx => {
   try {
@@ -220,14 +236,39 @@ router.get('/shops/elm', async ctx => {
   }
 })
 
+router.get('/shops/real', async ctx => {
+  try {
+    const res = await knx('foxx_real_shop_info').select()
+    ctx.body = { res }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
+
 router.post('/addNewShop', async ctx => {
   try {
-    let { platform, shopId, shopName, roomId, realName, city, person, bd, phone, isD, isM } = ctx.request.body
-    if (platform == null || shopId == null || shopName == null || roomId == null || realName == null) {
+    let { platform, shopId, shopName, roomId, realName, city, person, bd, phone, isD, isM, rent } = ctx.request.body
+    if (!platform  || !shopId  || !shopName  || !roomId || !realName ) {
       ctx.body = { e: 'invalid params' }
       return
     }
-    const res = await addNewShop(platform, shopId, shopName, roomId, realName, city, person, bd, phone, isD, isM)
+    const res = await addNewShop(platform, shopId, shopName, roomId, realName, city, person, bd, phone, isD, isM, rent)
+    ctx.body = { res }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
+
+router.post('/addFengniao', async ctx => {
+  try {
+    let { shopId, shopName, loginName, password } = ctx.request.body
+    if (!shopId || !loginName  || !password ) {
+      ctx.body = { e: 'invalid params' }
+      return
+    }
+    const res = await addFengniao(shopId, shopName, loginName, password)
     ctx.body = { res }
   } catch (e) {
     console.log(e)
@@ -260,7 +301,7 @@ const sum_sql0 = `
   ),
   c AS (
     SELECT *, 
-      GREATEST(ROUND(income_sum_15 * 2 / 30000), 4) * 4500 / 30 AS labor_cost,
+      GREATEST(ROUND(income_sum_15 * 2 / 30000), 5) * 4500 / 30 AS labor_cost,
       income_sum * 0.05 AS water_electr_cost,
       income_sum * 0.015 AS cashback_cost,
       income_sum * 0.06 AS oper_cost
@@ -299,15 +340,45 @@ WHERE (b.shop_name IS NOT NULL OR c.reptile_type IS NOT NULL)
 AND d.status <> 9 AND DATEDIFF(a.date, d.shop_start_date) BETWEEN 1 AND 30
 ORDER BY a.wmpoiid, a.date`
 
+const perf_sql = d => `WITH a AS (
+	SELECT city, person, real_shop, income_sum, income_avg, income_score, cost_sum, cost_avg, cost_sum_ratio, cost_score, consume_sum, consume_avg, consume_sum_ratio, consume_score, score, date
+	FROM test_analyse_t_ 
+	GROUP BY real_shop, date ORDER BY date DESC
+  ),
+  b AS (
+    SELECT *,
+      SUM(cost_sum) OVER w / SUM(income_sum) OVER w AS cost_sum_sum_ratio,
+      SUM(consume_sum) OVER w / SUM(income_sum) OVER w AS consume_sum_sum_ratio,
+      AVG(score) OVER w AS score_avg
+    FROM a
+    WINDOW w AS (PARTITION BY person, date ORDER BY date DESC)
+  ),
+  c AS (
+    SELECT *,
+      score - LEAD(score, 1) OVER w2 AS score_1,
+      score_avg - LEAD(score_avg, 1) OVER w2 AS score_avg_1
+    FROM b
+    WINDOW w2 AS (PARTITION BY real_shop ORDER BY date DESC)
+  )
+  SELECT * FROM c
+  WHERE date >= DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL ${d} DAY),'%Y%m%d')
+  ORDER BY date DESC, score DESC`
+
 const ts_sql = `SELECT city, person, real_shop, shop_id, shop_name, platform, income, third_send, consume, consume_ratio, income_sum, consume_sum, consume_sum_ratio, 
 cost, cost_ratio, orders, unit_price, settlea_30, settlea_1, settlea_7, settlea_7_3, date
 FROM test_analyse_t_ ORDER BY date`
 
 async function date(d) {}
 
-async function addNewShop(platform, shopId, shopName, roomId, realName, city, person, bd, phone, isD, isM) {
+async function addNewShop(platform, shopId, shopName, roomId, realName, city, person, bd, phone, isD, isM, rent) {
   try {
-    let results = {}
+    let results = {},
+      real_shop_id = ''
+    const realShops = await knx('foxx_real_shop_info').select()
+    realShops.find(v => v.real_shop_name == realName)
+      ? (real_shop_id = realShops.find(v => v.real_shop_name == realName).real_shop_id)
+      : (real_shop_id = Math.max(...realShops.map(v => v.real_shop_id)) + 1)
+
     if (platform == 2) {
       const { ks_id } = knx(`ele_info_manage`).first('ks_id')
       const res1 = await knx(`ele_info_manage`)
@@ -323,6 +394,7 @@ async function addNewShop(platform, shopId, shopName, roomId, realName, city, pe
     results.res2 = res2
     const res3 = await knx(`foxx_real_shop_info`)
       .insert({
+        real_shop_id,
         real_shop_name: realName,
         shop_id: shopId,
         room_id: roomId,
@@ -332,12 +404,30 @@ async function addNewShop(platform, shopId, shopName, roomId, realName, city, pe
         bd,
         shop_phone: phone,
         is_original_price_deduction_point: isD,
-        is_merit_based_activity: isM
+        is_merit_based_activity: isM,
+        rent
       })
       .onConflict('shop_id', 'platform')
       .merge()
     results.res3 = res3
     return Promise.resolve(results)
+  } catch (e) {
+    return Promise.reject(e)
+  }
+}
+
+async function addFengniao(shopId, shopName, loginName, password) {
+  try {
+    const res = await knx(`ele_fengniao_info`)
+      .insert({
+        shop_id: shopId,
+        shop_name: shopName,
+        loginName,
+        password
+      })
+      .onConflict('loginName', 'shop_id')
+      .merge()
+    return Promise.resolve(res)
   } catch (e) {
     return Promise.reject(e)
   }
@@ -695,6 +785,50 @@ async function fresh() {
     )
     ys = flatten(ys)
     return new M({ shops: ys, dates })
+  }
+}
+
+/////////////////////////////
+///////////////////////////////////
+async function perf(date) {
+  try {
+    let [data, _] = await knx.raw(perf_sql(date))
+
+    if (!data) return Promise.reject('no data')
+
+    let res = new M(data)
+      .bind(format)
+    return Promise.resolve(res.val)
+  } catch (e) {
+    return Promise.reject(e)
+  }
+
+  function format(xs) {
+    let ys = xs.map(v => ({
+      ...v,
+      key: `${v.real_shop}-${v.date}`,
+      city: empty(v.city),
+      person: empty(v.person),
+      real_shop: empty(v.real_shop),
+      income_sum: fixed2(v.income_sum),
+      income_avg: fixed2(v.income_avg),
+      income_score: fixed2(v.income_score),
+      cost_sum: fixed2(v.cost_sum),
+      cost_avg: fixed2(v.cost_avg),
+      cost_sum_ratio: percent(v.cost_sum_ratio),
+      cost_sum_sum_ratio: percent(v.cost_sum_sum_ratio),
+      cost_score: fixed2(v.cost_score),
+      consume_sum: fixed2(v.consume_sum),
+      consume_avg: fixed2(v.consume_avg),
+      consume_sum_ratio: percent(v.consume_sum_ratio),
+      consume_sum_sum_ratio: percent(v.consume_sum_sum_ratio),
+      consume_score: fixed2(v.consume_score),
+      score: fixed2(v.score),
+      score_1: percent(v.score_1),
+      score_avg: fixed2(v.score_avg),
+      score_avg_1: percent(v.score_avg_1)
+    }))
+    return new M(ys)
   }
 }
 
