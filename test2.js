@@ -1088,7 +1088,7 @@ async function delDieliverAct(id) {
 async function createDieliverAct(id, fee) {
   const fallbackApp = new FallbackApp(id)
   try {
-    // const res = await delDieliverAct(id)
+    const res = await delDieliverAct(id)
     const policy = [{ discount: fee, shipping_charge: '0', mt_charge: '0', poi_charge: fee, agent_charge: '0' }]
     const res2 = await fallbackApp.act.dieliver.save(policy)
     return Promise.resolve({ res2 })
@@ -1179,8 +1179,8 @@ async function test_reduction2() {
 
 async function test_delivery() {
   try {
-    let data = await readXls('plan/2.1减配活动配置.xlsx', 'Sheet1')
-    data = data.map(v => [v.shop_id, 7.1])
+    let data = `6119122`.split('\n').map(v=>v.trim())
+    data = data.map(v => [v, 5.1])
     await loop(createDieliverAct, data, false)
   } catch (e) {
     console.error(e)
@@ -1449,10 +1449,10 @@ async function test_boxPrice() {
 //   await test_updateWeight()
 // })
 
-// test_testFood()
+test_testFood()
 // test_autotask()
 
-test_boxPrice()
+// test_boxPrice()
 // test_plan()
 // test_updateMaterial()
 

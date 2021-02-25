@@ -1169,7 +1169,7 @@ router.post('/tests/del', async ctx => {
 koa.use(router.routes())
 
 export let koae = koa;
-// koa.listen(9010, () => console.log('running at 9010'))
+koa.listen(9010, () => console.log('running at 9010'))
 
 async function freshMt(userTasks, userRule) {
   try {

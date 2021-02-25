@@ -898,3 +898,51 @@ let skuT = {
   wmProductLadderBoxPrice: { ladder_num: 1, ladder_price: '1', status: 1 }
 }
 // test()
+let foodT = [{
+  description: '说明产品，请勿下单',
+  name: '测试2',
+  wm_poi_id: '10085676',
+  tag_id: 214055264,
+  tag_name: '店铺公告1',
+  isShippingTimeSyncPoi: 2,
+  shipping_time_x: '-',
+  min_order_count: 1,
+  wmProductPics: [
+    {
+      pic_large_url: 'http://p0.meituan.net/wmproduct/2ba25f68ca66b4ab234607c3b510f8ff332609.png',
+      pic_small_url: 'http://p0.meituan.net/wmproduct/2ba25f68ca66b4ab234607c3b510f8ff332609.png',
+      is_quality_low: false,
+      quality_score: 1,
+      specialEffectEnable: 0,
+      picPropagandaList: [],
+      sequence: 0
+    }
+  ],
+  specialEffectPic: null,
+  category_id: 115250,
+  labelList: [],
+  newSpuAttrs: [
+    {
+      name: '份量',
+      name_id: 0,
+      price: '88',
+      value: '',
+      value_id: 0,
+      no: 0,
+      mode: 2,
+      weight: 1,
+      weightUnit: '克',
+      sell_status: 0,
+      value_sequence: 0
+    }
+  ],
+  stockAndBoxPriceSkus: [],
+  unifiedPackagingFee: 1,
+  wmProductLadderBoxPrice: { status: 1, ladder_num: 1, ladder_price: 0 },
+  wmProductStock: { id: 0, stock: 10000, max_stock: 10000, auto_refresh: 1 },
+  productCardDisplayContent: '',
+  labelValues: [
+    { sequence: 1, value: '' },
+    { sequence: 2, value: '' }
+  ]
+}]

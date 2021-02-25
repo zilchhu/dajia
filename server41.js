@@ -113,6 +113,16 @@ router.get('/sum/:date', async ctx => {
   }
 })
 
+router.get('/sum2', async ctx => {
+  try {
+    const res = await sum2()
+    ctx.body = { res }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
+
 router.get('/fresh', async ctx => {
   try {
     const res = await fresh()
@@ -249,7 +259,7 @@ router.get('/shops/real', async ctx => {
 router.post('/addNewShop', async ctx => {
   try {
     let { platform, shopId, shopName, roomId, realName, city, person, bd, phone, isD, isM, rent } = ctx.request.body
-    if (!platform  || !shopId  || !shopName  || !roomId || !realName ) {
+    if (!platform || !shopId || !shopName || !roomId || !realName) {
       ctx.body = { e: 'invalid params' }
       return
     }
@@ -264,7 +274,7 @@ router.post('/addNewShop', async ctx => {
 router.post('/addFengniao', async ctx => {
   try {
     let { shopId, shopName, loginName, password } = ctx.request.body
-    if (!shopId || !loginName  || !password ) {
+    if (!shopId || !loginName || !password) {
       ctx.body = { e: 'invalid params' }
       return
     }
@@ -285,7 +295,7 @@ const date_sql = d =>
 
 const sum_sql0 = `
   WITH a AS(
-    SELECT t.city, t.person, t.real_shop, t.income_sum, t.consume_sum, t.consume_sum_ratio, t.cost_sum, t.cost_sum_ratio, t.date, IFNULL(r.rent / 30, 0) AS rent_cost
+    SELECT t.city, t.person, t.real_shop, t.income_sum, t.consume_sum, t.consume_sum_ratio, t.cost_sum, t.cost_sum_ratio, t.date, IFNULL(r.rent / DAY(LAST_DAY(date)), 0) AS rent_cost
     FROM test_analyse_t_ t
     LEFT JOIN foxx_real_shop_info r ON t.real_shop = r.real_shop_name
     GROUP BY real_shop, date 
@@ -308,26 +318,40 @@ const sum_sql0 = `
       FROM b
   ),
   d AS (
-    SELECT *,
+    SELECT *, EXTRACT(YEAR_MONTH FROM date) AS ym,
       income_sum - consume_sum - cost_sum - rent_cost - labor_cost - water_electr_cost - cashback_cost - oper_cost AS profit
     FROM c
   ),
   e AS (
-    SELECT *, SUM(profit) OVER w AS profit_month
+    SELECT *, 
+      SUM(income_sum) OVER w AS income_sum_month,
+      SUM(consume_sum) OVER w AS consume_sum_month,
+      SUM(consume_sum) OVER w / SUM(income_sum) OVER w AS consume_sum_ratio_month,
+      SUM(cost_sum) OVER w AS cost_sum_month,
+      SUM(cost_sum) OVER w / SUM(income_sum) OVER w AS cost_sum_ratio_month,
+      SUM(rent_cost) OVER w AS rent_cost_month,
+      SUM(labor_cost) OVER w AS labor_cost_month,
+      SUM(water_electr_cost) OVER w AS water_electr_cost_month,
+      SUM(cashback_cost) OVER w AS cashback_cost_month,
+      SUM(oper_cost) OVER w AS oper_cost_month,
+      SUM(profit) OVER w AS profit_month
     FROM d
-    WINDOW w AS (PARTITION BY real_shop, MONTH(date))
+    WINDOW w AS (PARTITION BY real_shop, ym)
   )`
 
 const sum_sql = d =>
   `${sum_sql0}  
-  SELECT * FROM e
+  SELECT *, consume_sum_sum / income_sum_sum AS consume_sum_sum_ratio, cost_sum_sum / income_sum_sum AS cost_sum_sum_ratio
+  FROM e
   WHERE date >= DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL ${d} DAY),'%Y%m%d')
   ORDER BY date DESC, income_sum DESC`
 
 const sum_sql2 = `
   ${sum_sql0}
-  SELECT city, person, real_shop, profit_month, YEAR(date) AS year, MONTH(date) AS month  FROM e 
-  GROUP BY real_shop, MONTH(date) ORDER BY year DESC, month DESC
+  SELECT city, person, real_shop,income_sum_month, consume_sum_month, consume_sum_ratio_month, cost_sum_month, cost_sum_ratio_month,
+  rent_cost_month, labor_cost_month, water_electr_cost_month, cashback_cost_month, oper_cost_month, profit_month, ym 
+  FROM e 
+  GROUP BY real_shop, ym ORDER BY ym DESC
 `
 
 const fresh_sql = `SELECT a.*, e.cost_ratio, IFNULL(b.shop_name, c.reptile_type) AS name, IF(ISNULL(b.shop_name),'美团', '饿了么') AS platform
@@ -341,28 +365,53 @@ AND d.status <> 9 AND DATEDIFF(a.date, d.shop_start_date) BETWEEN 1 AND 30
 ORDER BY a.wmpoiid, a.date`
 
 const perf_sql = d => `WITH a AS (
-	SELECT city, person, real_shop, income_sum, income_avg, income_score, cost_sum, cost_avg, cost_sum_ratio, cost_score, consume_sum, consume_avg, consume_sum_ratio, consume_score, score, date
-	FROM test_analyse_t_ 
-	GROUP BY real_shop, date ORDER BY date DESC
+    SELECT city, person, real_shop, income_sum, income_avg, income_score, cost_sum, cost_avg, cost_sum_ratio, cost_score, consume_sum, consume_avg, consume_sum_ratio, consume_score, score, date
+    FROM test_analyse_t_ 
+    GROUP BY real_shop, date ORDER BY date DESC
   ),
   b AS (
     SELECT *,
       SUM(cost_sum) OVER w / SUM(income_sum) OVER w AS cost_sum_sum_ratio,
       SUM(consume_sum) OVER w / SUM(income_sum) OVER w AS consume_sum_sum_ratio,
+      SUM(income_sum) OVER w AS income_sum_sum,
+      AVG(income_avg) OVER w AS income_avg_avg,
+      AVG(income_score) OVER w AS income_score_avg,
+      SUM(cost_sum) OVER w AS cost_sum_sum,
+      AVG(cost_avg) OVER w AS cost_avg_avg,
+      AVG(cost_sum_ratio) OVER w AS cost_sum_ratio_avg,
+      AVG(cost_score) OVER w AS cost_score_avg,
+      SUM(consume_sum) OVER w AS consume_sum_sum,
+      AVG(consume_avg) OVER w AS consume_avg_avg,
+      AVG(consume_sum_ratio) OVER w AS consume_sum_ratio_avg,
+      AVG(consume_score) OVER w AS consume_score_avg,
       AVG(score) OVER w AS score_avg
     FROM a
+    WINDOW w AS (PARTITION BY person, date ORDER BY date DESC)
+  ),
+  b2 AS (
+    SELECT *, 
+      AVG(cost_sum_sum_ratio) OVER w AS cost_sum_sum_ratio_avg,
+      AVG(consume_sum_sum_ratio) OVER w AS consume_sum_sum_ratio_avg
+    FROM b
     WINDOW w AS (PARTITION BY person, date ORDER BY date DESC)
   ),
   c AS (
     SELECT *,
       score - LEAD(score, 1) OVER w2 AS score_1,
       score_avg - LEAD(score_avg, 1) OVER w2 AS score_avg_1
-    FROM b
+    FROM b2
     WINDOW w2 AS (PARTITION BY real_shop ORDER BY date DESC)
+  ),
+  c2 AS (
+    SELECT *,
+      AVG(score_1) OVER w AS score_1_avg,
+      AVG(score_avg_1) OVER w AS score_avg_1_avg
+    FROM c
+    WINDOW w AS (PARTITION BY person, date ORDER BY date DESC)
   )
-  SELECT * FROM c
+  SELECT * FROM c2
   WHERE date >= DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL ${d} DAY),'%Y%m%d')
-  ORDER BY date DESC, score DESC`
+  ORDER BY date DESC`
 
 const ts_sql = `SELECT city, person, real_shop, shop_id, shop_name, platform, income, third_send, consume, consume_ratio, income_sum, consume_sum, consume_sum_ratio, 
 cost, cost_ratio, orders, unit_price, settlea_30, settlea_1, settlea_7, settlea_7_3, date
@@ -475,7 +524,7 @@ async function sum(date, raw) {
   let data2 = { shops: [] }
   try {
     let [data, _] = await knx.raw(sum_sql(date))
-    data2 = await sum2()
+    // data2 = await sum2()
     if (!data) return Promise.reject('no data')
 
     if (raw) return data
@@ -484,7 +533,7 @@ async function sum(date, raw) {
       .bind(format)
       .bind(sum_)
       .bind(split_shop)
-      .bind(extend)
+    // .bind(extend)
     return Promise.resolve(res.val)
   } catch (e) {
     return Promise.reject(e)
@@ -532,15 +581,15 @@ async function sum(date, raw) {
           cost_sum: data.cost_sum_sum,
           consume_sum_ratio: data.consume_sum_sum_ratio,
           cost_sum_ratio: data.cost_sum_sum_ratio,
-          rent_cost: fixed2(xs.filter(x => x.date == da).reduce((s, v) => s + parseFloat(v.rent_cost), 0)),
-          labor_cost: fixed2(xs.filter(x => x.date == da).reduce((s, v) => s + parseFloat(v.labor_cost), 0)),
+          rent_cost: fixed2(xs.filter(x => x.date == da).reduce((s, v) => s + parseFloat_0(v.rent_cost), 0)),
+          labor_cost: fixed2(xs.filter(x => x.date == da).reduce((s, v) => s + parseFloat_0(v.labor_cost), 0)),
           water_electr_cost: fixed2(
-            xs.filter(x => x.date == da).reduce((s, v) => s + parseFloat(v.water_electr_cost), 0)
+            xs.filter(x => x.date == da).reduce((s, v) => s + parseFloat_0(v.water_electr_cost), 0)
           ),
-          cashback_cost: fixed2(xs.filter(x => x.date == da).reduce((s, v) => s + parseFloat(v.cashback_cost), 0)),
-          oper_cost: fixed2(xs.filter(x => x.date == da).reduce((s, v) => s + parseFloat(v.oper_cost), 0)),
-          profit: fixed2(xs.filter(x => x.date == da).reduce((s, v) => s + parseFloat(v.profit), 0)),
-          profit_month: fixed2(xs.filter(x => x.date == da).reduce((s, v) => s + parseFloat(v.profit_month), 0)),
+          cashback_cost: fixed2(xs.filter(x => x.date == da).reduce((s, v) => s + parseFloat_0(v.cashback_cost), 0)),
+          oper_cost: fixed2(xs.filter(x => x.date == da).reduce((s, v) => s + parseFloat_0(v.oper_cost), 0)),
+          profit: fixed2(xs.filter(x => x.date == da).reduce((s, v) => s + parseFloat_0(v.profit), 0)),
+          profit_month: fixed2(xs.filter(x => x.date == da).reduce((s, v) => s + parseFloat_0(v.profit_month), 0)),
           date: da
         })
     }
@@ -664,26 +713,53 @@ async function sum2() {
       city: empty(v.city),
       person: empty(v.person),
       real_shop: empty(v.real_shop),
-      profit_month: fixed2(v.profit_month),
-      year_month: dayjs(`${v.year}${v.month}`, 'YYYYM').format('YYYYMM')
+      income_sum_month: fixed2(v.income_sum_month),
+      consume_sum_month: fixed2(v.consume_sum_month),
+      cost_sum_month: fixed2(v.cost_sum_month),
+      consume_sum_ratio_month: percent(v.consume_sum_ratio_month),
+      cost_sum_ratio_month: percent(v.cost_sum_ratio_month),
+      rent_cost_month: fixed2(v.rent_cost_month),
+      labor_cost_month: fixed2(v.labor_cost_month),
+      water_electr_cost_month: fixed2(v.water_electr_cost_month),
+      cashback_cost_month: fixed2(v.cashback_cost_month),
+      oper_cost_month: fixed2(v.oper_cost_month),
+      profit_month: fixed2(v.profit_month)
     }))
     return new M(ys)
   }
 
   function sum_(xs) {
-    let dates = distinct(xs, 'year_month')
+    let dates = distinct(xs, 'ym')
     for (let da of dates) {
-      let data = xs.find(v => v.year_month == da)
-      if (data)
+      let data = xs.find(v => v.ym == da)
+      if (data) {
+        let income = xs.filter(x => x.ym == da).reduce((s, v) => s + parseFloat_0(v.income_sum_month), 0)
+        let consume = xs.filter(x => x.ym == da).reduce((s, v) => s + parseFloat_0(v.consume_sum_month), 0)
+        let cost = xs.filter(x => x.ym == da).reduce((s, v) => s + parseFloat_0(v.cost_sum_month), 0)
         xs.push({
           city: '总计',
           person: '总计',
           real_shop: '总计',
-          profit_month: fixed2(xs.filter(x => x.year_month == da).reduce((s, v) => s + parseFloat(v.profit_month), 0)),
-          year: data.year,
-          month: data.month,
-          year_month: da
+          income_sum_month: fixed2(income),
+          consume_sum_month: fixed2(consume),
+          cost_sum_month: fixed2(cost),
+          consume_sum_ratio_month: percent(consume / income),
+          cost_sum_ratio_month: percent(cost / income),
+          rent_cost_month: fixed2(xs.filter(x => x.ym == da).reduce((s, v) => s + parseFloat_0(v.rent_cost_month), 0)),
+          labor_cost_month: fixed2(
+            xs.filter(x => x.ym == da).reduce((s, v) => s + parseFloat_0(v.labor_cost_month), 0)
+          ),
+          water_electr_cost_month: fixed2(
+            xs.filter(x => x.ym == da).reduce((s, v) => s + parseFloat_0(v.water_electr_cost_month), 0)
+          ),
+          cashback_cost_month: fixed2(
+            xs.filter(x => x.ym == da).reduce((s, v) => s + parseFloat_0(v.cashback_cost_month), 0)
+          ),
+          oper_cost_month: fixed2(xs.filter(x => x.ym == da).reduce((s, v) => s + parseFloat_0(v.oper_cost_month), 0)),
+          profit_month: fixed2(xs.filter(x => x.ym == da).reduce((s, v) => s + parseFloat_0(v.profit_month), 0)),
+          ym: da
         })
+      }
     }
     // fs.writeFileSync('log/sum.json', JSON.stringify(xs))
     return new M({
@@ -698,19 +774,54 @@ async function sum2() {
     let ys = distinct_shops.map(v => {
       let city = xs.find(k => k.real_shop == v).city
       let person = xs.find(k => k.real_shop == v).person
+      let income_sum_months = xs
+        .filter(k => k.real_shop == v)
+        .reduce((o, c) => ({ ...o, [`income_sum_month_${c.ym}`]: c.income_sum_month }), {})
+      let consume_sum_months = xs
+        .filter(k => k.real_shop == v)
+        .reduce((o, c) => ({ ...o, [`consume_sum_month_${c.ym}`]: c.consume_sum_month }), {})
+      let cost_sum_months = xs
+        .filter(k => k.real_shop == v)
+        .reduce((o, c) => ({ ...o, [`cost_sum_month_${c.ym}`]: c.cost_sum_month }), {})
+      let consume_sum_ratio_months = xs
+        .filter(k => k.real_shop == v)
+        .reduce((o, c) => ({ ...o, [`consume_sum_ratio_month_${c.ym}`]: c.consume_sum_ratio_month }), {})
+      let cost_sum_ratio_months = xs
+        .filter(k => k.real_shop == v)
+        .reduce((o, c) => ({ ...o, [`cost_sum_ratio_month_${c.ym}`]: c.cost_sum_ratio_month }), {})
+      let rent_cost_months = xs
+        .filter(k => k.real_shop == v)
+        .reduce((o, c) => ({ ...o, [`rent_cost_month_${c.ym}`]: c.rent_cost_month }), {})
+      let labor_cost_months = xs
+        .filter(k => k.real_shop == v)
+        .reduce((o, c) => ({ ...o, [`labor_cost_month_${c.ym}`]: c.labor_cost_month }), {})
+      let water_electr_cost_months = xs
+        .filter(k => k.real_shop == v)
+        .reduce((o, c) => ({ ...o, [`water_electr_cost_month_${c.ym}`]: c.water_electr_cost_month }), {})
+      let cashback_cost_months = xs
+        .filter(k => k.real_shop == v)
+        .reduce((o, c) => ({ ...o, [`cashback_cost_month_${c.ym}`]: c.cashback_cost_month }), {})
+      let oper_cost_months = xs
+        .filter(k => k.real_shop == v)
+        .reduce((o, c) => ({ ...o, [`oper_cost_month_${c.ym}`]: c.oper_cost_month }), {})
       let profit_months = xs
         .filter(k => k.real_shop == v)
-        .sort((a, b) => {
-          if (dayjs(`${a.year}${a.month}`, 'YYYYM').isBefore(dayjs(`${b.year}${b.month}`, 'YYYYM'))) {
-            return -1
-          } else return 1
-        })
-        .reduce((o, c) => ({ ...o, [`profit_month_${c.year_month}`]: c.profit_month }), {})
+        .reduce((o, c) => ({ ...o, [`profit_month_${c.ym}`]: c.profit_month }), {})
       return {
         city,
         person,
         real_shop: v,
-        ...profit_months
+        ...profit_months,
+        ...income_sum_months,
+        ...consume_sum_months,
+        ...cost_sum_months,
+        ...consume_sum_ratio_months,
+        ...cost_sum_ratio_months,
+        ...rent_cost_months,
+        ...labor_cost_months,
+        ...water_electr_cost_months,
+        ...cashback_cost_months,
+        ...oper_cost_months
       }
     })
     return new M({
@@ -719,6 +830,7 @@ async function sum2() {
     })
   }
 }
+
 ///////////////////////////
 /////////////////////////////
 //name field 20210101 20210102
@@ -796,8 +908,7 @@ async function perf(date) {
 
     if (!data) return Promise.reject('no data')
 
-    let res = new M(data)
-      .bind(format)
+    let res = new M(data).bind(sum_).bind(format)
     return Promise.resolve(res.val)
   } catch (e) {
     return Promise.reject(e)
@@ -806,7 +917,7 @@ async function perf(date) {
   function format(xs) {
     let ys = xs.map(v => ({
       ...v,
-      key: `${v.real_shop}-${v.date}`,
+      key: `${v.person}-${v.real_shop}-${v.date}`,
       city: empty(v.city),
       person: empty(v.person),
       real_shop: empty(v.real_shop),
@@ -829,6 +940,68 @@ async function perf(date) {
       score_avg_1: percent(v.score_avg_1)
     }))
     return new M(ys)
+  }
+
+  function sum_(xs) {
+    let dates = distinct(xs, 'date')
+    for (let da of dates) {
+      let data = xs.filter(x => x.date == da)
+      if (data.length > 0) {
+        let persons = distinct(data, 'person')
+        for (let person of persons) {
+          let v = data.find(x => x.person == person)
+          xs.push({
+            ...v,
+            city: '总计',
+            person: empty(v.person),
+            real_shop: '总计',
+            income_sum: v.income_sum_sum,
+            income_avg: v.income_avg_avg,
+            income_score: v.income_score_avg,
+            cost_sum: v.cost_sum_sum,
+            cost_avg: v.cost_avg_avg,
+            cost_sum_ratio: v.cost_sum_ratio_avg,
+            cost_sum_sum_ratio: v.cost_sum_sum_ratio_avg,
+            cost_score: v.cost_score_avg,
+            consume_sum: v.consume_sum_sum,
+            consume_avg: v.consume_avg_avg,
+            consume_sum_ratio: v.consume_sum_ratio_avg,
+            consume_sum_sum_ratio: v.consume_sum_sum_ratio_avg,
+            consume_score: v.consume_score_avg,
+            score: v.score_avg,
+            score_1: v.score_1_avg,
+            score_avg: v.score_avg,
+            score_avg_1: v.score_avg_1_avg,
+            date: da
+          })
+        }
+        xs.push({
+          city: '总计',
+          person: '总计',
+          real_shop: '总计',
+          income_sum: data.reduce((s, v) => s + parseFloat_0(v.income_sum), 0),
+          income_avg: data.reduce((s, v) => s + parseFloat_0(v.income_avg), 0) / data.length,
+          income_score: data.reduce((s, v) => s + parseFloat_0(v.income_score), 0) / data.length,
+          cost_sum: data.reduce((s, v) => s + parseFloat_0(v.cost_sum), 0),
+          cost_avg: data.reduce((s, v) => s + parseFloat_0(v.cost_avg), 0) / data.length,
+          cost_sum_ratio: data.reduce((s, v) => s + parseFloat_0(v.cost_sum_ratio), 0) / data.length,
+          cost_sum_sum_ratio: data.reduce((s, v) => s + parseFloat_0(v.cost_sum_sum_ratio), 0) / data.length,
+          cost_score: data.reduce((s, v) => s + parseFloat_0(v.cost_score), 0) / data.length,
+          consume_sum: data.reduce((s, v) => s + parseFloat_0(v.consume_sum), 0),
+          consume_avg: data.reduce((s, v) => s + parseFloat_0(v.consume_avg), 0) / data.length,
+          consume_sum_ratio: data.reduce((s, v) => s + parseFloat_0(v.consume_sum_ratio), 0) / data.length,
+          consume_sum_sum_ratio: data.reduce((s, v) => s + parseFloat_0(v.consume_sum_sum_ratio), 0) / data.length,
+          consume_score: data.reduce((s, v) => s + parseFloat_0(v.consume_score), 0) / data.length,
+          score: data.reduce((s, v) => s + parseFloat_0(v.score), 0) / data.length,
+          score_1: data.reduce((s, v) => s + parseFloat_0(v.score_1_avg), 0) / data.length,
+          score_avg: data.reduce((s, v) => s + parseFloat_0(v.score_avg), 0) / data.length,
+          score_avg_1: data.reduce((s, v) => s + parseFloat_0(v.score_avg_1), 0) / data.length,
+          date: da
+        })
+      }
+    }
+    // fs.writeFileSync('log/sum.json', JSON.stringify(xs))
+    return new M(xs)
   }
 }
 
@@ -1679,4 +1852,8 @@ function percent(num) {
 function fixed2(num) {
   if (typeof num === 'string') num = parseFloat(num)
   return num.toFixed(2)
+}
+
+function parseFloat_0(num) {
+  return parseFloat(num) ? parseFloat(num) : 0
 }

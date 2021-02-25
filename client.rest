@@ -75,6 +75,11 @@ content-type: application/json
 
 ###
 
+GET http://localhost:9005/realshops
+content-type: application/json
+
+###
+
 GET http://localhost:9005/shop_history/501093144
 content-type: application/json
 

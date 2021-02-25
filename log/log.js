@@ -9,3 +9,7 @@ export default function log(err) {
     fs.appendFileSync('log/log.txt', err + '\n')
   }
 }
+
+let data = fs.readFileSync('log/log.json')
+data = data.map(v => v.meta)
+
