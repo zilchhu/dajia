@@ -611,6 +611,36 @@ async function updateTagSeq(id, name) {
   }
 }
 
+async function updateTagTime(id, name) {
+  const fallbackApp = new FallbackApp(id)
+
+  try {
+    const tags = await fallbackApp.food.listTags()
+    const tagWillUpdate = tags.find(v => v.name.includes(name))
+    if (!tagWillUpdate) return Promise.reject({ err: 'tag1 not find' })
+    const tagUpdateSeqRes = await fallbackApp.food.updateFoodCatSeq(tagWillUpdate.id, tags.length)
+    const tagUpdated = await fallbackApp.food.searchTag(name)
+    return Promise.resolve({ ...tagUpdateSeqRes, tagUpdated: { seq: tagUpdated.sequence } })
+  } catch (err) {
+    return Promise.reject(err)
+  }
+}
+
+async function updateTagTop(id, name) {
+  const fallbackApp = new FallbackApp(id)
+
+  try {
+    const tags = await fallbackApp.food.listTags()
+    const tagWillUpdate = tags.find(v => v.name.includes(name))
+    if (!tagWillUpdate) return Promise.reject({ err: 'tag1 not find' })
+    const tagUpdateSeqRes = await fallbackApp.food.updateFoodCatTop_(tagWillUpdate)
+    const tagUpdated = await fallbackApp.food.searchTag(name)
+    return Promise.resolve({ ...tagUpdateSeqRes, tagUpdated: { timeZone: tagUpdated.timeZoneForHuman } })
+  } catch (err) {
+    return Promise.reject(err)
+  }
+}
+
 async function test_sortTag() {
   const fallbackApp = new FallbackApp()
   try {
@@ -825,8 +855,8 @@ async function renameFood(id, spuId, oldName, newName) {
 
 async function test_rename2() {
   try {
-    let data = await readXls('plan/2-24批量修改产品名不挂杯.xlsx', '美团')
-    data = data.map(v => [v.店铺id, null, v.name, v.修改为])
+    let data = await readXls('plan/美团汤圆(3)(1)(1)(1).xls', 'Sheet1')
+    data = data.map(v => [v.编号, null, v.商品, v.商品.trim()+'（元宵节快乐）'])
     await loop(renameFood, data, false)
   } catch (error) {
     console.error(error)
@@ -981,8 +1011,8 @@ async function test_updateActTime() {
 
 async function test_updateAct() {
   try {
-    let data = await readXls('plan/美团折扣价.xls', '修改折扣12.8')
-    data = data.map(v => [v.门店id, v.品名, 12.8]).slice(data.length - 53)
+    let data = await readXls('plan/美团折扣价修改.xls', '2美团商品查询')
+    data = data.filter(v => v.修改后折扣价 != '').map(v => [v.编号, v.商品, v.修改后折扣价])
     await loop(updateAct, data, false)
   } catch (error) {
     console.error(error)
@@ -1045,10 +1075,10 @@ async function test_createAct() {
     // 9899410`
     //   .split('\n')
     //   .map(v => v.trim())
-    let data = readJson('log/log.json')
+    let data = await readXls('plan/美团汤圆(3)(1)(1)(1).xls', 'Sheet1')
+    data = data.filter(v => v.修改后折扣价 != '').map(v => [v.编号, v.商品, v.修改后折扣价])
 
     // data = data.map(v => [v, '五福临门年夜饭套餐', 99.9])
-    data = data.map(v => v.meta)
     await loop(createAct, data, false)
   } catch (error) {
     console.error(error)
@@ -1179,7 +1209,7 @@ async function test_reduction2() {
 
 async function test_delivery() {
   try {
-    let data = `6119122`.split('\n').map(v=>v.trim())
+    let data = `6119122`.split('\n').map(v => v.trim())
     data = data.map(v => [v, 5.1])
     await loop(createDieliverAct, data, false)
   } catch (e) {
@@ -1192,6 +1222,17 @@ async function test_updateTagName() {
     let data = await readXls('plan/分类名称改为：元宵汤圆.xlsx', '2美团商品查询')
     data = data.map(v => [v.店铺id, v.tagName, '元宵汤圆'])
     await loop(updateFoodCatName, data, false)
+  } catch (err) {
+    console.error(err)
+  }
+}
+
+async function test_updateTagTop() {
+  try {
+    let data = await readXls('plan/美团汤圆(3)(1)(1)(1).xls', 'Sheet1')
+    data = Array.from(new Set(data.map(v => v.编号)))
+    data = data.map(v => [v, '元宵汤圆'])
+    await loop(updateTagTop, data, false)
   } catch (err) {
     console.error(err)
   }
@@ -1435,13 +1476,14 @@ async function test_boxPrice() {
 
 // test_stock()
 // test_saveFood()
-// test_updateAct()
+test_updateAct()
 // test_createAct()
 // test_move()
 // test_delTag()
 // test_updateWeight()
 // test_updateMinOrder()
 // test_updateTagName()
+// test_updateTagTop()
 // let date = new Date(2021, 1, 22, 3, 0, 0)
 // console.log('task wiil be exec at', dayjs(date).format('YYYY-MM-DD HH:mm:ss'))
 // let j = schedule.scheduleJob(date, async function() {
@@ -1449,7 +1491,7 @@ async function test_boxPrice() {
 //   await test_updateWeight()
 // })
 
-test_testFood()
+// test_testFood()
 // test_autotask()
 
 // test_boxPrice()

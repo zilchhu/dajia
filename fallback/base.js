@@ -14,17 +14,7 @@ const knx = knex({
 
 import urls_ from './url.js'
 
-let Cookie = '_lxsdk_cuid=1775b772fbac8-0ee0aab2fb3d09-c791039-1fa400-1775b772fba57; _lxsdk=1775b772fbac8-0ee0aab2fb3d09-c791039-1fa400-1775b772fba57; device_uuid=!93be5d46-1201-4ccb-af5d-fc7911ec8970; uuid_update=true; acctId=23262521; brandId=-1; city_id=0; isChain=1; existBrandPoi=true; ignore_set_router_proxy=true; region_id=; region_version=0; newCategory=false; cityId=440300; provinceId=440000; city_location_id=0; location_id=0; pushToken=0W3TxK_HBq9NfYgc8QSfiM10zJmWPGtAGSbfwo66HYO8*; wpush_server_url=wss://wpush.meituan.com; isOfflineSelfOpen=0; logan_custom_report=; wmPoiName=%E5%96%9C%E4%B8%89%E5%BE%B7%E7%94%9C%E5%93%81%E2%80%A2%E6%89%8B%E5%B7%A5%E8%8A%8B%E5%9C%86%EF%BC%88%E5%A4%A7%E6%9C%97%E5%BA%97%EF%BC%89; token=0tsGMyMPYmUawmMHQyc5-TSEgHsLN4bwGskJ0fOEFmgQ*; bsid=mC34NV__Jr20X-y-v-UuLXz1ctgNKh6DOxMoLBeN1D8SmYLFNegyHS3rRG1WRxpjOjwI54pAydTC9dvXcWhwrg; wmPoiId=10085676; logistics_support=1; shopCategory=food; set_info=%7B%22wmPoiId%22%3A10085676%2C%22ignoreSetRouterProxy%22%3Atrue%7D; JSESSIONID=1tmlikg4ma7k71jldogktf5w3z; setPrivacyTime=8_20210225; logan_session_token=gkh18lg6aa3g2ejljteo'
-async function fetchCookie() {
-  try {
-    const {cookie} = await knx('foxx_shop_reptile').first('cookie')
-    Cookie = cookie
-  } catch (e) {
-    console.error(e)
-  }
-}
-
-// console.log(Cookie)
+let { cookie } = await knx('foxx_shop_reptile').first('cookie')
 
 let axiosConfig = {
   baseURL: 'https://waimaieapp.meituan.com',
@@ -35,7 +25,7 @@ let axiosConfig = {
     'Accept-Language': 'zh-CN,zh;q=0.9',
     Connection: 'keep-alive',
     'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-    Cookie,
+    Cookie: cookie,
     Host: 'waimaie.meituan.com',
     Origin: 'https://waimaie.meituan.com',
     Referer: 'https://waimaie.meituan.com/v2/shop/manage/shopInfo?ignoreSetRouterProxy=true',
@@ -83,7 +73,9 @@ instance.interceptors.response.use(
       return Promise.reject(error)
     }
 
-    const shouldRetry = (/ETIMEDOUT|ECONNRESET/.test(error.code) || error.msg =='服务器超时，请稍后再试') && config[namespace].retryCount < 3
+    const shouldRetry =
+      (/ETIMEDOUT|ECONNRESET/.test(error.code) || error.msg == '服务器超时，请稍后再试') &&
+      config[namespace].retryCount < 3
 
     if (shouldRetry) {
       config[namespace].retryCount += 1

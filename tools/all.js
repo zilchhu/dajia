@@ -44,7 +44,8 @@ const router = new Router()
 
 const y = readYaml('tools/all.yaml')
 
-const singleCookie = y.headers['基本设置']['Cookie']
+let singleCookie = await knx('foxx_shop_reptile').first('cookie')
+singleCookie = singleCookie.cookie
 
 const baseHeaders = y.headers['基本设置']
 const instance = axios.create({
@@ -60,15 +61,17 @@ const instance2 = axios.create({
 /////////////
 
 const id = '63E97155736E4E70B1C744053F1C66E3|1613881907344'
+let { ks_id } = await knx('ele_info_manage').first('ks_id')
 const metas = {
   appName: 'melody',
   appVersion: '4.4.0',
-  ksid: 'OTA3YJMTA1MjUzOTA0OTU1MTAxTlhJSldrazJQ'
+  ksid: ks_id
 }
 var metasVar = { ...metas }
-const ksid = metas.ksid
+
 const ncp = '2.0.0'
 const namespace = 'elm-retry'
+let ksid = ks_id
 
 const instanceElm = axios.create({
   responseType: 'json',
@@ -114,6 +117,7 @@ const instanceElm2 = axios.create({
 
 instance.interceptors.request.use(
   config => {
+    config.headers['Cookie'] = singleCookie
     if (config.method == 'post' && config.headers['Content-Type'] != 'application/json')
       config.data = qs.stringify(config.data)
     // console.log(config)
@@ -946,10 +950,9 @@ async function a(wmPoiId) {
     // ]
     // data = data.map(v => [v])
     // await loop(closeBj, data, false)
-    let data = await readXls('plan/饿了么分类名称改为：元宵汤圆(1).xlsx', 'Sheet1')
-    data = data.map(v=>[v.店铺id, v.分类])
+    let data = await knx('ele_info_manage').select()
+    data = data.map(v => [v.shop_id, '元宵汤圆'])
     await loop(updateFoodCat, data, false)
-
   } catch (error) {
     console.error(error)
     fs.writeFileSync('log/log.json', JSON.stringify(error))
@@ -1005,21 +1008,24 @@ async function updateFoodCat(shopId, catName) {
     let update = deepmerge(
       cat,
       {
-        // dayPartingStick: {
-        //   beginDate: date(),
-        //   endDate: '2021-07-31',
-        //   dateRange: [
-        //     dayjs()
-        //       .startOf('day')
-        //       .toISOString(),
-        //     dayjs('2021-07-31').toISOString()
-        //   ]
-        // },
+        dayPartingStick: {
+          beginDate: date(),
+          endDate: '2021-02-28',
+          dateRange: [
+            dayjs()
+              .startOf('day')
+              .toISOString(),
+            dayjs('2021-02-28').toISOString()
+          ],
+          isAllDay: true,
+          times: [],
+          weeks: ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY']
+        },
         // dayPartingStick: null,
-        // isUseDayPartingStick: false
+        isUseDayPartingStick: true,
         name: '元宵汤圆'
-      }
-      // { arrayMerge: (_, source) => source }
+      },
+      { arrayMerge: (_, source) => source }
     )
     return execRequest(instanceElm, y.requests.elm['分类列表/update'], [cat.globalId, update], xshard(shopId))
   } catch (e) {
@@ -1168,7 +1174,7 @@ router.post('/tests/del', async ctx => {
 
 koa.use(router.routes())
 
-export let koae = koa;
+export let koae = koa
 koa.listen(9010, () => console.log('running at 9010'))
 
 async function freshMt(userTasks, userRule) {
