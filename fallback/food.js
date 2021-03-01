@@ -321,6 +321,22 @@ export default class Food {
     return instance.post(urls.food.updateFoodCatName, data)
   }
 
+  async updateFoodCatUnTop_(tag) {
+    let data = {
+      wmPoiId: this.wmPoiId,
+      tagInfo: JSON.stringify({
+        id: tag.id,
+        name: tag.name,
+        description: tag.description,
+        top_flag: 0,
+        tag_type: tag.tagType,
+        time_zone: {},
+        sequence: tag.sequence
+      })
+    }
+    return instance.post(urls.food.updateFoodCatName, data)
+  }
+
   async saveFoodCat(tagName, seq) {
     let data = {
       wmPoiId: this.wmPoiId,

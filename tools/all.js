@@ -950,8 +950,8 @@ async function a(wmPoiId) {
     // ]
     // data = data.map(v => [v])
     // await loop(closeBj, data, false)
-    let data = await knx('ele_info_manage').select()
-    data = data.map(v => [v.shop_id, '元宵汤圆'])
+    let data = await readXls('plan/3-1批量修改.xls', '饿了么分类名修改')
+    data = data.map(v => [v.shop_id, v.category_name, v.修改后的分类名])
     await loop(updateFoodCat, data, false)
   } catch (error) {
     console.error(error)
@@ -1000,7 +1000,7 @@ async function updateShopInfo(wmPoiId, bulletin) {
   }
 }
 
-async function updateFoodCat(shopId, catName) {
+async function updateFoodCat(shopId, catName, newName) {
   try {
     const res = await execRequest(instanceElm, y.requests.elm['分类列表/get'], [shopId], xshard(shopId))
     const cat = res.find(v => v.name == catName)
@@ -1008,22 +1008,22 @@ async function updateFoodCat(shopId, catName) {
     let update = deepmerge(
       cat,
       {
-        dayPartingStick: {
-          beginDate: date(),
-          endDate: '2021-02-28',
-          dateRange: [
-            dayjs()
-              .startOf('day')
-              .toISOString(),
-            dayjs('2021-02-28').toISOString()
-          ],
-          isAllDay: true,
-          times: [],
-          weeks: ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY']
-        },
+        // dayPartingStick: {
+        //   beginDate: date(),
+        //   endDate: '2021-02-28',
+        //   dateRange: [
+        //     dayjs()
+        //       .startOf('day')
+        //       .toISOString(),
+        //     dayjs('2021-02-28').toISOString()
+        //   ],
+        //   isAllDay: true,
+        //   times: [],
+        //   weeks: ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY']
+        // },
         // dayPartingStick: null,
-        isUseDayPartingStick: true,
-        name: '元宵汤圆'
+        isUseDayPartingStick: false,
+        name: newName
       },
       { arrayMerge: (_, source) => source }
     )

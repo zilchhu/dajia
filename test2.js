@@ -641,6 +641,21 @@ async function updateTagTop(id, name) {
   }
 }
 
+async function updateTagUnTop(id, name) {
+  const fallbackApp = new FallbackApp(id)
+
+  try {
+    const tags = await fallbackApp.food.listTags()
+    const tagWillUpdate = tags.find(v => v.name.includes(name))
+    if (!tagWillUpdate) return Promise.reject({ err: 'tag1 not find' })
+    const tagUpdateSeqRes = await fallbackApp.food.updateFoodCatUnTop_(tagWillUpdate)
+    const tagUpdated = await fallbackApp.food.searchTag(name)
+    return Promise.resolve({ ...tagUpdateSeqRes, tagUpdated: { timeZone: tagUpdated.timeZone } })
+  } catch (err) {
+    return Promise.reject(err)
+  }
+}
+
 async function test_sortTag() {
   const fallbackApp = new FallbackApp()
   try {
@@ -855,8 +870,8 @@ async function renameFood(id, spuId, oldName, newName) {
 
 async function test_rename2() {
   try {
-    let data = await readXls('plan/美团汤圆(3)(1)(1)(1).xls', 'Sheet1')
-    data = data.map(v => [v.编号, null, v.商品, v.商品.trim()+'（元宵节快乐）'])
+    let data = await readXls('plan/3-1批量修改.xls', '美团产品名修改')
+    data = data.map(v => [v.shop_id, null, v.name, v.修改后的产品名])
     await loop(renameFood, data, false)
   } catch (error) {
     console.error(error)
@@ -1219,8 +1234,8 @@ async function test_delivery() {
 
 async function test_updateTagName() {
   try {
-    let data = await readXls('plan/分类名称改为：元宵汤圆.xlsx', '2美团商品查询')
-    data = data.map(v => [v.店铺id, v.tagName, '元宵汤圆'])
+    let data = await readXls('plan/3-1批量修改.xls', '美团分类名修改')
+    data = data.map(v => [v.shop_id, v.category_name, v.修改后的分类名])
     await loop(updateFoodCatName, data, false)
   } catch (err) {
     console.error(err)
@@ -1233,6 +1248,17 @@ async function test_updateTagTop() {
     data = Array.from(new Set(data.map(v => v.编号)))
     data = data.map(v => [v, '元宵汤圆'])
     await loop(updateTagTop, data, false)
+  } catch (err) {
+    console.error(err)
+  }
+}
+
+async function test_updateTagUnTop() {
+  try {
+    let data = await readXls('plan/美团汤圆(3)(1)(1)(1).xls', 'Sheet1')
+    data = Array.from(new Set(data.map(v => v.编号)))
+    data = data.map(v => [v, '元宵汤圆'])
+    await loop(updateTagUnTop, data, false)
   } catch (err) {
     console.error(err)
   }
@@ -1476,14 +1502,14 @@ async function test_boxPrice() {
 
 // test_stock()
 // test_saveFood()
-test_updateAct()
+// test_updateAct()
 // test_createAct()
 // test_move()
 // test_delTag()
 // test_updateWeight()
 // test_updateMinOrder()
 // test_updateTagName()
-// test_updateTagTop()
+// test_updateTagUnTop()
 // let date = new Date(2021, 1, 22, 3, 0, 0)
 // console.log('task wiil be exec at', dayjs(date).format('YYYY-MM-DD HH:mm:ss'))
 // let j = schedule.scheduleJob(date, async function() {
@@ -1507,5 +1533,5 @@ test_updateAct()
 // test_updateAct()1
 // test_delFoods()
 // test_testFood()
-// test_rename2()
+test_rename2()
 // test_updateImg()

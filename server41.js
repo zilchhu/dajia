@@ -148,6 +148,16 @@ router.get('/perf/:date', async ctx => {
     ctx.body = { e }
   }
 })
+
+router.get('/export/perf', async ctx => {
+  try {
+    const [res, _] = await knx.raw(perf_sql(3))
+    ctx.body = { res }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
 // all days
 router.get('/shop/:shopid', async ctx => {
   try {
@@ -341,6 +351,7 @@ router.get('/prob/cost/elm/:shopId', async ctx => {
       return
     }
     let [data, _] = await knx.raw(饿了么成本问题(shopId))
+
     data = data.map((v, i) => ({
       key: i,
       ...v,
@@ -591,13 +602,13 @@ b AS (
 SELECT 
 	wmpoiid,
 	shop_name,
-	goods_cnt '商品数',
-	activi '活动',
-	cost '成本',
-	settlea '收入',
-	order_cnt '单量',
-	cost / SUM(cost) OVER() AS '单量占比',
-	cost / settlea AS '成本比例'
+	goods_cnt 商品数,
+	activi 活动,
+	cost 成本,
+	settlea 收入,
+	order_cnt 单量,
+	order_cnt / SUM(order_cnt) OVER()  AS 单量占比,
+	cost / settlea AS 成本比例
 FROM b
 ORDER BY activi, goods_cnt`
 
@@ -658,7 +669,7 @@ d AS (
 		JOIN c 
 			ON a.shop_id = c.shop_id
 )
-SELECT * FROM d GROUP BY '活动', '商品数'`
+SELECT * FROM d GROUP BY 活动, 商品数`
 
 const 美团单维度订单 = (id, activi, counts) => `WITH
 a AS (
@@ -764,8 +775,8 @@ FROM a
 		ON a.shop_id = c.shop_id
 WHERE 
 	act = '${activi}' AND
-	goods_cnt <= ${counts}
-ORDER BY '成本比例' DESC`
+	goods_cnt = ${counts}
+ORDER BY 成本比例 DESC`
 
 async function date(d) {}
 
@@ -779,7 +790,7 @@ async function addNewShop(platform, shopId, shopName, roomId, realName, city, pe
       : (real_shop_id = Math.max(...realShops.map(v => v.real_shop_id)) + 1)
 
     if (platform == 2) {
-      const { ks_id } = knx(`ele_info_manage`).first('ks_id')
+      const { ks_id } = await knx(`ele_info_manage`).first('ks_id')
       const res1 = await knx(`ele_info_manage`)
         .insert({ shop_id: shopId, shop_name: shopName, ks_id })
         .onConflict('shop_id')
@@ -788,7 +799,7 @@ async function addNewShop(platform, shopId, shopName, roomId, realName, city, pe
     }
     const res2 = await knx(`foxx_message_room`)
       .insert({ wmpoiid: shopId, roomName: shopName, roomId })
-      .onConflict('wmpoiid', 'roomName')
+      .onConflict('wmpoiid')
       .merge()
     results.res2 = res2
     const res3 = await knx(`foxx_real_shop_info`)
@@ -806,7 +817,7 @@ async function addNewShop(platform, shopId, shopName, roomId, realName, city, pe
         is_merit_based_activity: isM,
         rent
       })
-      .onConflict('shop_id', 'platform')
+      .onConflict('shop_id')
       .merge()
     results.res3 = res3
     return Promise.resolve(results)
@@ -824,7 +835,7 @@ async function addFengniao(shopId, shopName, loginName, password) {
         loginName,
         password
       })
-      .onConflict('loginName', 'shop_id')
+      .onConflict('shop_id')
       .merge()
     return Promise.resolve(res)
   } catch (e) {
