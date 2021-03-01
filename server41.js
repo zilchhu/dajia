@@ -152,7 +152,7 @@ router.get('/perf/:date', async ctx => {
 router.get('/export/perf', async ctx => {
   try {
     const [res, _] = await knx.raw(perf_sql(3))
-    ctx.body = { res }
+    ctx.body = res.map(v => ({ ...v, date: `${v.date}` }))
   } catch (e) {
     console.log(e)
     ctx.body = { e }
@@ -370,7 +370,7 @@ router.get('/prob/cost/elm/:shopId', async ctx => {
 router.get('/order/mt/:shopId', async ctx => {
   try {
     let { shopId } = ctx.params
-    let {activi, counts} = ctx.query
+    let { activi, counts } = ctx.query
     if (!shopId || !activi || !counts) {
       ctx.body = { e: 'invalid params' }
       return
@@ -391,7 +391,7 @@ router.get('/order/mt/:shopId', async ctx => {
 router.get('/order/elm/:shopId', async ctx => {
   try {
     let { shopId } = ctx.params
-    let {activi, counts} = ctx.query
+    let { activi, counts } = ctx.query
     if (!shopId || !activi || !counts) {
       ctx.body = { e: 'invalid params' }
       return
@@ -409,7 +409,6 @@ router.get('/order/elm/:shopId', async ctx => {
     ctx.body = { e }
   }
 })
-
 
 koa.use(router.routes())
 
