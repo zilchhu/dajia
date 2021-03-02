@@ -811,7 +811,7 @@ export default class Food {
         properties_values: properties_values,
         description: wmProductSpu.description,
         labelValues: wmProductSpu.labelValues || [],
-        labelList: wmProductSpu.labelList || [],
+        labelList: wmProductSpu.labelList || [], // { id: 32, group_name: '单点不送', group_id: 18, sub_attr: '0' }
         newSpuAttrs: attrs
           ? wmProductSpu.newSpuAttrs.filter(a => a.name == '份量').concat(getNewSpuAttrs(attrs, no))
           : wmProductSpu.newSpuAttrs,
@@ -853,7 +853,6 @@ export default class Food {
         productCardDisplayContent: wmProductSpu.productCardDisplayContent || ''
       }
 
-      fs.writeFileSync('log/logE2.json', JSON.stringify(model))
       return this.save_(model)
     } catch (e) {
       return Promise.reject(e)
@@ -934,10 +933,10 @@ export default class Food {
 async function test() {
   try {
     let attrs = [
-      { name: '温度', values: ['温热', '常温', '正常冰', '多冰', '少冰', '去冰'] },
-      { name: '甜度', values: ['正常糖', '少糖', '半糖', '多糖'] }
+      { name: '底料', values: ['椰汁底'] },
+      { name: '温度', values: ['冷', '温热'] }
     ]
-    const res = await new Food(10177204).save2('奥利奥奶茶', null, 1)
+    const res = await new Food(10307635).save2('芒果紫米捞', attrs, 1)
     console.log(res)
   } catch (error) {
     console.error(error)

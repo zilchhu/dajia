@@ -480,13 +480,26 @@ async function updateAttrs(id, name, attrs) {
 async function updateAttrs2(id, name, attrs) {
   const fallbackApp = new FallbackApp(id)
   try {
-    const { ok } = await fallbackApp.food.setHighBoxPrice(0, true)
-    if (ok) {
+    // const { ok } = await fallbackApp.food.setHighBoxPrice(0, true)
+    if (true) {
       const res = await fallbackApp.food.save2(name, attrs)
       return Promise.resolve(res)
     } else return Promise.reject({ err: 'sync failed' })
   } catch (err) {
     return Promise.reject(err)
+  }
+}
+
+async function test_updateAttrs2() {
+  try {
+    let attrs = [
+      { name: '温度', values: ['冷', '温热'] }
+    ]
+    let [data, _] = await knx.raw(`select * from foxx_food_manage where date=curdate() and name LIKE '%【新品】芋球圆子香芋椰奶%' `)
+    data = data.map(v => [v.wmpoiid, v.name, attrs])
+    await loop(updateAttrs2, data, true)
+  } catch (e) {
+    console.error(e)
   }
 }
 
@@ -1532,6 +1545,6 @@ async function test_boxPrice() {
 // test_rename()
 // test_updateAct()1
 // test_delFoods()
-// test_testFood()
-test_rename2()
+test_testFood()
+// test_updateAttrs2()
 // test_updateImg()

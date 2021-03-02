@@ -151,8 +151,8 @@ router.get('/perf/:date', async ctx => {
 
 router.get('/export/perf', async ctx => {
   try {
-    const [res, _] = await knx.raw(perf_sql(3))
-    ctx.body = res.map(v => ({ ...v, date: `${v.date}` }))
+    const [res, _] = await knx.raw(perf_sql(31))
+    ctx.body = res.map(v => ({ ...v, date: `${v.date}` })).reverse()
   } catch (e) {
     console.log(e)
     ctx.body = { e }
