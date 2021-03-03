@@ -63,6 +63,19 @@ content-type: application/json
 GET http://localhost:9005/fresh
 content-type: application/json
 
+
+###
+
+POST  http://localhost:9005/addDada
+content-type: application/json
+
+{
+  "shopId": 2000536681,
+  "shopName": "苏姐甜品（龙城广场店）",
+  "username": "15018531252",
+  "password": "2e5c54832cdb283a881db057012cb018"
+}
+
 ###
 
 GET http://localhost:9005/user_acts/小伍/1

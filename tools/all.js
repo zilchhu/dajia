@@ -47,6 +47,11 @@ const y = readYaml('tools/all.yaml')
 let singleCookie = await knx('foxx_shop_reptile').first('cookie')
 singleCookie = singleCookie.cookie
 
+y.headers['基本设置']['Cookie'] = singleCookie
+y.headers['店铺设置']['Cookie'] = singleCookie
+y.headers['铂金推广']['Cookie'] = singleCookie
+y.headers['总店']['Cookie'] = updateCookie(singleCookie, { wmPoiId: -1 })
+
 const baseHeaders = y.headers['基本设置']
 const instance = axios.create({
   responseType: 'json',
@@ -117,7 +122,7 @@ const instanceElm2 = axios.create({
 
 instance.interceptors.request.use(
   config => {
-    config.headers['Cookie'] = singleCookie
+    // config.headers['Cookie'] = singleCookie
     if (config.method == 'post' && config.headers['Content-Type'] != 'application/json')
       config.data = qs.stringify(config.data)
     // console.log(config)
@@ -950,9 +955,9 @@ async function a(wmPoiId) {
     // ]
     // data = data.map(v => [v])
     // await loop(closeBj, data, false)
-    let data = await readXls('plan/3-1批量修改.xls', '饿了么分类名修改')
-    data = data.map(v => [v.shop_id, v.category_name, v.修改后的分类名])
-    await loop(updateFoodCat, data, false)
+    // let data = await readXls('plan/3-1批量修改.xls', '饿了么分类名修改')
+    // data = data.map(v => [v.shop_id, v.category_name, v.修改后的分类名])
+    // await loop(updateFoodCat, data, false)
   } catch (error) {
     console.error(error)
     fs.writeFileSync('log/log.json', JSON.stringify(error))
@@ -1314,7 +1319,7 @@ async function freshMt(userTasks, userRule) {
       },
       {
         name: '青山公益',
-        fn: b(undefined, y.requests.mt['青山公益/update'], [wmPoiId], y.headers['总店'])
+        fn: b(undefined, y.requests.mt['青山公益/update'], [parseInt(wmPoiId)], y.headers['总店'])
       },
       {
         name: '营业设置',

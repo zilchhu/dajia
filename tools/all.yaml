@@ -1030,12 +1030,12 @@ requests:
     青山公益/update:
       url: https://waimaie.meituan.com/v2/shop/manage/donation/w/update/batch?ignoreSetRouterProxy=true
       body:
-        wmPoiIdStr: 9470231
         status: 1
-        updateStatus: 0
         donationStatus: 2
         donationAmount: 0.01
-        csrfToken: FMMKl0WMUHqdTnqZ6Y3X9BiApLjH1DokiSKWnGgUg1X8IaQD3IPI2PHzKb4xZOlvXacVk2i72/4J7yDQiRohGEXdeN0toUW8ArSu7LYSKak7CuqNyyf+VCNhQ0IBiWOfdDh7yA+GuEXMG3qpw6ZOwA==
+        wmPoiIdStr: 10085676
+        updateStatus: 0
+        csrfToken: AVgd1y29eSly6SNUHaoyPjrL2v2KAojVq178qdZnPNYKFddkbg0nTwuc2KEJYbDddMmwILz8gqz676IN97bNh8BSfs1AOiPfw4ceb114YAb+KHEKmNQbT8N0PzPlOGwI83iCI54vw5HfKpu1zy++2w==
       requires:
         - wmPoiIdStr
 

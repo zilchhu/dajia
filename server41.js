@@ -5,6 +5,8 @@ import cors from 'koa2-cors'
 import flatten from 'flatten'
 import dayjs from 'dayjs'
 import fs from 'fs'
+import axios from 'axios'
+import md5 from 'md5'
 
 import Poi from './fallback/poi.js'
 import { getAllElmShops } from './tools/all.js'
@@ -86,15 +88,6 @@ koa.use(
 
 router.get('/date/:date', async ctx => {})
 
-router.get('/ts', async ctx => {
-  try {
-    const res = await ts()
-    ctx.body = res
-  } catch (e) {
-    console.log(e)
-    ctx.body = e
-  }
-})
 // multiple dates
 router.get('/sum/:date', async ctx => {
   try {
@@ -156,6 +149,16 @@ router.get('/export/perf', async ctx => {
   } catch (e) {
     console.log(e)
     ctx.body = { e }
+  }
+})
+
+router.get('/export/op', async ctx => {
+  try {
+    const [res, _] = await knx.raw(op_sql(3))
+    ctx.body = res.map(v => ({ ...v, shop_id: `${v.shop_id}`, date: `${v.date}` }))
+  } catch (e) {
+    console.log(e)
+    ctx.body = e
   }
 })
 // all days
@@ -276,6 +279,26 @@ router.get('/fengniao', async ctx => {
   }
 })
 
+router.get('/dada', async ctx => {
+  try {
+    const res = await knx('dd_login_info').select()
+    ctx.body = { res }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
+
+router.get('/myt', async ctx => {
+  try {
+    const res = await knx('myt_login_info').select()
+    ctx.body = { res }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
+
 router.post('/addNewShop', async ctx => {
   try {
     let { platform, shopId, shopName, roomId, realName, city, person, bd, phone, isD, isM, rent } = ctx.request.body
@@ -306,6 +329,36 @@ router.post('/addFengniao', async ctx => {
   }
 })
 
+router.post('/addDada', async ctx => {
+  try {
+    let { shopId, shopName, username, password } = ctx.request.body
+    if (!shopId || !username || !password) {
+      ctx.body = { e: 'invalid params' }
+      return
+    }
+    const res = await addDada(shopId, shopName, username, password)
+    ctx.body = { res }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
+
+router.post('/addMyt', async ctx => {
+  try {
+    let { shopId, loginName, password } = ctx.request.body
+    if (!shopId || !loginName || !password) {
+      ctx.body = { e: 'invalid params' }
+      return
+    }
+    const res = await addMyt(shopId, loginName, password)
+    ctx.body = { res }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
+
 router.post('/delFengniao', async ctx => {
   try {
     let { shopId, loginName } = ctx.request.body
@@ -314,6 +367,36 @@ router.post('/delFengniao', async ctx => {
       return
     }
     const res = await delFengniao(shopId, loginName)
+    ctx.body = { res }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
+
+router.post('/delDada', async ctx => {
+  try {
+    let { shopId, username } = ctx.request.body
+    if (!shopId || !username) {
+      ctx.body = { e: 'invalid params' }
+      return
+    }
+    const res = await delDada(shopId, username)
+    ctx.body = { res }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
+
+router.post('/delMyt', async ctx => {
+  try {
+    let { shopId, loginName } = ctx.request.body
+    if (!shopId || !loginName) {
+      ctx.body = { e: 'invalid params' }
+      return
+    }
+    const res = await delMyt(shopId, loginName)
     ctx.body = { res }
   } catch (e) {
     console.log(e)
@@ -537,9 +620,13 @@ const perf_sql = d => `WITH a AS (
   WHERE date >= DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL ${d} DAY),'%Y%m%d')
   ORDER BY date DESC`
 
-const ts_sql = `SELECT city, person, real_shop, shop_id, shop_name, platform, income, third_send, consume, consume_ratio, income_sum, consume_sum, consume_sum_ratio, 
-cost, cost_ratio, orders, unit_price, settlea_30, settlea_1, settlea_7, settlea_7_3, date
-FROM test_analyse_t_ ORDER BY date`
+const op_sql = d => `SELECT city, person, real_shop, shop_id, shop_name, platform, third_send, unit_price, orders, income, income_avg, income_sum,
+  cost, cost_avg, cost_sum, cost_ratio, cost_sum_ratio, 
+  consume, consume_avg, consume_sum, consume_ratio, consume_sum_ratio, 
+    settlea_30, settlea_1, settlea_7, settlea_7_3, date
+  FROM test_analyse_t_ 
+  WHERE date >= DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL ${d} DAY),'%Y%m%d')
+  ORDER BY date`
 
 const 美团成本问题 = id => `WITH
 a AS (
@@ -678,7 +765,14 @@ a AS (
 		wm_order_id_view_str order_id,
 		details,
 		settleAmount,
-		goods_count,
+		CASE
+      WHEN goods_count BETWEEN 1 AND 3 THEN
+      goods_count
+      WHEN goods_count < 1 THEN
+      0
+      ELSE
+      4
+      END goods_count,
 		cost_sum
 	FROM foxx_order_manag_historical
 	WHERE
@@ -842,10 +936,121 @@ async function addFengniao(shopId, shopName, loginName, password) {
   }
 }
 
+async function addDada(shopId, shopName, username, password) {
+  try {
+    const { status, content } = await loginDada(username, password)
+    if (status != 'ok') return Promise.reject('达达登录失败')
+    const { supplierId, accessToken } = content
+    const res = await knx(`dd_login_info`)
+      .insert({
+        shop_id: shopId,
+        shop_name: shopName,
+        username,
+        pw: password,
+        user_id: supplierId,
+        token: accessToken,
+        status: 0
+      })
+      .onConflict('shop_id')
+      .merge()
+    return Promise.resolve(res)
+  } catch (e) {
+    return Promise.reject(e)
+  }
+}
+
+async function loginDada(username, password) {
+  try {
+    var data = `{"accountType":2,"code":"","loginType":"password","password":"${password}","token":"","username":"${username}"}`
+
+    var config = {
+      method: 'post',
+      url: 'https://supplier-api.imdada.cn/v1/login',
+      headers: {
+        'Enable-Gps': '1',
+        Accuracy: '550.0',
+        Model: 'Android-MI_9',
+        'City-Id': '0',
+        'User-Token': '1',
+        'City-Code': '010',
+        'Client-MacAddress': '02:00:00:00:00:02',
+        'Rate-Limit-Hash': '2e6e6a654a88fcc8289c162e2c5db0e1',
+        'Location-Provider': 'lbs',
+        'Channel-ID': 'CPA006',
+        Lng: '116.410344',
+        'User-Id': '0',
+        'App-Version': '8.2.0',
+        Operator: 'ChinaMobile',
+        'OS-Version': '7.1.2',
+        Lat: '39.916295',
+        UUID: 'ffffffff-fd1b-7a8d-e826-db5b00000000',
+        'Client-Time': '1606389139648',
+        'Request-Id': '62f8bfc5-b35f-449c-a6a6-c6724f625a7e',
+        Platform: 'Android',
+        'App-Name': 'a-shop',
+        'Ad-Code': '110101',
+        'Sdcard-Id': '219bb10e76f64599b3b10ab8f52f3018',
+        'Client-Imei': '865166027515306',
+        Network: 'WIFI',
+        'Client-Imsi': '460000409278205',
+        'Location-Time': '1606389042484',
+        'Verification-Hash': md5(data + 'Athens'),
+        'Content-Type': 'application/json; charset=UTF-8',
+        Host: 'supplier-api.imdada.cn',
+        'User-Agent': 'okhttp/3.10.0'
+      },
+      data: data
+    }
+
+    const res = await axios(config)
+    return Promise.resolve(res.data)
+  } catch (e) {
+    return Promise.reject(e)
+  }
+}
+
+async function addMyt(shopId, loginName, password) {
+  try {
+    const res = await knx(`myt_login_info`)
+      .insert({
+        shop_id: shopId,
+        login_name: loginName,
+        pw: password
+      })
+      .onConflict('shop_id')
+      .merge()
+    return Promise.resolve(res)
+  } catch (e) {
+    return Promise.reject(e)
+  }
+}
+
 async function delFengniao(shopId, loginName) {
   try {
     const res = await knx(`ele_fengniao_info`)
       .where({ shop_id: shopId, loginName })
+      .del()
+    return Promise.resolve(res)
+  } catch (e) {
+    return Promise.reject(e)
+  }
+}
+
+async function delDada(shopId, username) {
+  try {
+    const res = await knx(`dd_login_info`)
+      .where({ shop_id: shopId, username })
+      .del()
+    return Promise.resolve(res)
+  } catch (e) {
+    return Promise.reject(e)
+  }
+}
+
+async function delMyt(shopId, loginName) {
+  try {
+    const res = await knx(`myt_login_info`)
+      .where({ shop_id: shopId, login_name: loginName })
       .del()
     return Promise.resolve(res)
   } catch (e) {

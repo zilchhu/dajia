@@ -1157,7 +1157,7 @@ async function createDieliverAct(id, fee) {
 
 async function test_reduction2() {
   try {
-    let data = await readXls('plan/改满减(2)(1).xlsx', 'Sheet2')
+    let data = await readXls('plan/择优改满减(2).xlsx', 'Sheet1')
     data = data.map(v => ({
       ...v,
       reduc: [
@@ -1165,70 +1165,70 @@ async function test_reduction2() {
           discounts: [
             {
               code: 1,
-              discount: '15-6'.split('-')[1],
-              poi_charge: '15-6'.split('-')[1],
+              discount: v.满减档位1.split('-')[1],
+              poi_charge: v.满减档位1.split('-')[1],
               agent_charge: 0,
               type: 'default',
               mt_charge: 0
             }
           ],
-          price: '15-6'.split('-')[0]
+          price: v.满减档位1.split('-')[0]
         },
         {
           discounts: [
             {
               code: 1,
-              discount: '30-10'.split('-')[1],
-              poi_charge: '30-10'.split('-')[1],
+              discount: v.满减档位2.split('-')[1],
+              poi_charge: v.满减档位2.split('-')[1],
               agent_charge: 0,
               type: 'default',
               mt_charge: 0
             }
           ],
-          price: '30-10'.split('-')[0]
+          price: v.满减档位2.split('-')[0]
         },
         {
           discounts: [
             {
               code: 1,
-              discount: '45-16'.split('-')[1],
-              poi_charge: '45-16'.split('-')[1],
+              discount: v.满减档位3.split('-')[1],
+              poi_charge: v.满减档位3.split('-')[1],
               agent_charge: 0,
               type: 'default',
               mt_charge: 0
             }
           ],
-          price: '45-16'.split('-')[0]
+          price: v.满减档位3.split('-')[0]
         },
         {
           discounts: [
             {
               code: 1,
-              discount: '60-20'.split('-')[1],
-              poi_charge: '60-20'.split('-')[1],
+              discount: v.满减档位4.split('-')[1],
+              poi_charge: v.满减档位4.split('-')[1],
               agent_charge: 0,
               type: 'default',
               mt_charge: 0
             }
           ],
-          price: '60-20'.split('-')[0]
+          price: v.满减档位4.split('-')[0]
         },
         {
           discounts: [
             {
               code: 1,
-              discount: '100-30'.split('-')[1],
-              poi_charge: '100-30'.split('-')[1],
+              discount: v.满减档位5.split('-')[1],
+              poi_charge: v.满减档位5.split('-')[1],
               agent_charge: 0,
               type: 'default',
               mt_charge: 0
             }
           ],
-          price: '100-30'.split('-')[0]
+          price: v.满减档位5.split('-')[0]
         }
       ]
     }))
-    data = data.map(v => [v['id'], null, null, v['reduc']])
+    data = data.map(v => [v['店铺id'], null, null, v['reduc']])
     await loop(saveReduction, data, false)
   } catch (error) {
     console.error(error)
@@ -1536,7 +1536,7 @@ async function test_boxPrice() {
 // test_boxPrice()
 // test_plan()
 // test_updateMaterial()
-
+test_reduction2()
 // test_delivery()
 // test_reduction2()
 // test_plan()
@@ -1545,6 +1545,6 @@ async function test_boxPrice() {
 // test_rename()
 // test_updateAct()1
 // test_delFoods()
-test_testFood()
+// test_testFood()
 // test_updateAttrs2()
 // test_updateImg()
