@@ -142,9 +142,16 @@ async function insertTableFromMysql(day_from_today = 1) {
   c1 AS (
     SELECT real_shop_name, shop_id, city, person
     FROM foxx_real_shop_info
-  )
+  ),
+  d1 AS (
+		SELECT wmpoiid AS shop_id, bizScore AS rating_mt FROM foxx_cus_manag_analy_score WHERE date = @last_day
+	),
+  d2 AS (
+		SELECT shop_id, rating AS rating_elm FROM ele_rating_log WHERE DATE_FORMAT(insert_date, '%Y%m%d') = @last_day
+	)
   SELECT id, city, person,
-    a1.real_shop, a1.shop_id, a1.shop_name, platform, third_send, unit_price, orders,
+    a1.real_shop, a1.shop_id, a1.shop_name, platform, 
+    IF(platform = '美团', rating_mt, rating_elm) AS rating, third_send, unit_price, orders,
     income, income_avg, income_sum,
     a1.cost, cost_avg, cost_sum, cost_ratio, cost_sum_ratio,
     consume, consume_avg, consume_sum, consume_ratio, consume_sum_ratio,
@@ -157,6 +164,8 @@ async function insertTableFromMysql(day_from_today = 1) {
   LEFT JOIN a4 USING (shop_id)
   LEFT JOIN b2 USING (shop_id)
   LEFT JOIN c1 USING (shop_id)
+  LEFT JOIN d1 USING (shop_id)
+	LEFT JOIN d2 USING (shop_id)
   
   ORDER BY a1.real_shop `
 
@@ -171,10 +180,11 @@ async function insertTableFromMysql(day_from_today = 1) {
       .merge()
     // for (let d of data) {
     //   await knx('test_analyse_t_')
-    //     .where({ shop_id: d.shop_id, date: d.date })
-    //     .update(d)
+    //     .where({ shop_id: d.shop_id, platform: d.platform, date: d.date })
+    //     .update({ rating: d.rating })
     // }
-    // console.log(1)
+    
+    // const res = 1
     return Promise.resolve(res)
   } catch (err) {
     return Promise.reject(err)
@@ -183,10 +193,10 @@ async function insertTableFromMysql(day_from_today = 1) {
 
 async function insertTable(day_from_today) {
   try {
-    const [search, _] = await knx.raw(
-      `select * from test_analyse_t_ where date = DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL ${day_from_today} DAY),'%Y%m%d');`
-    )
-    if (search.length > 0) return Promise.reject('have been added')
+    // const [search, _] = await knx.raw(
+    //   `select * from test_analyse_t_ where date = DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL ${day_from_today} DAY),'%Y%m%d');`
+    // )
+    // if (search.length > 0) return Promise.reject('have been added')
     const res = await insertTableFromMysql(day_from_today)
     return Promise.resolve(res)
   } catch (err) {
@@ -238,7 +248,7 @@ async function getTableByShop(shop_id) {
 }
 
 async function insertTableAll() {
-  for (let day = 1; day <= 94; day++) {
+  for (let day = 1; day <= 167; day++) {
     try {
       console.log(day)
       const res = await insertTable(day)

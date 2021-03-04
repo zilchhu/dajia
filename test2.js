@@ -492,10 +492,10 @@ async function updateAttrs2(id, name, attrs) {
 
 async function test_updateAttrs2() {
   try {
-    let attrs = [
-      { name: '温度', values: ['冷', '温热'] }
-    ]
-    let [data, _] = await knx.raw(`select * from foxx_food_manage where date=curdate() and name LIKE '%【新品】芋球圆子香芋椰奶%' `)
+    let attrs = [{ name: '温度', values: ['冷', '温热'] }]
+    let [data, _] = await knx.raw(
+      `select * from foxx_food_manage where date=curdate() and name LIKE '%【新品】芋球圆子香芋椰奶%' `
+    )
     data = data.map(v => [v.wmpoiid, v.name, attrs])
     await loop(updateAttrs2, data, true)
   } catch (e) {
@@ -1157,7 +1157,7 @@ async function createDieliverAct(id, fee) {
 
 async function test_reduction2() {
   try {
-    let data = await readXls('plan/择优改满减(2).xlsx', 'Sheet1')
+    let data = await readXls('plan/择优改满减(5).xlsx', 'Sheet2')
     data = data.map(v => ({
       ...v,
       reduc: [
@@ -1536,7 +1536,7 @@ async function test_boxPrice() {
 // test_boxPrice()
 // test_plan()
 // test_updateMaterial()
-test_reduction2()
+// test_reduction2()
 // test_delivery()
 // test_reduction2()
 // test_plan()
@@ -1545,6 +1545,6 @@ test_reduction2()
 // test_rename()
 // test_updateAct()1
 // test_delFoods()
-// test_testFood()
+test_testFood()
 // test_updateAttrs2()
 // test_updateImg()

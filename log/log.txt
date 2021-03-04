@@ -576,3 +576,11 @@
 --
 
 
+{"time":"2021/03/04 09:44:26","meta":["10757738",null,null,[{"discounts":[{"code":1,"discount":"6","poi_charge":"6","agent_charge":0,"type":"default","mt_charge":0}],"price":"15"},{"discounts":[{"code":1,"discount":"10","poi_charge":"10","agent_charge":0,"type":"default","mt_charge":0}],"price":"30"},{"discounts":[{"code":1,"discount":"25","poi_charge":"25","agent_charge":0,"type":"default","mt_charge":0}],"price":"45"},{"discounts":[{"code":1,"discount":"20","poi_charge":"20","agent_charge":0,"type":"default","mt_charge":0}],"price":"60"},{"discounts":[{"code":1,"discount":"30","poi_charge":"30","agent_charge":0,"type":"default","mt_charge":0}],"price":"100"}]],"err":{"code":1,"id":0,"msg":"立减金额必须随满减门槛的增加而增加","data":null,"succ":false}},
+{"time":"2021/03/04 09:59:48","meta":[10085676,1],"err":{"msg":"请勿重复提交","code":1,"data":""}},
+{"time":"2021/03/04 09:59:49","meta":[10085676,2],"err":{"msg":"请勿重复提交","code":1,"data":""}},
+{"time":"2021/03/04 09:59:49","meta":[10085676,3],"err":{"msg":"请勿重复提交","code":1,"data":""}},
+{"time":"2021/03/04 09:59:50","meta":[10085676,4],"err":{"msg":"请勿重复提交","code":1,"data":""}},
+{"time":"2021/03/04 09:59:50","meta":[10085676,5],"err":{"msg":"请勿重复提交","code":1,"data":""}},
+{"time":"2021/03/04 09:59:51","meta":[10085676,6],"err":{"msg":"请勿重复提交","code":1,"data":""}},
+{"time":"2021/03/04 09:59:51","meta":[10085676,7],"err":{"msg":"请勿重复提交","code":1,"data":""}},
