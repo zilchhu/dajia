@@ -1950,7 +1950,7 @@ async function freshElm(userTasks, userRule) {
 async function testsSync(wmPoiId) {
   const fallbackApp = new FallbackApp(wmPoiId)
   try {
-    const { ok } = await fallbackApp.food.setHighBoxPrice(0, true)
+    const { ok } = await fallbackApp.food.setHighBoxPrice2()
     if (ok) {
       console.log(ok)
       return Promise.resolve({ ok })

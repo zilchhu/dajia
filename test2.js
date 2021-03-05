@@ -436,6 +436,7 @@ async function createTest(id, ti) {
       }
     }
     return Promise.resolve(c)
+    // const tag = await fallbackApp.food.
   } catch (err) {
     return Promise.reject(err)
   }
@@ -504,7 +505,7 @@ async function test_updateAttrs2() {
 }
 
 async function test_testFood() {
-  let data = [1, 2, 3, 4, 5, 6, 7].map(v => [10085676, v])
+  let data = [1, 2, 3, 4, 5, 6, 7].map(v => [9620939, v])
   await loop(createTest, data, false)
 }
 
@@ -1157,7 +1158,7 @@ async function createDieliverAct(id, fee) {
 
 async function test_reduction2() {
   try {
-    let data = await readXls('plan/择优改满减(5).xlsx', 'Sheet2')
+    let data = await readXls('plan/择优改满减(1)(1).xlsx', 'Sheet3')
     data = data.map(v => ({
       ...v,
       reduc: [
@@ -1237,8 +1238,56 @@ async function test_reduction2() {
 
 async function test_delivery() {
   try {
-    let data = `6119122`.split('\n').map(v => v.trim())
-    data = data.map(v => [v, 5.1])
+    let data = `6119122
+    8135116
+    9155621
+    2924399
+    9306217
+    8591999
+    7449372
+    8939455
+    6914754
+    9412662
+    7180353
+    8195835
+    7552065
+    8600359
+    9271561
+    8953861
+    9134834
+    7494614
+    9062221
+    8996740
+    4799060
+    9663962
+    9771558
+    10028591
+    9959091
+    10039526
+    10096975
+    10049050
+    10065090
+    10159750
+    10711763
+    6434760
+    8751302
+    7673028
+    9411129
+    8828359
+    7735904
+    9014461
+    8670629
+    9236042
+    8890748
+    8221674
+    9100878
+    9249572
+    9355348
+    6950373
+    9842782
+    10083564
+    10014983`.split('\n').map(v => v.trim())
+    data = data.map(v => [v, 6.1])
     await loop(createDieliverAct, data, false)
   } catch (e) {
     console.error(e)
@@ -1537,7 +1586,7 @@ async function test_boxPrice() {
 // test_plan()
 // test_updateMaterial()
 // test_reduction2()
-// test_delivery()
+test_delivery()
 // test_reduction2()
 // test_plan()
 // test_delTag()
@@ -1545,6 +1594,6 @@ async function test_boxPrice() {
 // test_rename()
 // test_updateAct()1
 // test_delFoods()
-test_testFood()
+// test_testFood()
 // test_updateAttrs2()
 // test_updateImg()

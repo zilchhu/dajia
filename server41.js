@@ -27,7 +27,8 @@ const knx = knex({
     host: '192.168.3.112',
     user: 'root',
     password: '123456',
-    database: 'naicai'
+    database: 'naicai',
+    multipleStatements: true
   }
 })
 
@@ -154,7 +155,7 @@ router.get('/export/perf', async ctx => {
 
 router.get('/export/op', async ctx => {
   try {
-    const [res, _] = await knx.raw(op_sql(3))
+    const [res, _] = await knx.raw(op_sql(31))
     ctx.body = res.map(v => ({ ...v, shop_id: `${v.shop_id}`, date: `${v.date}` }))
   } catch (e) {
     console.log(e)
@@ -443,6 +444,22 @@ router.get('/prob/cost/elm/:shopId', async ctx => {
       成本比例: percent(v.成本比例),
       单均配送: fixed2(v.单均配送)
     }))
+    ctx.body = { res: data }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
+
+router.get('/indices/mt/:shopId/:day', async ctx => {
+  try {
+    let { shopId, day } = ctx.params
+    if (!shopId) {
+      ctx.body = { e: 'invalid params' }
+      return
+    }
+    let data = await indices('美团', shopId, day)
+
     ctx.body = { res: data }
   } catch (e) {
     console.log(e)
@@ -871,10 +888,234 @@ WHERE
 	goods_cnt = ${counts}
 ORDER BY 成本比例 DESC`
 
+const 线下指标美团评分 = (id, d = 7) => `SELECT 
+    -- 评分
+    bizscore,
+    --  时间统一到数据当天
+    DATE_SUB( date, INTERVAL 1 day) date 
+    FROM
+    foxx_cus_manag_analy_score 
+    WHERE 
+    -- 查看七天评分
+    date >= DATE_SUB( CURRENT_DATE, INTERVAL ${d - 1} DAY) AND
+    wmpoiid = ${id}
+    ORDER BY date DESC`
+
+const 线下指标饿了么评分 = (id, d = 7) => `SELECT 
+    -- 评分
+    rating,
+    --  时间统一到数据当天
+    DATE_FORMAT( DATE_SUB( insert_date, INTERVAL 1 day), "%Y-%m-%d") date
+    FROM
+    ele_rating_log 
+    WHERE 
+    -- 查看七天评分
+    insert_date > DATE_SUB( CURRENT_DATE, INTERVAL ${d} DAY) AND
+    shop_id = ${id}
+    ORDER BY insert_date DESC`
+
+const 线下指标美团商责配送延迟率 = (id, d = 7) => `SELECT
+    --  商责取消订单
+    negotiable_order_cancellation,
+    --  配送延迟率
+    distribution_delay_rate,
+    DATE_FORMAT( date, "%Y-%m-%d") date
+    FROM
+    foox_mt_sales_information 
+    WHERE 
+    -- 查看七天
+    DATE_ADD( date, INTERVAL 1 day) >= DATE_SUB( CURRENT_DATE, INTERVAL ${d - 1} DAY) AND
+    shop_id = ${id}
+    ORDER BY date DESC`
+
+const 线下指标美团评价率差评率 = (id, d = 7) => `SELECT
+    -- 评论数/订单数 
+    a.evaluation_cnt / b.valid_orders evaluation_rate,
+    --  差评数/订单数
+    IFNULL( c.bad_evaluation_cnt / a.evaluation_cnt, 0 ) bad_evaluation_rate,
+    a.date
+    FROM 
+    (
+    SELECT
+    count(*) evaluation_cnt,
+    DATE_SUB( date, INTERVAL 1 day) date  
+    FROM foxx_cus_manag_analy_evaluate
+    WHERE 
+    date >= DATE_SUB( CURRENT_DATE, INTERVAL ${d} DAY) AND
+    wmpoiid = ${id}
+    GROUP BY date
+    ) a
+    JOIN (
+    SELECT
+      valid_orders,
+      DATE_FORMAT( date, "%Y-%m-%d") date
+    FROM
+      foox_mt_sales_information
+    WHERE
+      date >= DATE_SUB( CURRENT_DATE, INTERVAL ${d} DAY) AND
+      shop_id = ${id}
+    ) b
+    ON a.date = b.date
+    LEFT JOIN (
+    SELECT
+    count(*) bad_evaluation_cnt,
+    DATE_SUB( date, INTERVAL 1 day) date  
+    FROM foxx_cus_manag_analy_evaluate
+    WHERE 
+    date >= DATE_SUB( CURRENT_DATE, INTERVAL ${d} DAY) AND
+    wmpoiid = ${id} AND
+    order_comment_score < 3
+    GROUP BY date
+    ) c
+    ON a.date = c.date
+    ORDER BY a.date DESC`
+
+const 线下指标饿了么评价率差评率 = (id, d = 7) => `SELECT
+    -- 评论数/订单数
+    evaluation_cnt / valid_orders evaluation_rate,
+    --  差评数 / 订单数
+    IFNULL( bad_evaluation_cnt / evaluation_cnt , 0 ) bad_evaluation_rate,
+    a.date
+    FROM
+    (
+    SELECT
+      count(*) evaluation_cnt,
+    --   时间统一到数据当天
+      DATE_FORMAT( DATE_SUB( insert_date, INTERVAL 1 day), "%Y-%m-%d") date
+    FROM 
+      ele_rate_result
+    WHERE 
+      insert_date > DATE_SUB( CURRENT_DATE, INTERVAL ${d - 1} DAY) AND
+      shop_id = ${id}
+    GROUP BY DATE_FORMAT( insert_date, "%Y-%m-%d")
+    ) a
+    JOIN (
+    SELECT
+      valid_orders,
+      DATE_FORMAT( date, "%Y-%m-%d") date 
+    FROM
+      ele_all_shop_data_info
+    WHERE
+      date >= DATE_SUB( CURRENT_DATE, INTERVAL ${d} DAY) AND
+      shop_id = ${id}
+    ) b
+    ON a.date = b.date
+    LEFT JOIN (
+    SELECT
+      count(*) bad_evaluation_cnt,
+    --   时间统一到数据当天
+      DATE_FORMAT( DATE_SUB( insert_date, INTERVAL 1 day), "%Y-%m-%d") date 
+    FROM 
+      ele_rate_result
+    WHERE 
+      insert_date > DATE_SUB( CURRENT_DATE, INTERVAL ${d - 1} DAY) AND
+      shop_id = ${id} AND
+    service_rating < 3
+    GROUP BY DATE_FORMAT( insert_date, "%Y-%m-%d")
+    ) c
+    ON a.date = c.date
+    ORDER BY a.date DESC`
+
+const 线下指标美团30天评价率 = id => `SELECT
+    -- 评论数/订单数 
+    a.evaluation_cnt / b.valid_orders evaluation_rate
+    FROM 
+    (
+    SELECT
+    count(*) evaluation_cnt
+    FROM foxx_cus_manag_analy_evaluate
+    WHERE 
+    date >= DATE_SUB( CURRENT_DATE, INTERVAL 29 DAY) AND
+    wmpoiid = ${id}
+    ) a
+    JOIN (
+    SELECT
+      SUM(valid_orders) valid_orders
+    FROM
+      foox_mt_sales_information
+    WHERE
+      date >= DATE_SUB( CURRENT_DATE, INTERVAL 30 DAY) AND
+      shop_id = ${id}
+    ) b`
+
+const 线下指标饿了么30天评价率 = id => `SELECT
+    -- 评论数/订单数
+    evaluation_cnt / valid_orders evaluation_rate
+    FROM
+    (
+    SELECT
+      count(*) evaluation_cnt
+    FROM
+      ele_rate_result
+    WHERE
+      insert_date > DATE_SUB( CURRENT_DATE, INTERVAL 29 DAY) AND
+      shop_id = ${id}
+    ) a
+    JOIN (
+    SELECT
+      SUM(valid_orders) valid_orders
+    FROM
+      ele_all_shop_data_info
+    WHERE
+      date >= DATE_SUB( CURRENT_DATE, INTERVAL 30 DAY) AND
+      shop_id = ${id}
+    ) b`
+
+const 线下指标美团30天商责配送延迟率 = (id, d = 7) => `SELECT 
+    -- 30天商责取消次数
+    cancelOfPoiResCnt,
+    --   30天配送延迟率
+    delayRate,
+    DATE_FORMAT( date, "%Y-%m-%d") date
+    FROM 
+    foxx_service_performance_30d
+    WHERE
+    date >= DATE_SUB(CURRENT_DATE, INTERVAL ${d - 1} DAY) AND
+    wmpoiid = ${id}
+    ORDER BY date DESC`
+
+const 线下指标美团商品数下架数 = (id, d = 7) => `SELECT
+    -- 第二天早上下架的产品数量
+    count( sellStatus = '1' OR NULL ) off_shelf_cnt,
+    --  第二天早上统计的门店所有产品数量
+    count(*) food_cnt,
+    DATE_SUB( date, INTERVAL 1 DAY ) date
+    FROM foxx_food_manage 
+    WHERE 
+    date > DATE_SUB( CURRENT_DATE, INTERVAL ${d} DAY ) AND
+    wmpoiid = ${id}
+    GROUP BY DATE_FORMAT( date, '%Y-%m-%d')
+    ORDER BY date DESC`
+
+const 线下指标饿了么商品数下架数 = (id, d = 7) => `SELECT
+    -- 第二天早上统计的下架的产品数量
+    count( on_shelf = '下架' OR NULL ) off_shelf_cnt,
+    --  第二天早上统计的门店所有产品数量
+    count(*) food_cnt,
+    DATE_FORMAT(DATE_SUB( insert_date, INTERVAL 1 DAY ), '%Y-%m-%d') date
+    FROM ele_food_manage 
+    WHERE 
+    insert_date > DATE_SUB( CURRENT_DATE, INTERVAL ${d - 1} DAY ) AND
+    shop_id = ${id}
+    GROUP BY DATE_FORMAT( insert_date, '%Y-%m-%d')
+    ORDER BY insert_date DESC`
+
+const 线下指标美团关店次数 = (id, d = 7) => `SELECT
+    count( msgTitle = '已被置休' OR NULL ) off_count,
+    DATE_FORMAT(insert_date, '%Y-%m-%d') date
+    FROM
+    foxx_sys_message 
+    WHERE 
+    wmpoiid = ${id} AND 
+    insert_date > DATE_SUB( CURRENT_DATE, INTERVAL ${d - 1} DAY )
+    GROUP BY DATE_FORMAT( insert_date, '%Y%m%d' )
+    ORDER BY insert_date DESC`
+
 async function date(d) {}
 
 async function addNewShop(platform, shopId, shopName, roomId, realName, city, person, bd, phone, isD, isM, rent) {
   try {
+    roomId = roomId.trim()
     let results = {},
       real_shop_id = ''
     const realShops = await knx('foxx_real_shop_info').select()
@@ -885,8 +1126,14 @@ async function addNewShop(platform, shopId, shopName, roomId, realName, city, pe
     if (platform == 2) {
       const { ks_id } = await knx(`ele_info_manage`).first('ks_id')
       const res1 = await knx(`ele_info_manage`)
-        .insert({ shop_id: shopId, shop_name: shopName, ks_id })
+        .insert({ shop_id: shopId, shop_name: shopName, ks_id, status: 0 })
         .onConflict('shop_id')
+        .merge()
+      results.res1 = res1
+    } else if (platform == 1) {
+      const res1 = await knx(`foxx_shop_reptile`)
+        .insert({ wmpoiid: shopId, reptile_type: shopName, project_id: 10000 })
+        .onConflict('wmpoiid')
         .merge()
       results.res1 = res1
     }
@@ -1011,15 +1258,48 @@ async function loginDada(username, password) {
 
 async function addMyt(shopId, loginName, password) {
   try {
+    const { message, data } = await loginMyt(loginName, password)
+    if (message != '') return Promise.reject(message)
+    const { token } = data
     const res = await knx(`myt_login_info`)
       .insert({
         shop_id: shopId,
         login_name: loginName,
-        pw: password
+        pw: password,
+        token
       })
       .onConflict('shop_id')
       .merge()
     return Promise.resolve(res)
+  } catch (e) {
+    return Promise.reject(e)
+  }
+}
+
+async function loginMyt(username, password) {
+  try {
+    var data = `username=${username}&password=${password}&cid=&token=&v=3.4.0`
+
+    var config = {
+      method: 'post',
+      url: 'https://app.saas.maiyatian.com/login/in/',
+      headers: {
+        Host: 'app.saas.maiyatian.com',
+        Cookie: 'PHPSESSID=288581lk05ptplk0704m3bld54',
+        origin: 'file://',
+        'user-agent':
+          'Mozilla/5.0 (Linux; Android 7.1.2; TAS-AN00 Build/N2G48C; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/68.0.3440.70 Mobile Safari/537.36 Html5Plus/1.0 (Immersed/24.0)',
+        'content-type': 'application/x-www-form-urlencoded',
+        accept: '*/*',
+        'accept-language': 'zh-CN,en-US;q=0.9',
+        'x-requested-with': 'io.dcloud.maiyatian'
+      },
+      data: data
+    }
+
+    const res = await axios(config)
+    console.log(res.data)
+    return Promise.resolve(res.data)
   } catch (e) {
     return Promise.reject(e)
   }
@@ -1473,6 +1753,82 @@ async function fresh() {
     )
     ys = flatten(ys)
     return new M({ shops: ys, dates })
+  }
+}
+
+async function indices(platform, shopId, day) {
+  try {
+    day = parseInt(day)
+
+    if (platform == '美团') {
+      let [data, _] = await knx.raw(`
+        ${线下指标美团评分(shopId, day)};
+        ${线下指标美团商责配送延迟率(shopId, day)};
+        ${线下指标美团评价率差评率(shopId, day)};
+        ${线下指标美团30天评价率(shopId)};
+        ${线下指标美团30天商责配送延迟率(shopId, day)};
+        ${线下指标美团商品数下架数(shopId, day)};
+        ${线下指标美团关店次数(shopId, day)}
+      `)
+      let res = new M(data).bind(split)
+      return Promise.resolve(res.val)
+    }
+  } catch (e) {
+    return Promise.reject(e)
+  }
+
+  function split(xs) {
+    let dateRange = [...Array(day)].map((_, i) =>
+      dayjs()
+        .subtract(i + 1, 'day')
+        .format('YYYY-MM-DD')
+    )
+
+    let ratings = dateRange.reduce((o, d) => {
+      let v = xs[0].find(x => x.date == d)
+      return { ...o, [d]: v ? v.bizscore : null, field: '评分' }
+    }, {})
+    let nocs = dateRange.reduce((o, d) => {
+      let v = xs[1].find(x => x.date == d)
+      return { ...o, [d]: v ? v.negotiable_order_cancellation : null, field: '商责取消数' }
+    }, {})
+    let ddrs = dateRange.reduce((o, d) => {
+      let v = xs[1].find(x => x.date == d)
+      return { ...o, [d]: v ? v.distribution_delay_rate : null, field: '配送延迟率' }
+    }, {})
+    let ers = dateRange.reduce((o, d) => {
+      let v = xs[2].find(x => x.date == d)
+      return { ...o, [d]: v ? v.evaluation_rate : null, field: '评价率' }
+    }, {})
+    let bers = dateRange.reduce((o, d) => {
+      let v = xs[2].find(x => x.date == d)
+      return { ...o, [d]: v ? v.bad_evaluation_rate : null, field: '一二星差评率' }
+    }, {})
+    let ers_30 = dateRange.reduce((o, d) => {
+      let v = xs[3].find(x => x.date == d)
+      return { ...o, [d]: v ? v.evaluation_rate : null, field: '30天评价率' }
+    }, {})
+    let nocs_30 = dateRange.reduce((o, d) => {
+      let v = xs[4].find(x => x.date == d)
+      return { ...o, [d]: v ? v.cancelOfPoiResCnt : null, field: '30天商责取消数' }
+    }, {})
+    let ddrs_30 = dateRange.reduce((o, d) => {
+      let v = xs[4].find(x => x.date == d)
+      return { ...o, [d]: v ? v.delayRate : null, field: '30天配送延迟率' }
+    }, {})
+    let fcs = dateRange.reduce((o, d) => {
+      let v = xs[5].find(x => x.date == d)
+      return { ...o, [d]: v ? v.food_cnt : null, field: '商品数' }
+    }, {})
+    let ofcs = dateRange.reduce((o, d) => {
+      let v = xs[5].find(x => x.date == d)
+      return { ...o, [d]: v ? v.off_shelf_cnt : null, field: '下架商品数' }
+    }, {})
+    let ocs = dateRange.reduce((o, d) => {
+      let v = xs[6].find(x => x.date == d)
+      return { ...o, [d]: v ? v.off_count : null, field: '关店数' }
+    }, {})
+    return new M({ data: [ratings, nocs, ddrs, ers, bers, ers_30, nocs_30, ddrs_30, fcs, ofcs, ocs], dates: dateRange })
   }
 }
 

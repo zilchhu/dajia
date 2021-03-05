@@ -494,6 +494,62 @@ export default class Food {
     }
   }
 
+  async setHighBoxPrice2() {
+    try {
+      const highBoxPriceR = await this.getHighBoxPrice()
+
+      let canSave =
+        highBoxPriceR.skuInSellOverall > highBoxPriceR.highBoxPriceCount || highBoxPriceR.highBoxPriceCount == 0
+
+      console.log('highBoxPrice', '...')
+
+      if (!canSave) {
+        console.error({
+          onSell: highBoxPriceR.skuInSellOverall,
+          all: highBoxPriceR.highBoxPriceCount,
+          wmPoiId: this.wmPoiId
+        })
+        let needCnt = (highBoxPriceR.highBoxPriceCount - highBoxPriceR.skuInSellOverall) * 10 + 30
+        let pages = []
+        while (needCnt > 500) {
+          pages.push(500)
+          needCnt = needCnt - 500
+        }
+        if (needCnt != 0) pages.push(needCnt)
+        let tags = await this.listTags()
+        let startIndex = Math.max(
+          ...[
+            ...tags.filter(tag => /店铺公告\d+/.test(tag.name)).map(tag => parseInt(tag.name.replace('店铺公告', ''))),
+            1
+          ]
+        )
+        for (let [i, p] of pages.entries()) {
+          try {
+            let tagName = `店铺公告${startIndex + i + 1}`
+            await this.saveFoodCat(tagName, tags.length + 1)
+            await sleep(2000)
+            let tag = await this.searchTag(tagName)
+            console.log(tag.id, tag.name)
+            for (let j = 0; j < p; j++) {
+              try {
+                await this.createTestFood(tag.id, tag.name, `测试${j}`)
+              } catch (error) {
+                console.error(error)
+              }
+            }
+          } catch (error) {
+            console.error(error)
+          }
+        }
+        return this.setHighBoxPrice2()
+      } else {
+        return Promise.resolve({ ok: true })
+      }
+    } catch (err) {
+      return Promise.reject(err)
+    }
+  }
+
   async updateMin(spuId) {
     let data = {
       wmPoiId: this.wmPoiId,
