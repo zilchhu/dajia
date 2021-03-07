@@ -9,6 +9,9 @@ import axios from 'axios'
 import md5 from 'md5'
 
 import Poi from './fallback/poi.js'
+// import { getAllElmShops } from './tools/all.js'
+import knex from 'knex'
+import { readXls } from './fallback/fallback_app.js'
 import { getAllElmShops } from './tools/all.js'
 
 function omit(obj, ks) {
@@ -19,8 +22,6 @@ function omit(obj, ks) {
   return newObj
 }
 
-import knex from 'knex'
-import { readXls } from './fallback/fallback_app.js'
 const knx = knex({
   client: 'mysql',
   connection: {
@@ -36,12 +37,13 @@ async function t() {
   try {
     const r = await knx('foxx_operating_data')
       .select()
-      .where({ date: 20210202 })
+      .where({ date: 20210306 })
 
     const d = Array.from(new Set(r.map(v => v.shop_name))).map(v => r.find(k => k.shop_name == v))
     await knx('foxx_operating_data')
-      .where({ date: 20210219 })
+      .where({ date: 20210306 })
       .del()
+    // console.log(d)
     console.log(await knx('foxx_operating_data').insert(d))
 
     // const r = await knx('foxx_operating_data').select()
@@ -162,6 +164,16 @@ router.get('/export/op', async ctx => {
     ctx.body = e
   }
 })
+
+router.get('/export/op2', async ctx => {
+  try {
+    const [res, _] = await knx.raw(sum_sql2)
+    ctx.body = res.map(v => ({ ...v, ym: `${v.ym}` }))
+  } catch (e) {
+    console.log(e)
+    ctx.body = e
+  }
+})
 // all days
 router.get('/shop/:shopid', async ctx => {
   try {
@@ -233,6 +245,21 @@ router.post('/plans', async ctx => {
       return
     }
     const res = await plans(ids, a)
+    ctx.body = { res }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
+
+router.post('/comments', async ctx => {
+  try {
+    let { id, c } = ctx.request.body
+    if (!id || !c) {
+      ctx.body = { e: 'invalid params' }
+      return
+    }
+    const res = await comments(id, c)
     ctx.body = { res }
   } catch (e) {
     console.log(e)
@@ -460,12 +487,31 @@ router.get('/indices/mt/:shopId/:day', async ctx => {
     }
     let data = await indices('美团', shopId, day)
 
+    ctx.set('Cache-Control', 'max-age=28800');
     ctx.body = { res: data }
   } catch (e) {
     console.log(e)
     ctx.body = { e }
   }
 })
+
+router.get('/indices/elm/:shopId/:day', async ctx => {
+  try {
+    let { shopId, day } = ctx.params
+    if (!shopId) {
+      ctx.body = { e: 'invalid params' }
+      return
+    }
+    let data = await indices('饿了么', shopId, day)
+    
+    ctx.set('Cache-Control', 'max-age=28800');
+    ctx.body = { res: data }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
+
 
 router.get('/order/mt/:shopId', async ctx => {
   try {
@@ -910,7 +956,7 @@ const 线下指标饿了么评分 = (id, d = 7) => `SELECT
     ele_rating_log 
     WHERE 
     -- 查看七天评分
-    insert_date > DATE_SUB( CURRENT_DATE, INTERVAL ${d} DAY) AND
+    insert_date > DATE_SUB( CURRENT_DATE, INTERVAL ${d - 1} DAY) AND
     shop_id = ${id}
     ORDER BY insert_date DESC`
 
@@ -1761,16 +1807,27 @@ async function indices(platform, shopId, day) {
     day = parseInt(day)
 
     if (platform == '美团') {
-      let [data, _] = await knx.raw(`
-        ${线下指标美团评分(shopId, day)};
-        ${线下指标美团商责配送延迟率(shopId, day)};
-        ${线下指标美团评价率差评率(shopId, day)};
-        ${线下指标美团30天评价率(shopId)};
-        ${线下指标美团30天商责配送延迟率(shopId, day)};
-        ${线下指标美团商品数下架数(shopId, day)};
-        ${线下指标美团关店次数(shopId, day)}
-      `)
+      let data = await Promise.all([
+        knx.raw(`${线下指标美团评分(shopId, day)}`),
+        knx.raw(`${线下指标美团商责配送延迟率(shopId, day)}`),
+        knx.raw(`${线下指标美团评价率差评率(shopId, day)}`),
+        knx.raw(`${线下指标美团30天评价率(shopId)}`),
+        knx.raw(`${线下指标美团30天商责配送延迟率(shopId, day)}`),
+        knx.raw(`${线下指标美团商品数下架数(shopId, day)}`),
+        knx.raw(`${线下指标美团关店次数(shopId, day)}`)
+      ])
+      data = data.map(v => v[0])
       let res = new M(data).bind(split)
+      return Promise.resolve(res.val)
+    } else if (platform == '饿了么') {
+      let data = await Promise.all([
+        knx.raw(`${线下指标饿了么评分(shopId, day)}`),
+        knx.raw(`${线下指标饿了么评价率差评率(shopId, day)}`),
+        knx.raw(`${线下指标饿了么30天评价率(shopId)}`),
+        knx.raw(`${线下指标饿了么商品数下架数(shopId, day)}`)
+      ])
+      data = data.map(v => v[0])
+      let res = new M(data).bind(split_elm)
       return Promise.resolve(res.val)
     }
   } catch (e) {
@@ -1794,19 +1851,19 @@ async function indices(platform, shopId, day) {
     }, {})
     let ddrs = dateRange.reduce((o, d) => {
       let v = xs[1].find(x => x.date == d)
-      return { ...o, [d]: v ? v.distribution_delay_rate : null, field: '配送延迟率' }
+      return { ...o, [d]: v ? percent(v.distribution_delay_rate) : null, field: '配送延迟率' }
     }, {})
     let ers = dateRange.reduce((o, d) => {
       let v = xs[2].find(x => x.date == d)
-      return { ...o, [d]: v ? v.evaluation_rate : null, field: '评价率' }
+      return { ...o, [d]: v ? percent(v.evaluation_rate) : null, field: '评价率' }
     }, {})
     let bers = dateRange.reduce((o, d) => {
       let v = xs[2].find(x => x.date == d)
-      return { ...o, [d]: v ? v.bad_evaluation_rate : null, field: '一二星差评率' }
+      return { ...o, [d]: v ? percent(v.bad_evaluation_rate) : null, field: '一二星差评率' }
     }, {})
     let ers_30 = dateRange.reduce((o, d) => {
-      let v = xs[3].find(x => x.date == d)
-      return { ...o, [d]: v ? v.evaluation_rate : null, field: '30天评价率' }
+      let v = xs[3][0]
+      return { ...o, [d]: v ? percent(v.evaluation_rate) : null, field: '30天评价率' }
     }, {})
     let nocs_30 = dateRange.reduce((o, d) => {
       let v = xs[4].find(x => x.date == d)
@@ -1814,7 +1871,7 @@ async function indices(platform, shopId, day) {
     }, {})
     let ddrs_30 = dateRange.reduce((o, d) => {
       let v = xs[4].find(x => x.date == d)
-      return { ...o, [d]: v ? v.delayRate : null, field: '30天配送延迟率' }
+      return { ...o, [d]: v ? percent(v.delayRate) : null, field: '30天配送延迟率' }
     }, {})
     let fcs = dateRange.reduce((o, d) => {
       let v = xs[5].find(x => x.date == d)
@@ -1830,7 +1887,42 @@ async function indices(platform, shopId, day) {
     }, {})
     return new M({ data: [ratings, nocs, ddrs, ers, bers, ers_30, nocs_30, ddrs_30, fcs, ofcs, ocs], dates: dateRange })
   }
+
+  function split_elm(xs) {
+    let dateRange = [...Array(day)].map((_, i) =>
+      dayjs()
+        .subtract(i + 1, 'day')
+        .format('YYYY-MM-DD')
+    )
+
+    let ratings = dateRange.reduce((o, d) => {
+      let v = xs[0].find(x => x.date == d)
+      return { ...o, [d]: v ? v.rating : null, field: '评分' }
+    }, {})
+    let ers = dateRange.reduce((o, d) => {
+      let v = xs[1].find(x => x.date == d)
+      return { ...o, [d]: v ? percent(v.evaluation_rate) : null, field: '评价率' }
+    }, {})
+    let bers = dateRange.reduce((o, d) => {
+      let v = xs[1].find(x => x.date == d)
+      return { ...o, [d]: v ? percent(v.bad_evaluation_rate) : null, field: '一二星差评率' }
+    }, {})
+    let ers_30 = dateRange.reduce((o, d) => {
+      let v = xs[2][0]
+      return { ...o, [d]: v ? percent(v.evaluation_rate) : null, field: '30天评价率' }
+    }, {})
+    let fcs = dateRange.reduce((o, d) => {
+      let v = xs[3].find(x => x.date == d)
+      return { ...o, [d]: v ? v.food_cnt : null, field: '商品数' }
+    }, {})
+    let ofcs = dateRange.reduce((o, d) => {
+      let v = xs[3].find(x => x.date == d)
+      return { ...o, [d]: v ? v.off_shelf_cnt : null, field: '下架商品数' }
+    }, {})
+    return new M({ data: [ratings, ers, bers, ers_30, fcs, ofcs], dates: dateRange })
+  }
 }
+
 
 /////////////////////////////
 ///////////////////////////////////
@@ -2522,6 +2614,17 @@ async function plans(ids, a) {
       }
     })
     return new M(ys)
+  }
+}
+
+async function comments(id, c) {
+  try {
+    let update_res = await knx('test_analyse_t_')
+      .where('id', id)
+      .update({ comments: c })
+    return Promise.resolve(update_res)
+  } catch (err) {
+    return Promise.reject(err)
   }
 }
 
