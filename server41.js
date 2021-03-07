@@ -3,7 +3,6 @@ import Router from 'koa-router'
 import bodyParser from 'koa-bodyparser'
 import cors from 'koa2-cors'
 import flatten from 'flatten'
-import dayjs from 'dayjs'
 import fs from 'fs'
 import axios from 'axios'
 import md5 from 'md5'
@@ -13,6 +12,23 @@ import Poi from './fallback/poi.js'
 import knex from 'knex'
 import { readXls } from './fallback/fallback_app.js'
 import { getAllElmShops } from './tools/all.js'
+
+import dayjs from 'dayjs'
+// import localeData from 'dayjs/plugin/localeData'
+// import weekday from 'dayjs/plugin/weekday'
+// import updateLocale from 'dayjs/plugin/updateLocale'
+
+// import 'dayjs/locale/zh-cn'
+
+// dayjs.extend(localeData)
+// dayjs.extend(weekday)
+// dayjs.extend(updateLocale)
+
+// dayjs.locale('zh-cn')
+
+// dayjs.updateLocale('zh-cn', {
+//   weekdays: ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
+// })
 
 function omit(obj, ks) {
   let newKs = Object.keys(obj).filter(v => !ks.includes(v))
@@ -169,6 +185,19 @@ router.get('/export/op2', async ctx => {
   try {
     const [res, _] = await knx.raw(sum_sql2)
     ctx.body = res.map(v => ({ ...v, ym: `${v.ym}` }))
+  } catch (e) {
+    console.log(e)
+    ctx.body = e
+  }
+})
+
+router.get('/export/op3', async ctx => {
+  try {
+    const [res, _] = await knx.raw(sum_sql(31))
+    ctx.body = res.map(v => ({
+      ...v,
+      date: `${v.date}`
+    }))
   } catch (e) {
     console.log(e)
     ctx.body = e
@@ -487,7 +516,7 @@ router.get('/indices/mt/:shopId/:day', async ctx => {
     }
     let data = await indices('美团', shopId, day)
 
-    ctx.set('Cache-Control', 'max-age=28800');
+    ctx.set('Cache-Control', 'max-age=28800')
     ctx.body = { res: data }
   } catch (e) {
     console.log(e)
@@ -503,15 +532,14 @@ router.get('/indices/elm/:shopId/:day', async ctx => {
       return
     }
     let data = await indices('饿了么', shopId, day)
-    
-    ctx.set('Cache-Control', 'max-age=28800');
+
+    ctx.set('Cache-Control', 'max-age=28800')
     ctx.body = { res: data }
   } catch (e) {
     console.log(e)
     ctx.body = { e }
   }
 })
-
 
 router.get('/order/mt/:shopId', async ctx => {
   try {
@@ -1922,7 +1950,6 @@ async function indices(platform, shopId, day) {
     return new M({ data: [ratings, ers, bers, ers_30, fcs, ofcs], dates: dateRange })
   }
 }
-
 
 /////////////////////////////
 ///////////////////////////////////

@@ -71,6 +71,44 @@ namespace d
     public string Date { get; set; }
   }
 
+  public class Record3
+  {
+    public string City { get; set; }
+    public string Person { get; set; }
+    public string Real_Shop { get; set; }
+    public double? Income_Sum_Month { get; set; }
+    public double? Cost_Sum_Month { get; set; }
+    public double? Cost_Sum_Ratio_Month { get; set; }
+    public double? Consume_Sum_Month { get; set; }
+    public double? Consume_Sum_Ratio_Month { get; set; }
+    public double? Rent_Cost_Month { get; set; }
+    public double? Labor_Cost_Month { get; set; }
+    public double? Water_Electr_Cost_Month { get; set; }
+    public double? Cashback_Cost_Month { get; set; }
+    public double? Oper_Cost_Month { get; set; }
+    public double? Profit_Month { get; set; }
+    public string Ym { get; set; }
+  }
+
+  public class Record4
+  {
+    public string City { get; set; }
+    public string Person { get; set; }
+    public string Real_Shop { get; set; }
+    public double? Income_Sum { get; set; }
+    public double? Cost_Sum { get; set; }
+    public double? Cost_Sum_Ratio { get; set; }
+    public double? Consume_Sum { get; set; }
+    public double? Consume_Sum_Ratio { get; set; }
+    public double? Rent_Cost { get; set; }
+    public double? Labor_Cost { get; set; }
+    public double? Water_Electr_Cost { get; set; }
+    public double? Cashback_Cost { get; set; }
+    public double? Oper_Cost { get; set; }
+    public double? Profit { get; set; }
+    public string Date { get; set; }
+  }
+
   public class ExcelData
   {
     public static HttpClient client => new HttpClient { BaseAddress = new Uri("http://192.168.3.3:9005/") };
@@ -101,6 +139,34 @@ namespace d
         Console.WriteLine(e);
       }
       return records2;
+    }
+
+    public static async Task<Record3[]> GetRecords3Async()
+    {
+      var records3 = new Record3[0];
+      try
+      {
+        records3 = await client.GetFromJsonAsync<Record3[]>("export/op2");
+      }
+      catch (Exception e)
+      {
+        Console.WriteLine(e);
+      }
+      return records3;
+    }
+
+    public static async Task<Record4[]> GetRecords4Async()
+    {
+      var records4 = new Record4[0];
+      try
+      {
+        records4 = await client.GetFromJsonAsync<Record4[]>("export/op3");
+      }
+      catch (Exception e)
+      {
+        Console.WriteLine(e);
+      }
+      return records4;
     }
 
   }
@@ -808,7 +874,11 @@ namespace d
     public static async Task BuildTable2()
     {
       var data = await ExcelData.GetRecords2Async();
+      var data2 = await ExcelData.GetRecords3Async();
+      var data3 = await ExcelData.GetRecords4Async();
       var colLen = 27;
+      var colLen2 = data2.Select(v => v.Ym).Distinct().Count() * 11 + 3;
+      var colLen3 = data3.Select(v => v.Date).Distinct().Count() * 11 + 3;
       var yesterday = DateTime.Today.AddDays(-1).ToString("yyyyMMdd");
 
       var doc = SpreadsheetDocument.Create(@$"D:\G\d\files\营推表{yesterday}.xlsx", SpreadsheetDocumentType.Workbook);
@@ -855,10 +925,10 @@ namespace d
       });
       borders.AppendChild(new Border
       {
-        LeftBorder = new LeftBorder { Style = new EnumValue<BorderStyleValues>(BorderStyleValues.Thin), Color = new Color { Auto = true } },
-        RightBorder = new RightBorder { Style = new EnumValue<BorderStyleValues>(BorderStyleValues.Dashed), Color = new Color { Rgb = "FFFF0000" } },
-        TopBorder = new TopBorder { Style = new EnumValue<BorderStyleValues>(BorderStyleValues.Thin), Color = new Color { Auto = true } },
-        BottomBorder = new BottomBorder { Style = new EnumValue<BorderStyleValues>(BorderStyleValues.Thin), Color = new Color { Auto = true } },
+        LeftBorder = new LeftBorder { Style = new EnumValue<BorderStyleValues>(BorderStyleValues.Thin), Color = new Color { Rgb = "FF0000FF" } },
+        RightBorder = new RightBorder(),
+        TopBorder = new TopBorder(),
+        BottomBorder = new BottomBorder()
         // DiagonalBorder = new DiagonalBorder()
       });
       Fills fills = new Fills { Count = 3 };
@@ -882,7 +952,7 @@ namespace d
       CellStyleFormats cellStyleFormats = new CellStyleFormats { Count = 1 };
       cellStyleFormats.AppendChild(new CellFormat { NumberFormatId = 0, FontId = 0, FillId = 1, BorderId = 0 });
 
-      CellFormats cellFormats = new CellFormats { Count = 3 };
+      CellFormats cellFormats = new CellFormats { Count = 4 };
       cellFormats.AppendChild(new CellFormat { NumberFormatId = 0, FontId = 0, FillId = 0, BorderId = 0, FormatId = 0 });
       cellFormats.AppendChild(new CellFormat
       {
@@ -891,17 +961,18 @@ namespace d
         FillId = 2,
         BorderId = 0,
         FormatId = 0,
-        // Alignment = new Alignment
-        // {
-        //   Horizontal = new EnumValue<HorizontalAlignmentValues>(HorizontalAlignmentValues.Center),
-        //   Vertical = new EnumValue<VerticalAlignmentValues>(VerticalAlignmentValues.Center)
-        // },
+        Alignment = new Alignment
+        {
+          Horizontal = new EnumValue<HorizontalAlignmentValues>(HorizontalAlignmentValues.Center),
+          Vertical = new EnumValue<VerticalAlignmentValues>(VerticalAlignmentValues.Center)
+        },
         ApplyFont = false,
         ApplyFill = true,
         ApplyBorder = false,
-        ApplyAlignment = false
+        ApplyAlignment = true
       });
       cellFormats.AppendChild(new CellFormat { NumberFormatId = 10, FontId = 0, FillId = 0, BorderId = 0, FormatId = 0, ApplyNumberFormat = true });
+      cellFormats.AppendChild(new CellFormat { NumberFormatId = 0, FontId = 0, FillId = 0, BorderId = 1, FormatId = 0, ApplyBorder = true });
       // CellStyles cellStyles = new CellStyles { Count = 1 };
       // cellStyles.AppendChild(new CellStyle { Name = "Normal", FormatId = 0, BuiltinId = 0 });
 
@@ -1177,26 +1248,26 @@ namespace d
           new FieldItem { Val = (uint)shopIds.First(K => K.Val == v.Shop_Id).Index },
           new FieldItem { Val = (uint)shopNames.First(k => k.Val == v.Shop_Name).Index },
           new FieldItem { Val = (uint)platforms.First(k => k.Val == v.Platform).Index },
-          new NumberItem { Val = v.Third_Send },
-          new NumberItem { Val = v.Unit_Price },
-          new NumberItem { Val = v.Orders },
-          new NumberItem { Val = v.Income },
-          new NumberItem { Val = v.Income_Avg },
-          new NumberItem { Val = v.Income_Sum },
-          new NumberItem { Val = v.Cost },
-          new NumberItem { Val = v.Cost_Avg },
-          new NumberItem { Val = v.Cost_Sum },
-          new NumberItem { Val = v.Cost_Ratio },
-          new NumberItem { Val = v.Cost_Sum_Ratio },
-          new NumberItem { Val = v.Consume },
-          new NumberItem { Val = v.Consume_Avg },
-          new NumberItem { Val = v.Consume_Sum },
-          new NumberItem { Val = v.Consume_Ratio },
-          new NumberItem { Val = v.Consume_Sum_Ratio },
-          new NumberItem { Val = v.Settlea_30 },
-          new NumberItem { Val = v.Settlea_1 },
-          new NumberItem { Val = v.Settlea_7 },
-          new NumberItem { Val = v.Settlea_7_3 },
+          v?.Third_Send != null ? new NumberItem { Val = v?.Third_Send } : new MissingItem(),
+          v?.Unit_Price != null ? new NumberItem { Val = v?.Unit_Price } : new MissingItem(),
+          v?.Orders != null ? new NumberItem { Val = v?.Orders } : new MissingItem(),
+          v?.Income != null ? new NumberItem { Val = v?.Income } : new MissingItem(),
+          v?.Income_Avg != null ? new NumberItem { Val = v?.Income_Avg } : new MissingItem(),
+          v?.Income_Sum != null ? new NumberItem { Val = v?.Income_Sum } : new MissingItem(),
+          v?.Cost != null ? new NumberItem { Val = v?.Cost } : new MissingItem(),
+          v?.Cost_Avg != null ? new NumberItem { Val = v?.Cost_Avg } : new MissingItem(),
+          v?.Cost_Sum != null ? new NumberItem { Val = v?.Cost_Sum } : new MissingItem(),
+          v?.Cost_Ratio != null ? new NumberItem { Val = v?.Cost_Ratio } : new MissingItem(),
+          v?.Cost_Sum_Ratio != null ? new NumberItem { Val = v?.Cost_Sum_Ratio } : new MissingItem(),
+          v?.Consume != null ? new NumberItem { Val = v?.Consume } : new MissingItem(),
+          v?.Consume_Avg != null ? new NumberItem { Val = v?.Consume_Avg } : new MissingItem(),
+          v?.Consume_Sum != null ? new NumberItem { Val = v?.Consume_Sum } : new MissingItem(),
+          v?.Consume_Ratio != null ? new NumberItem { Val = v?.Consume_Ratio } : new MissingItem(),
+          v?.Consume_Sum_Ratio != null ? new NumberItem { Val = v?.Consume_Sum_Ratio } : new MissingItem(),
+          v?.Settlea_30 != null ? new NumberItem { Val = v?.Settlea_30 } : new MissingItem(),
+          v?.Settlea_1 != null ? new NumberItem { Val = v?.Settlea_1 } : new MissingItem(),
+          v?.Settlea_7 != null ? new NumberItem { Val = v?.Settlea_7 } : new MissingItem(),
+          v?.Settlea_7_3 != null ? new NumberItem { Val = v?.Settlea_7_3 } : new MissingItem(),
           new FieldItem { Val = (uint)dates.First(k => k.Val == v.Date).Index }
         );
         return r;
@@ -1409,12 +1480,276 @@ namespace d
       ptPart3.PivotTableDefinition = pt3;
 
 
+      // sheet5 sum_month
+      var sheetPart5 = workbookPart.AddNewPart<WorksheetPart>("r5");
+      var sheetViews5 = new SheetViews();
+      sheetViews5.Append(new SheetView
+      {
+        WorkbookViewId = 0,
+        Pane = new Pane { HorizontalSplit = 3, State = PaneStateValues.Frozen, TopLeftCell = "D1", ActivePane = PaneValues.TopRight }
+      });
+      var sheet5 = new Worksheet
+      {
+        SheetDimension = new SheetDimension { Reference = $"A1:{toColName(colLen2)}{data2.Length + 1}" },
+        SheetViews = sheetViews5
+      };
+      sheetPart5.Worksheet = sheet5;
+
+      var yms = data2.Select(v => v.Ym).Distinct().Select((v, i) => new { Val = v, Index = i });
+      var realShops5 = data2.Select(v => v.Real_Shop).Distinct().Select((v, i) => new { Val = v, Index = i });
+      var sheetData5 = new SheetData();
+      var headerRow5 = new Row { RowIndex = 1, StyleIndex = 1, CustomFormat = true };
+      var headerRow52 = new Row { RowIndex = 2, StyleIndex = 1, CustomFormat = true };
+      var mergeCells = new MergeCells { Count = (uint)yms.Count() };
+
+      var hA = CreateStringCell("A2", "城市", sstPart);
+      hA.StyleIndex = 1;
+      var hB = CreateStringCell("B2", "负责人", sstPart);
+      hB.StyleIndex = 1;
+      var hC = CreateStringCell("C2", "物理店", sstPart);
+      hC.StyleIndex = 1;
+      headerRow52.Append(
+        hA, hB, hC
+      );
+      foreach (var ym in yms)
+      {
+        var cell = CreateStringCell($"{toColName(ym.Index * 11 + 4)}1", ym.Val, sstPart);
+        cell.StyleIndex = 1;
+        headerRow5.Append(cell);
+        var colD = CreateStringCell($"{toColName(ym.Index * 11 + 4)}2", "营业收入", sstPart);
+        colD.StyleIndex = 1;
+        var colE = CreateStringCell($"{toColName(ym.Index * 11 + 5)}2", "推广费用", sstPart);
+        colE.StyleIndex = 1;
+        var colF = CreateStringCell($"{toColName(ym.Index * 11 + 6)}2", "推广比例", sstPart);
+        colF.StyleIndex = 1;
+        var colG = CreateStringCell($"{toColName(ym.Index * 11 + 7)}2", "成本", sstPart);
+        colG.StyleIndex = 1;
+        var colH = CreateStringCell($"{toColName(ym.Index * 11 + 8)}2", "成本比例", sstPart);
+        colH.StyleIndex = 1;
+        var colI = CreateStringCell($"{toColName(ym.Index * 11 + 9)}2", "房租成本", sstPart);
+        colI.StyleIndex = 1;
+        var colJ = CreateStringCell($"{toColName(ym.Index * 11 + 10)}2", "人工成本", sstPart);
+        colJ.StyleIndex = 1;
+        var colK = CreateStringCell($"{toColName(ym.Index * 11 + 11)}2", "水电成本", sstPart);
+        colK.StyleIndex = 1;
+        var colL = CreateStringCell($"{toColName(ym.Index * 11 + 12)}2", "好评返现", sstPart);
+        colL.StyleIndex = 1;
+        var colM = CreateStringCell($"{toColName(ym.Index * 11 + 13)}2", "运营成本", sstPart);
+        colM.StyleIndex = 1;
+        var colN = CreateStringCell($"{toColName(ym.Index * 11 + 14)}2", "利润", sstPart);
+        colN.StyleIndex = 1;
+        headerRow52.Append(
+          colD, colE, colF, colG, colH, colI, colJ, colK, colL, colM, colN
+        );
+        mergeCells.Append(new MergeCell { Reference = $"{toColName(ym.Index * 11 + 4)}1:${toColName(ym.Index * 11 + 14)}1" });
+      }
+      sheetData5.Append(headerRow5, headerRow52);
+
+      foreach (var realShop in realShops5)
+      {
+        var i = (uint)realShop.Index + 3;
+        var row = new Row { RowIndex = i };
+        var colA = CreateStringCell($"A{i}", data2.FirstOrDefault(v => v.Real_Shop == realShop.Val)?.City, sstPart);
+        var colB = CreateStringCell($"B{i}", data2.FirstOrDefault(v => v.Real_Shop == realShop.Val)?.Person, sstPart);
+        var colC = CreateStringCell($"C{i}", realShop.Val, sstPart);
+
+        row.Append(colA, colB, colC);
+        foreach (var ym in yms)
+        {
+          var v = data2.FirstOrDefault(v => v.Real_Shop == realShop.Val && v.Ym == ym.Val);
+          row.Append(
+            v?.Income_Sum_Month != null ? new Cell { CellReference = $"{toColName(ym.Index * 11 + 4)}{i}", DataType = CellValues.Number, CellValue = new CellValue((double)v?.Income_Sum_Month), StyleIndex = 3 } : null,
+            v?.Consume_Sum_Month != null ? new Cell { CellReference = $"{toColName(ym.Index * 11 + 5)}{i}", DataType = CellValues.Number, CellValue = new CellValue((double)v?.Consume_Sum_Month) } : null,
+            v?.Consume_Sum_Ratio_Month != null ? new Cell { CellReference = $"{toColName(ym.Index * 11 + 6)}{i}", DataType = CellValues.Number, CellValue = new CellValue((double)v?.Consume_Sum_Ratio_Month), StyleIndex = 2 } : null,
+            v?.Cost_Sum_Month != null ? new Cell { CellReference = $"{toColName(ym.Index * 11 + 7)}{i}", DataType = CellValues.Number, CellValue = new CellValue((double)v?.Cost_Sum_Month) } : null,
+            v?.Cost_Sum_Ratio_Month != null ? new Cell { CellReference = $"{toColName(ym.Index * 11 + 8)}{i}", DataType = CellValues.Number, CellValue = new CellValue((double)v?.Cost_Sum_Ratio_Month), StyleIndex = 2 } : null,
+            v?.Rent_Cost_Month != null ? new Cell { CellReference = $"{toColName(ym.Index * 11 + 9)}{i}", DataType = CellValues.Number, CellValue = new CellValue((double)v?.Rent_Cost_Month) } : null,
+            v?.Labor_Cost_Month != null ? new Cell { CellReference = $"{toColName(ym.Index * 11 + 10)}{i}", DataType = CellValues.Number, CellValue = new CellValue((double)v?.Labor_Cost_Month) } : null,
+            v?.Water_Electr_Cost_Month != null ? new Cell { CellReference = $"{toColName(ym.Index * 11 + 11)}{i}", DataType = CellValues.Number, CellValue = new CellValue((double)v?.Water_Electr_Cost_Month) } : null,
+            v?.Cashback_Cost_Month != null ? new Cell { CellReference = $"{toColName(ym.Index * 11 + 12)}{i}", DataType = CellValues.Number, CellValue = new CellValue((double)v?.Cashback_Cost_Month) } : null,
+            v?.Oper_Cost_Month != null ? new Cell { CellReference = $"{toColName(ym.Index * 11 + 13)}{i}", DataType = CellValues.Number, CellValue = new CellValue((double)v?.Oper_Cost_Month) } : null,
+            v?.Profit_Month != null ? new Cell { CellReference = $"{toColName(ym.Index * 11 + 14)}{i}", DataType = CellValues.Number, CellValue = new CellValue((double)v?.Profit_Month) } : null
+          );
+        }
+        sheetData5.Append(row);
+      }
+
+      var bottomRow = new Row { RowIndex = (uint)realShops5.Count() + 3 };
+      var bA = CreateStringCell($"A{realShops5.Count() + 3}", "总计", sstPart);
+      bA.StyleIndex = 1;
+      bottomRow.Append(bA);
+      mergeCells.Append(new MergeCell { Reference = $"A{realShops5.Count() + 3}:C{realShops5.Count() + 3}" });
+      foreach (var ym in yms)
+      {
+        var j = toColName(ym.Index * 11 + 4);
+        var j2 = toColName(ym.Index * 11 + 5);
+        var j3 = toColName(ym.Index * 11 + 6);
+        var j4 = toColName(ym.Index * 11 + 7);
+        var j5 = toColName(ym.Index * 11 + 8);
+        var j6 = toColName(ym.Index * 11 + 9);
+        var j7 = toColName(ym.Index * 11 + 10);
+        var j8 = toColName(ym.Index * 11 + 11);
+        var j9 = toColName(ym.Index * 11 + 12);
+        var j10 = toColName(ym.Index * 11 + 13);
+        var j11 = toColName(ym.Index * 11 + 14);
+        bottomRow.Append(
+          new Cell { CellReference = $"{j}{realShops5.Count() + 3}", CellFormula = new CellFormula($"SUM({j}3:${j}{realShops5.Count() + 2})"), StyleIndex = 3 },
+          new Cell { CellReference = $"{j2}{realShops5.Count() + 3}", CellFormula = new CellFormula($"SUM({j2}3:${j2}{realShops5.Count() + 2})") },
+          new Cell { CellReference = $"{j3}{realShops5.Count() + 3}", CellFormula = new CellFormula($"{j2}{realShops5.Count() + 3}/{j}{realShops5.Count() + 3}"), StyleIndex = 2 },
+          new Cell { CellReference = $"{j4}{realShops5.Count() + 3}", CellFormula = new CellFormula($"SUM({j4}3:${j4}{realShops5.Count() + 2})") },
+          new Cell { CellReference = $"{j5}{realShops5.Count() + 3}", CellFormula = new CellFormula($"{j4}{realShops5.Count() + 3}/{j}{realShops5.Count() + 3}"), StyleIndex = 2 },
+          new Cell { CellReference = $"{j6}{realShops5.Count() + 3}", CellFormula = new CellFormula($"SUM({j6}3:${j6}{realShops5.Count() + 2})") },
+          new Cell { CellReference = $"{j7}{realShops5.Count() + 3}", CellFormula = new CellFormula($"SUM({j7}3:${j7}{realShops5.Count() + 2})") },
+          new Cell { CellReference = $"{j8}{realShops5.Count() + 3}", CellFormula = new CellFormula($"SUM({j8}3:${j8}{realShops5.Count() + 2})") },
+          new Cell { CellReference = $"{j9}{realShops5.Count() + 3}", CellFormula = new CellFormula($"SUM({j9}3:${j9}{realShops5.Count() + 2})") },
+          new Cell { CellReference = $"{j10}{realShops5.Count() + 3}", CellFormula = new CellFormula($"SUM({j10}3:${j10}{realShops5.Count() + 2})") },
+          new Cell { CellReference = $"{j11}{realShops5.Count() + 3}", CellFormula = new CellFormula($"SUM({j11}3:${j11}{realShops5.Count() + 2})") }
+        );
+      }
+      sheetData5.Append(bottomRow);
+      sheet5.Append(sheetData5);
+      sheet5.Append(mergeCells);
+
+
+      // sheet6
+      var sheetPart6 = workbookPart.AddNewPart<WorksheetPart>("r66");
+      var sheetViews6 = new SheetViews();
+      sheetViews6.Append(new SheetView
+      {
+        WorkbookViewId = 0,
+        Pane = new Pane { HorizontalSplit = 3, State = PaneStateValues.Frozen, TopLeftCell = "D1", ActivePane = PaneValues.TopRight }
+      });
+      var sheet6 = new Worksheet
+      {
+        SheetDimension = new SheetDimension { Reference = $"A1:{toColName(colLen3)}{data3.Length + 1}" },
+        SheetViews = sheetViews6
+      };
+      sheetPart6.Worksheet = sheet6;
+
+      var dates6 = data3.Select(v => v.Date).Distinct().Select((v, i) => new { Val = v, Index = i });
+      var realShops6 = data3.Select(v => v.Real_Shop).Distinct().Select((v, i) => new { Val = v, Index = i });
+      var sheetData6 = new SheetData();
+      var headerRow6 = new Row { RowIndex = 1, StyleIndex = 1, CustomFormat = true };
+      var headerRow62 = new Row { RowIndex = 2, StyleIndex = 1, CustomFormat = true };
+      var mergeCells6 = new MergeCells { Count = (uint)yms.Count() };
+
+      var hA6 = CreateStringCell("A2", "城市", sstPart);
+      hA6.StyleIndex = 1;
+      var hB6 = CreateStringCell("B2", "负责人", sstPart);
+      hB6.StyleIndex = 1;
+      var hC6 = CreateStringCell("C2", "物理店", sstPart);
+      hC6.StyleIndex = 1;
+      headerRow62.Append(
+        hA6, hB6, hC6
+      );
+      foreach (var date in dates6)
+      {
+        var cell = CreateStringCell($"{toColName(date.Index * 11 + 4)}1", date.Val, sstPart);
+        cell.StyleIndex = 1;
+        headerRow6.Append(cell);
+        var colD = CreateStringCell($"{toColName(date.Index * 11 + 4)}2", "营业收入", sstPart);
+        colD.StyleIndex = 1;
+        var colE = CreateStringCell($"{toColName(date.Index * 11 + 5)}2", "推广费用", sstPart);
+        colE.StyleIndex = 1;
+        var colF = CreateStringCell($"{toColName(date.Index * 11 + 6)}2", "推广比例", sstPart);
+        colF.StyleIndex = 1;
+        var colG = CreateStringCell($"{toColName(date.Index * 11 + 7)}2", "成本", sstPart);
+        colG.StyleIndex = 1;
+        var colH = CreateStringCell($"{toColName(date.Index * 11 + 8)}2", "成本比例", sstPart);
+        colH.StyleIndex = 1;
+        var colI = CreateStringCell($"{toColName(date.Index * 11 + 9)}2", "房租成本", sstPart);
+        colI.StyleIndex = 1;
+        var colJ = CreateStringCell($"{toColName(date.Index * 11 + 10)}2", "人工成本", sstPart);
+        colJ.StyleIndex = 1;
+        var colK = CreateStringCell($"{toColName(date.Index * 11 + 11)}2", "水电成本", sstPart);
+        colK.StyleIndex = 1;
+        var colL = CreateStringCell($"{toColName(date.Index * 11 + 12)}2", "好评返现", sstPart);
+        colL.StyleIndex = 1;
+        var colM = CreateStringCell($"{toColName(date.Index * 11 + 13)}2", "运营成本", sstPart);
+        colM.StyleIndex = 1;
+        var colN = CreateStringCell($"{toColName(date.Index * 11 + 14)}2", "利润", sstPart);
+        colN.StyleIndex = 1;
+        headerRow62.Append(
+          colD, colE, colF, colG, colH, colI, colJ, colK, colL, colM, colN
+        );
+        mergeCells6.Append(new MergeCell { Reference = $"{toColName(date.Index * 11 + 4)}1:${toColName(date.Index * 11 + 14)}1" });
+      }
+      sheetData6.Append(headerRow6, headerRow62);
+
+      foreach (var realShop in realShops6)
+      {
+        var i = (uint)realShop.Index + 3;
+        var row = new Row { RowIndex = i };
+        var colA = CreateStringCell($"A{i}", data3.FirstOrDefault(v => v.Real_Shop == realShop.Val)?.City, sstPart);
+        var colB = CreateStringCell($"B{i}", data3.FirstOrDefault(v => v.Real_Shop == realShop.Val)?.Person, sstPart);
+        var colC = CreateStringCell($"C{i}", realShop.Val, sstPart);
+
+        row.Append(colA, colB, colC);
+        foreach (var date in dates6)
+        {
+          var v = data3.FirstOrDefault(v => v.Real_Shop == realShop.Val && v.Date == date.Val);
+          row.Append(
+            v?.Income_Sum != null ? new Cell { CellReference = $"{toColName(date.Index * 11 + 4)}{i}", DataType = CellValues.Number, CellValue = new CellValue((double)v?.Income_Sum), StyleIndex = 3 } : null,
+            v?.Consume_Sum != null ? new Cell { CellReference = $"{toColName(date.Index * 11 + 5)}{i}", DataType = CellValues.Number, CellValue = new CellValue((double)v?.Consume_Sum) } : null,
+            v?.Consume_Sum_Ratio != null ? new Cell { CellReference = $"{toColName(date.Index * 11 + 6)}{i}", DataType = CellValues.Number, CellValue = new CellValue((double)v?.Consume_Sum_Ratio), StyleIndex = 2 } : null,
+            v?.Cost_Sum != null ? new Cell { CellReference = $"{toColName(date.Index * 11 + 7)}{i}", DataType = CellValues.Number, CellValue = new CellValue((double)v?.Cost_Sum) } : null,
+            v?.Cost_Sum_Ratio != null ? new Cell { CellReference = $"{toColName(date.Index * 11 + 8)}{i}", DataType = CellValues.Number, CellValue = new CellValue((double)v?.Cost_Sum_Ratio), StyleIndex = 2 } : null,
+            v?.Rent_Cost != null ? new Cell { CellReference = $"{toColName(date.Index * 11 + 9)}{i}", DataType = CellValues.Number, CellValue = new CellValue((double)v?.Rent_Cost) } : null,
+            v?.Labor_Cost != null ? new Cell { CellReference = $"{toColName(date.Index * 11 + 10)}{i}", DataType = CellValues.Number, CellValue = new CellValue((double)v?.Labor_Cost) } : null,
+            v?.Water_Electr_Cost != null ? new Cell { CellReference = $"{toColName(date.Index * 11 + 11)}{i}", DataType = CellValues.Number, CellValue = new CellValue((double)v?.Water_Electr_Cost) } : null,
+            v?.Cashback_Cost != null ? new Cell { CellReference = $"{toColName(date.Index * 11 + 12)}{i}", DataType = CellValues.Number, CellValue = new CellValue((double)v?.Cashback_Cost) } : null,
+            v?.Oper_Cost != null ? new Cell { CellReference = $"{toColName(date.Index * 11 + 13)}{i}", DataType = CellValues.Number, CellValue = new CellValue((double)v?.Oper_Cost) } : null,
+            v?.Profit != null ? new Cell { CellReference = $"{toColName(date.Index * 11 + 14)}{i}", DataType = CellValues.Number, CellValue = new CellValue((double)v?.Profit) } : null
+          );
+        }
+        sheetData6.Append(row);
+      }
+
+      var bottomRow6 = new Row { RowIndex = (uint)realShops6.Count() + 3 };
+      var bA6 = CreateStringCell($"A{realShops6.Count() + 3}", "总计", sstPart);
+      bA6.StyleIndex = 1;
+      bottomRow6.Append(bA6);
+      mergeCells6.Append(new MergeCell { Reference = $"A{realShops6.Count() + 3}:C{realShops6.Count() + 3}" });
+      foreach (var date in dates6)
+      {
+        var j = toColName(date.Index * 11 + 4);
+        var j2 = toColName(date.Index * 11 + 5);
+        var j3 = toColName(date.Index * 11 + 6);
+        var j4 = toColName(date.Index * 11 + 7);
+        var j5 = toColName(date.Index * 11 + 8);
+        var j6 = toColName(date.Index * 11 + 9);
+        var j7 = toColName(date.Index * 11 + 10);
+        var j8 = toColName(date.Index * 11 + 11);
+        var j9 = toColName(date.Index * 11 + 12);
+        var j10 = toColName(date.Index * 11 + 13);
+        var j11 = toColName(date.Index * 11 + 14);
+        bottomRow6.Append(
+          new Cell { CellReference = $"{j}{realShops6.Count() + 3}", CellFormula = new CellFormula($"SUM({j}3:${j}{realShops6.Count() + 2})"), StyleIndex = 3 },
+          new Cell { CellReference = $"{j2}{realShops6.Count() + 3}", CellFormula = new CellFormula($"SUM({j2}3:${j2}{realShops6.Count() + 2})") },
+          new Cell { CellReference = $"{j3}{realShops6.Count() + 3}", CellFormula = new CellFormula($"{j2}{realShops6.Count() + 3}/{j}{realShops6.Count() + 3}"), StyleIndex = 2 },
+          new Cell { CellReference = $"{j4}{realShops6.Count() + 3}", CellFormula = new CellFormula($"SUM({j4}3:${j4}{realShops6.Count() + 2})") },
+          new Cell { CellReference = $"{j5}{realShops6.Count() + 3}", CellFormula = new CellFormula($"{j4}{realShops6.Count() + 3}/{j}{realShops6.Count() + 3}"), StyleIndex = 2 },
+          new Cell { CellReference = $"{j6}{realShops6.Count() + 3}", CellFormula = new CellFormula($"SUM({j6}3:${j6}{realShops6.Count() + 2})") },
+          new Cell { CellReference = $"{j7}{realShops6.Count() + 3}", CellFormula = new CellFormula($"SUM({j7}3:${j7}{realShops6.Count() + 2})") },
+          new Cell { CellReference = $"{j8}{realShops6.Count() + 3}", CellFormula = new CellFormula($"SUM({j8}3:${j8}{realShops6.Count() + 2})") },
+          new Cell { CellReference = $"{j9}{realShops6.Count() + 3}", CellFormula = new CellFormula($"SUM({j9}3:${j9}{realShops6.Count() + 2})") },
+          new Cell { CellReference = $"{j10}{realShops6.Count() + 3}", CellFormula = new CellFormula($"SUM({j10}3:${j10}{realShops6.Count() + 2})") },
+          new Cell { CellReference = $"{j11}{realShops6.Count() + 3}", CellFormula = new CellFormula($"SUM({j11}3:${j11}{realShops6.Count() + 2})") }
+        );
+      }
+      sheetData6.Append(bottomRow6);
+      sheet6.Append(sheetData6);
+      sheet6.Append(mergeCells6);
+
+
       var sheets = new Sheets();
       sheets.Append(
         new Sheet { Id = "r1", Name = "sheet1", SheetId = 1 },
         new Sheet { Id = "r2", Name = "收入汇总", SheetId = 2 },
         new Sheet { Id = "r33", Name = "成本汇总", SheetId = 3 },
-        new Sheet { Id = "r4", Name = "推广汇总", SheetId = 4 }
+        new Sheet { Id = "r4", Name = "推广汇总", SheetId = 4 },
+        new Sheet { Id = "r5", Name = "总计(月)", SheetId = 5 },
+        new Sheet { Id = "r66", Name = "总计(日)", SheetId = 6 }
       );
 
       var pivotCaches = new PivotCaches();

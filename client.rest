@@ -16,7 +16,7 @@ content-type: application/json
 
 ###
 
-GET http://localhost:9004/tableByShop/168048393
+GET http://192.168.3.3:9005/indices/elm/168048393/7
 content-type: application/json
 
 ###
