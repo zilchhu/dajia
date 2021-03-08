@@ -144,10 +144,10 @@ async function insertTableFromMysql(day_from_today = 1) {
     FROM foxx_real_shop_info
   ),
   d1 AS (
-		SELECT wmpoiid AS shop_id, bizScore AS rating_mt FROM foxx_cus_manag_analy_score WHERE date = @last_day
+		SELECT wmpoiid AS shop_id, bizScore AS rating_mt FROM foxx_cus_manag_analy_score WHERE date = CURDATE()
 	),
   d2 AS (
-		SELECT shop_id, rating AS rating_elm FROM ele_rating_log WHERE DATE_FORMAT(insert_date, '%Y%m%d') = @last_day
+		SELECT shop_id, rating AS rating_elm FROM ele_rating_log WHERE DATE_FORMAT(insert_date, '%Y%m%d') = CURDATE()
 	)
   SELECT id, city, person,
     a1.real_shop, a1.shop_id, a1.shop_name, platform, 
