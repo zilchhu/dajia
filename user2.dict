@@ -1,2 +1,14 @@
-日式 10 mq
-烧仙草 10 nz
+curl 'https://waimaie.meituan.com/v2/order/common/history/all/r/list?lastLabel=&nextLabel=&userId=-1&tag=all&startDate=2021-02-03&endDate=2021-03-08&ignoreSetRouterProxy=true' \
+  -H 'Connection: keep-alive' \
+  -H 'sec-ch-ua: "Chromium";v="88", "Google Chrome";v="88", ";Not A Brand";v="99"' \
+  -H 'Accept: application/json, text/plain, */*' \
+  -H 'X-Requested-With: XMLHttpRequest' \
+  -H 'sec-ch-ua-mobile: ?0' \
+  -H 'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.104 Safari/537.36' \
+  -H 'Sec-Fetch-Site: same-origin' \
+  -H 'Sec-Fetch-Mode: cors' \
+  -H 'Sec-Fetch-Dest: empty' \
+  -H 'Referer: https://waimaie.meituan.com/v2/order/new/history?ignoreSetRouterProxy=true' \
+  -H 'Accept-Language: zh-CN,zh;q=0.9' \
+  -H $'Cookie: _lxsdk=1775b772fbac8-0ee0aab2fb3d09-c791039-1fa400-1775b772fba57; _lxsdk_cuid=1775b772fbac8-0ee0aab2fb3d09-c791039-1fa400-1775b772fba57; uuid=899f93173acef791d886.1612921512.1.0.0; device_uuid=\u002193be5d46-1201-4ccb-af5d-fc7911ec8970; pushToken=0W3TxK_HBq9NfYgc8QSfiM10zJmWPGtAGSbfwo66HYO8*; uuid_update=true; isNewCome=1; wpush_server_url=wss://wpush.meituan.com; e_u_id_3299326472=7e0dbe1fc46d29c6155e6acc5ce0c4c1; acctId=23262521; brandId=-1; isOfflineSelfOpen=0; city_id=0; isChain=1; existBrandPoi=true; ignore_set_router_proxy=true; region_id=; region_version=0; newCategory=false; cityId=440300; provinceId=440000; city_location_id=0; location_id=0; wmPoiName=%E5%8F%A4%E5%BE%A1%E8%B4%A1%E8%8C%B6%E2%80%A2%E6%89%8B%E6%8A%93%E9%A5%BC%E2%80%A2%E5%B0%8F%E5%90%83%EF%BC%88%E9%BE%99%E5%B2%97%E7%88%B1%E8%81%94%E5%BA%97%EF%BC%89; logan_custom_report=; token=0AeRsPq91Oa-EC5rCQZzButJMQpsMVte8XNKB46HyEho*; bsid=3kgfpfDoK25nhK3CJ8WtekWwrZzfh5JGsGIhDeAqhMRHhoUMjkT0Hm-Cdi1gkjF0pi9jXGFsiaAqQmIHlxxpog; wmPoiId=6119122; logistics_support=1; shopCategory=food; set_info=%7B%22wmPoiId%22%3A6119122%2C%22ignoreSetRouterProxy%22%3Atrue%7D; setPrivacyTime=5_20210308; JSESSIONID=1db53p86whmuh45z8z33kbwyz; logan_session_token=58dcww21akjowsmegf06; _lxsdk_s=178103b9253-ab5-81e-3a6%7C23262521%7C55' \
+  --compressed

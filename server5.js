@@ -216,16 +216,23 @@ async function customs(sqls) {
 }
 
 async function customs2(sqls) {
-  let results = []
-  for (let sql of sqls) {
-    try {
-      let [data, _] = await knx.raw(sql.sql)
-      results.push({ id: sql.id, data })
-    } catch (e) {
-      return Promise.reject(e)
-    }
+  try {
+    let results2 = await Promise.all(sqls.map(sql => knx.raw(sql.sql)))
+    results2 = results2.map(v => v[0])
+    results2 = sqls.map((sql, i) => ({ id: sql.id, data: results2[i] }))
+
+    // for (let sql of sqls) {
+    //   try {
+    //     let [data, _] = await knx.raw(sql.sql)
+    //     results.push({ id: sql.id, data })
+    //   } catch (e) {
+    //     return Promise.reject(e)
+    //   }
+    // }
+    return Promise.resolve(results2)
+  } catch (e) {
+    return Promise.reject(e)
   }
-  return Promise.resolve(results)
 }
 
 async function shops() {

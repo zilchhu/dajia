@@ -478,12 +478,12 @@ async function updateAttrs(id, name, attrs) {
   }
 }
 
-async function updateAttrs2(id, name, attrs) {
+async function updateAttrs2(id, name, desc) {
   const fallbackApp = new FallbackApp(id)
   try {
     // const { ok } = await fallbackApp.food.setHighBoxPrice(0, true)
     if (true) {
-      const res = await fallbackApp.food.save2(name, attrs)
+      const res = await fallbackApp.food.save2(name, null, null, desc)
       return Promise.resolve(res)
     } else return Promise.reject({ err: 'sync failed' })
   } catch (err) {
@@ -493,11 +493,9 @@ async function updateAttrs2(id, name, attrs) {
 
 async function test_updateAttrs2() {
   try {
-    let attrs = [{ name: '温度', values: ['冷', '温热'] }]
-    let [data, _] = await knx.raw(
-      `select * from foxx_food_manage where date=curdate() and name LIKE '%【新品】芋球圆子香芋椰奶%' `
-    )
-    data = data.map(v => [v.wmpoiid, v.name, attrs])
+    // let attrs = [{ name: '温度', values: ['冷', '温热'] }]
+    let data = await readXls('plan/美团（大计划民治店）商品描述.xlsx', '修改版')
+    data = data.map(v => [9835112, v.商品名称.trim(), v.描述.trim()])
     await loop(updateAttrs2, data, true)
   } catch (e) {
     console.error(e)
@@ -1586,7 +1584,7 @@ async function test_boxPrice() {
 // test_plan()
 // test_updateMaterial()
 // test_reduction2()
-test_delivery()
+// test_delivery()
 // test_reduction2()
 // test_plan()
 // test_delTag()
@@ -1595,5 +1593,5 @@ test_delivery()
 // test_updateAct()1
 // test_delFoods()
 // test_testFood()
-// test_updateAttrs2()
+test_updateAttrs2()
 // test_updateImg()

@@ -1,1 +1,282 @@
-{}
+{
+  "id": 3894198922,
+  "name": "芒果紫米捞",
+  "tagId": 221354886,
+  "tagName": "┏ 🌈 ┓新品尝鲜",
+  "secondTagId": -1,
+  "secondTagName": "",
+  "level": 2,
+  "price": 13.8,
+  "discountPrice": 10.8,
+  "unit": "份",
+  "minOrderCount": 1,
+  "monthSale": 0,
+  "stock": -1,
+  "allSoldOut": false,
+  "someSoldOut": false,
+  "needBindTag": false,
+  "sellStatus": 1,
+  "offSellType": -1,
+  "shippingTimeX": "",
+  "wmProductVideoId": -1,
+  "example": 1000001,
+  "description": "",
+  "wmProductSkuVos": [
+    {
+      "id": 4409490644,
+      "spec": "1人份",
+      "description": "",
+      "skuCode": "",
+      "upcCode": "",
+      "locatorCode": "",
+      "price": 13.8,
+      "limitStock": false,
+      "stock": -1,
+      "boxNum": 1,
+      "boxPrice": 1.0,
+      "sequence": 0,
+      "specifications": "",
+      "unit": "1人份",
+      "weight": -2,
+      "weightUint": "",
+      "standard": false,
+      "maxStock": -1,
+      "autoRefresh": 0,
+      "wmProductLadderBoxPriceVo": {
+        "status": 1,
+        "ladderNum": 1,
+        "ladderPrice": 1.0
+      }
+    }
+  ],
+  "wmProductSpuAttrVos": [
+    {
+      "name": "底料",
+      "wmProductSpuSubAttrVos": [
+        {
+          "id": 7332845694,
+          "value": "椰汁底"
+        }
+      ]
+    },
+    {
+      "name": "温度",
+      "wmProductSpuSubAttrVos": [
+        {
+          "id": 7504510931,
+          "value": "冷"
+        },
+        {
+          "id": 7504510932,
+          "value": "温热"
+        }
+      ]
+    }
+  ],
+  "wmProductLabelVos": [
+    {
+      "id": 32,
+      "groupId": 18,
+      "groupName": "单点不送",
+      "subAttr": "0"
+    }
+  ],
+  "searchTerms": [],
+  "wmProductPicVos": [
+    {
+      "id": 26199107362,
+      "picLargeUrl": "http://p0.meituan.net/wmproduct/8460f726465c1f0e381bc6e3ce5b476a69250.jpg",
+      "picMaterialId": 0,
+      "isMaster": 1,
+      "picUrl": "http://p0.meituan.net/100.100.90/wmproduct/8460f726465c1f0e381bc6e3ce5b476a69250.jpg",
+      "specialEffectUrl": "",
+      "specialEffectLargeUrl": "",
+      "specialEffectEnable": 0,
+      "content": "",
+      "type": 1,
+      "score": 1.0,
+      "isLowQuality": 0,
+      "detailList": [
+        {
+          "type": "recapture",
+          "typeName": "",
+          "score": 1.0,
+          "extra": "",
+          "result": "1",
+          "setExtra": null,
+          "setPicPropaganda": null,
+          "setResult": null,
+          "setScore": null,
+          "setTypeName": null,
+          "setType": null
+        },
+        {
+          "type": "blur",
+          "typeName": "",
+          "score": 0.781,
+          "extra": "",
+          "result": "1",
+          "setExtra": null,
+          "setPicPropaganda": null,
+          "setResult": null,
+          "setScore": null,
+          "setTypeName": null,
+          "setType": null
+        },
+        {
+          "type": "border",
+          "typeName": "",
+          "score": 1.0,
+          "extra": "",
+          "result": "1",
+          "setExtra": null,
+          "setPicPropaganda": null,
+          "setResult": null,
+          "setScore": null,
+          "setTypeName": null,
+          "setType": null
+        }
+      ]
+    }
+  ],
+  "riskManaVo": {
+    "shortDescribe": "",
+    "longDescribe": "",
+    "recoveryTime": ""
+  },
+  "wmProductSpuAttrVoV2List": [
+    {
+      "name_id": 0,
+      "name": "份量",
+      "spuAttrValueVoList": [
+        {
+          "value": "",
+          "name": "份量",
+          "price": 13.8,
+          "mode": 2,
+          "sell_status": 1,
+          "value_id": 0,
+          "name_id": 0,
+          "unit": "",
+          "weight": -2,
+          "weightUnit": "1人份"
+        }
+      ]
+    },
+    {
+      "name_id": 0,
+      "name": "底料",
+      "spuAttrValueVoList": [
+        {
+          "value": "椰汁底",
+          "name": "底料",
+          "price": 0,
+          "mode": 1,
+          "sell_status": 0,
+          "value_id": 0,
+          "name_id": 0,
+          "unit": "",
+          "weight": 0,
+          "weightUnit": "克"
+        }
+      ]
+    },
+    {
+      "name_id": 0,
+      "name": "温度",
+      "spuAttrValueVoList": [
+        {
+          "value": "冷",
+          "name": "温度",
+          "price": 0,
+          "mode": 1,
+          "sell_status": 0,
+          "value_id": 0,
+          "name_id": 0,
+          "unit": "",
+          "weight": 0,
+          "weightUnit": "克"
+        },
+        {
+          "value": "温热",
+          "name": "温度",
+          "price": 0,
+          "mode": 1,
+          "sell_status": 0,
+          "value_id": 0,
+          "name_id": 0,
+          "unit": "",
+          "weight": 0,
+          "weightUnit": "克"
+        }
+      ]
+    }
+  ],
+  "stockAndBoxPriceInfo": {
+    "boxType": 2,
+    "wmProductBoxInfoVoList": [
+      {
+        "boxPrice": 1,
+        "stock": 0,
+        "maxStock": -1,
+        "autoRefresh": 2,
+        "boxNum": 1,
+        "limitStock": 0,
+        "haveAttrSendOut": 1,
+        "wmProductSkuDetailVoList": [
+          {
+            "value": "1人份",
+            "value_id": 0,
+            "name": "份量",
+            "name_id": 0
+          }
+        ]
+      }
+    ]
+  },
+  "newProductPage": true,
+  "category_id": 115310,
+  "properties_values": {
+    "1200001152": [
+      {
+        "wm_product_property_category_id": 0,
+        "id": 50300572695,
+        "is_leaf": 1,
+        "wm_product_lib_tag_id": 1200001152,
+        "wm_product_lib_tag_name": "库存包装费设置方式",
+        "level": 1,
+        "parent_tag_id": 0,
+        "sequence": 0,
+        "value": "1",
+        "value_id": -1614662035300
+      }
+    ],
+    "1000000015": [
+      {
+        "wm_product_property_category_id": 115310,
+        "id": 50300572693,
+        "is_leaf": 1,
+        "wm_product_lib_tag_id": 1000000015,
+        "wm_product_lib_tag_name": "主料",
+        "level": 2,
+        "parent_tag_id": 0,
+        "sequence": 1,
+        "value": "紫米",
+        "value_id": 105201
+      },
+      {
+        "wm_product_property_category_id": 115310,
+        "id": 50300572694,
+        "is_leaf": 1,
+        "wm_product_lib_tag_id": 1000000015,
+        "wm_product_lib_tag_name": "主料",
+        "level": 2,
+        "parent_tag_id": 0,
+        "sequence": 1,
+        "value": "芒果",
+        "value_id": 105461
+      }
+    ]
+  },
+  "customPropertiesValues": []
+}

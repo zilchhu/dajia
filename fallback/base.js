@@ -15,6 +15,7 @@ const knx = knex({
 import urls_ from './url.js'
 
 let { cookie } = await knx('foxx_shop_reptile').first('cookie')
+// cookie = "_lxsdk=1775b772fbac8-0ee0aab2fb3d09-c791039-1fa400-1775b772fba57; _lxsdk_cuid=1775b772fbac8-0ee0aab2fb3d09-c791039-1fa400-1775b772fba57; device_uuid=!93be5d46-1201-4ccb-af5d-fc7911ec8970; pushToken=0W3TxK_HBq9NfYgc8QSfiM10zJmWPGtAGSbfwo66HYO8*; uuid_update=true; isNewCome=1; wpush_server_url=wss://wpush.meituan.com; acctId=40811325; token=0GxKRgM-DEYf8uUH-HGAvXeWDWGI4Lli4jeh0pHy1xPo*; brandId=-1; wmPoiId=-1; isOfflineSelfOpen=0; city_id=440300; isChain=1; existBrandPoi=true; ignore_set_router_proxy=true; region_id=; region_version=0; newCategory=false; bsid=hKVTULAN5KmuiXsa5cKTrvXvRwm7yjk_lDyU4NOQCHN0VO08EWEhiwJXKHq4lLXxc571wI7JH3zHFntMWQ_q7g; cityId=440300; provinceId=440000; city_location_id=440300; location_id=0; shopCategory=food; set_info=%7B%22wmPoiId%22%3A-1%2C%22ignoreSetRouterProxy%22%3Atrue%7D; setPrivacyTime=3_20210308; JSESSIONID=1rs0tl2s20hq8mlah3y8pbb94; logan_session_token=5s0z2pbefb22cqncthur; _lxsdk_s=17810fc91be-547-cb4-117%7C23262521%7C92"
 
 let axiosConfig = {
   baseURL: 'https://waimaieapp.meituan.com',

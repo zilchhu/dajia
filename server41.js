@@ -358,12 +358,40 @@ router.get('/myt', async ctx => {
 
 router.post('/addNewShop', async ctx => {
   try {
-    let { platform, shopId, shopName, roomId, realName, city, person, bd, phone, isD, isM, rent } = ctx.request.body
+    let {
+      platform,
+      shopId,
+      shopName,
+      roomId,
+      realName,
+      city,
+      person,
+      newPerson,
+      bd,
+      phone,
+      isD,
+      isM,
+      rent
+    } = ctx.request.body
     if (!platform || !shopId || !shopName || !roomId || !realName) {
       ctx.body = { e: 'invalid params' }
       return
     }
-    const res = await addNewShop(platform, shopId, shopName, roomId, realName, city, person, bd, phone, isD, isM, rent)
+    const res = await addNewShop(
+      platform,
+      shopId,
+      shopName,
+      roomId,
+      realName,
+      city,
+      person,
+      newPerson,
+      bd,
+      phone,
+      isD,
+      isM,
+      rent
+    )
     ctx.body = { res }
   } catch (e) {
     console.log(e)
@@ -584,6 +612,35 @@ router.get('/order/elm/:shopId', async ctx => {
   }
 })
 
+router.get('/shopActsDiff', async ctx => {
+  try {
+    let data = await knx('test_change_t_').select()
+    data = data.map(v => ({ ...v, after_rule: JSON.parse(v.after_rule), before_rule: JSON.parse(v.before_rule) }))
+    if (!data.find(v => dayjs(v.change_date, 'YYYYMMDD').isSame(dayjs(), 'day'))) {
+      data = await shopActsDiff()
+    }
+    ctx.body = { res: data }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
+
+router.post('/saveShopActsDiff', async ctx => {
+  try {
+    let { key, handle } = ctx.request.body
+    if (!key || !handle) {
+      ctx.body = { e: 'invalid params' }
+      return
+    }
+    const res = await saveShopActsDiff(key, handle)
+    ctx.body = { res }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
+
 koa.use(router.routes())
 
 koa.listen(9005, () => console.log('running at 9005'))
@@ -652,15 +709,16 @@ const sum_sql2 = `
   GROUP BY real_shop, ym ORDER BY ym DESC
 `
 
-const fresh_sql = `SELECT a.*, e.cost_ratio, IFNULL(b.shop_name, c.reptile_type) AS name, IF(ISNULL(b.shop_name),'美团', '饿了么') AS platform
+const fresh_sql = `SELECT a.*, e.cost_ratio, IFNULL(b.shop_name, c.reptile_type) AS name, IF(ISNULL(b.shop_name),'美团', '饿了么') AS platform, f.new_person
 FROM foxx_new_shop_track a
 LEFT JOIN ele_info_manage b ON a.wmpoiid = b.shop_id 
 LEFT JOIN foxx_shop_reptile c USING(wmpoiid)
 LEFT JOIN foxx_new_shop d ON a.wmpoiid = d.shop_id
 LEFT JOIN foxx_operating_data e ON a.wmpoiid = e.shop_id AND a.date = e.date
+LEFT JOIN foxx_real_shop_info f ON a.wmpoiid = f.shop_id 
 WHERE (b.shop_name IS NOT NULL OR c.reptile_type IS NOT NULL)
 AND d.status <> 9 AND DATEDIFF(a.date, d.shop_start_date) BETWEEN 1 AND 30
-ORDER BY a.wmpoiid, a.date`
+ORDER BY a.wmpoiid, a.date DESC`
 
 const perf_sql = d => `WITH a AS (
     SELECT city, person, real_shop, income_sum, income_avg, income_score, cost_sum, cost_avg, cost_sum_ratio, cost_score, consume_sum, consume_avg, consume_sum_ratio, consume_score, score, date
@@ -1185,9 +1243,59 @@ const 线下指标美团关店次数 = (id, d = 7) => `SELECT
     GROUP BY DATE_FORMAT( insert_date, '%Y%m%d' )
     ORDER BY insert_date DESC`
 
+const elm_shop_acts_diff = `SELECT t.shop_id, e.shop_name, IF(r.platform IS NULL, NULL, IF(r.platform = 1, '美团', '饿了么')) platform, r.person, 
+    title, rule, date, insert_date
+    FROM
+    (
+    SELECT t1.shop_id, t1.title, t1.rule, t1.date, t1.insert_date
+    FROM ele_activity_full_reduction t1 -- 今天
+    WHERE insert_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(),INTERVAL 1 DAY) AND descs = '进行中' AND conflict_message IS NULL 
+    UNION ALL
+    SELECT t2.shop_id, t2.title, t2.rule, t2.date, t2.insert_date
+    FROM ele_activity_full_reduction t2 -- 昨天
+    WHERE insert_date BETWEEN DATE_SUB(CURDATE(),INTERVAL 1 DAY) AND CURDATE() AND descs = '进行中' AND conflict_message IS NULL
+    )  t
+    LEFT JOIN ele_info_manage e USING(shop_id)
+    LEFT JOIN foxx_real_shop_info r USING(shop_id)
+    GROUP BY t.shop_id, title, rule
+    HAVING COUNT(*) = 1
+    ORDER BY t.shop_id, title, insert_date`
+
+const mt_shop_acts_diff = `SELECT t.wmpoiid shop_id, m.reptile_type shop_name, IF(r.platform IS NULL, NULL, IF(r.platform = 1, '美团', '饿了么')) platform, r.person, 
+    name title, detail rule, CONCAT(DATE_FORMAT(start_time,'%Y%m%d'),' 至 ', DATE_FORMAT(end_time,'%Y%m%d')) date, DATE_FORMAT(date,'%Y-%m-%d') insert_date
+    FROM
+    (
+    SELECT t1.wmpoiid, t1.name, t1.detail, t1.start_time, t1.end_time, t1.date
+    FROM foxx_market_activit_my t1 -- 今天
+    WHERE date = CURDATE() AND status_desc = '进行中'
+    UNION ALL
+    SELECT t2.wmpoiid, t2.name, t2.detail, t2.start_time, t2.end_time, t2.date
+    FROM foxx_market_activit_my t2 -- 昨天
+    WHERE date = DATE_SUB(CURDATE(),INTERVAL 1 DAY) AND status_desc = '进行中'
+    )  t
+    LEFT JOIN foxx_shop_reptile m USING(wmpoiid)
+    LEFT JOIN foxx_real_shop_info r ON t.wmpoiid = r.shop_id
+    GROUP BY t.wmpoiid, name, detail
+    HAVING COUNT(*) = 1
+    ORDER BY t.wmpoiid, name, date`
+
 async function date(d) {}
 
-async function addNewShop(platform, shopId, shopName, roomId, realName, city, person, bd, phone, isD, isM, rent) {
+async function addNewShop(
+  platform,
+  shopId,
+  shopName,
+  roomId,
+  realName,
+  city,
+  person,
+  newPerson,
+  bd,
+  phone,
+  isD,
+  isM,
+  rent
+) {
   try {
     roomId = roomId.trim()
     let results = {},
@@ -1225,6 +1333,7 @@ async function addNewShop(platform, shopId, shopName, roomId, realName, city, pe
         platform,
         city,
         person,
+        new_person: newPerson,
         bd,
         shop_phone: phone,
         is_original_price_deduction_point: isD,
@@ -1407,6 +1516,73 @@ async function delMyt(shopId, loginName) {
       .where({ shop_id: shopId, login_name: loginName })
       .del()
     return Promise.resolve(res)
+  } catch (e) {
+    return Promise.reject(e)
+  }
+}
+
+async function shopActsDiff() {
+  try {
+    let data = await Promise.all([knx.raw(elm_shop_acts_diff), knx.raw(mt_shop_acts_diff)])
+    data = data.map(v => v[0])
+    data = [...data[0], ...data[1]]
+
+    let res = new M(data).bind(split)
+    let saveRes = await knx('test_change_t_')
+      .insert(
+        res.val.map(v => ({
+          ...v,
+          after_rule: JSON.stringify(v.after_rule),
+          before_rule: JSON.stringify(v.before_rule)
+        }))
+      )
+      .onConflict('key')
+      .merge()
+    console.log(saveRes)
+    return Promise.resolve(res.val)
+  } catch (e) {
+    return Promise.reject(e)
+  }
+
+  function split(xs) {
+    let distinct_shop_titles = Array.from(new Set(xs.map(v => `${v.shop_id}|${v.title}`)))
+    let ys = distinct_shop_titles.map(shop_title => {
+      let shop_id = shop_title.split('|')[0]
+      let title = shop_title.split('|')[1]
+      let shop_name = xs.find(k => k.shop_id == shop_id)?.shop_name
+      let person = xs.find(k => k.shop_id == shop_id)?.person
+      let platform = xs.find(k => k.shop_id == shop_id)?.platform
+      let after_rule = xs
+        .filter(k => k.shop_id == shop_id && k.title == title && dayjs(k.insert_date).isSame(dayjs(), 'day'))
+        .map(k => ({ rule: k.rule, date: k.date, insert_date: dayjs(k.insert_date).format('YYYY-MM-DD HH:mm:ss') }))
+      let before_rule = xs
+        .filter(
+          k =>
+            k.shop_id == shop_id && k.title == title && dayjs(k.insert_date).isSame(dayjs().subtract(1, 'day'), 'day')
+        )
+        .map(k => ({ rule: k.rule, date: k.date, insert_date: dayjs(k.insert_date).format('YYYY-MM-DD HH:mm:ss') }))
+      return {
+        key: `${shop_id}-${title}-${dayjs().format('YYYYMMDD')}`,
+        shop_id,
+        shop_name,
+        platform,
+        person,
+        title,
+        after_rule,
+        before_rule,
+        change_date: dayjs().format('YYYYMMDD'),
+        handle: ''
+      }
+    })
+    return new M(ys)
+  }
+}
+
+async function saveShopActsDiff(key, handle) {
+  try {
+    return knx('test_change_t_')
+      .where({ key })
+      .update({ handle })
   } catch (e) {
     return Promise.reject(e)
   }
@@ -1807,7 +1983,8 @@ async function fresh() {
       kangaroo_name: '袋鼠店长',
       red_packet_recharge: '高拥返现',
       ranknum: '商圈排名',
-      extend: '延迟发单'
+      extend: '延迟发单',
+      placeholder: ''
     }
     let dates = distinct(xs, 'date').sort((a, b) => b - a)
     let ys = names.map(name =>
@@ -1820,6 +1997,7 @@ async function fresh() {
           key: `${name}-${field}`,
           name,
           wmPoiId: xs.find(x => name.includes(x.name)).wmPoiId,
+          new_person: xs.find(x => name.includes(x.name)).new_person,
           field: fields[field],
           ...values
         }

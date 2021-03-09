@@ -816,7 +816,7 @@ export default class Food {
     }
   }
 
-  async save2(name, attrs, minOrder) {
+  async save2(name, attrs, minOrder, desc) {
     let that = this
     try {
       const food = await this.find(name)
@@ -865,7 +865,7 @@ export default class Food {
         wmProductPics: wmProductSpu.wmProductPics,
         specialEffectPic: getSpecialEffectPic(wmProductSpu.wmProductPics),
         properties_values: properties_values,
-        description: wmProductSpu.description,
+        description: desc || wmProductSpu.description,
         labelValues: wmProductSpu.labelValues || [],
         labelList: wmProductSpu.labelList || [], // { id: 32, group_name: '单点不送', group_id: 18, sub_attr: '0' }
         newSpuAttrs: attrs
@@ -923,6 +923,14 @@ export default class Food {
           specialEffectEnable,
           specialEffectUrl: specialEffectUrl,
           content: content,
+          isMaster: 1,
+          specialEffectPicBase64: ''
+        }
+      } else {
+        specialEffectPic = {
+          specialEffectEnable: 2,
+          specialEffectUrl: '',
+          content: '',
           isMaster: 1,
           specialEffectPicBase64: ''
         }
