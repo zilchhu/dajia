@@ -1316,14 +1316,14 @@ const elm_spareas_diff = `SELECT t.shop_id, e.shop_name, IF(r.platform IS NULL, 
     ORDER BY t.shop_id, shop_product_desc, insert_date`
 
 const elm_foods_diff = `SELECT t.shop_id, e.shop_name, IF(r.platform IS NULL, NULL, IF(r.platform = 1, '美团', '饿了么')) platform, r.person, 
-    '商品详情' title, category_name, global_id, name, activity_price, price, package_fee, min_purchase_quantity, '-' date,  insert_date
+    '商品详情' title, category_name, global_id, name, activity_price, price, package_fee, min_purchase_quantity, on_shelf, '-' date,  insert_date
     FROM
     (
-    SELECT t1.shop_id, t1.category_name, t1.global_id, t1.name, t1.activity_price, t1.price, t1.package_fee, t1.min_purchase_quantity, t1.insert_date
+    SELECT t1.shop_id, t1.category_name, t1.global_id, t1.name, t1.activity_price, t1.price, t1.package_fee, t1.min_purchase_quantity, t1.on_shelf, t1.insert_date
     FROM ele_food_manage t1 -- 今天
     WHERE insert_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(),INTERVAL 1 DAY) 
     UNION ALL
-    SELECT t2.shop_id, t2.category_name, t2.global_id, t2.name, t2.activity_price, t2.price, t2.package_fee, t2.min_purchase_quantity, t2.insert_date
+    SELECT t2.shop_id, t2.category_name, t2.global_id, t2.name, t2.activity_price, t2.price, t2.package_fee, t2.min_purchase_quantity, t2.on_shelf, t2.insert_date
     FROM ele_food_manage t2 -- 昨天
     WHERE insert_date BETWEEN DATE_SUB(CURDATE(),INTERVAL 1 DAY) AND CURDATE()
     )  t
@@ -1332,6 +1332,60 @@ const elm_foods_diff = `SELECT t.shop_id, e.shop_name, IF(r.platform IS NULL, NU
     GROUP BY t.shop_id, global_id, activity_price, price, package_fee, min_purchase_quantity
     HAVING COUNT(*) = 1
     ORDER BY t.shop_id, global_id, insert_date`
+
+const mt_foods_diff = `SELECT t.wmpoiid shop_id, m.reptile_type shop_name, IF(r.platform IS NULL, NULL, IF(r.platform = 1, '美团', '饿了么')) platform, r.person, 
+    '商品详情' title, tagName, productId, name, price, boxPrice, sellStatus, '-' date, DATE_FORMAT(date,'%Y-%m-%d') insert_date
+    FROM
+    (
+    SELECT t1.wmpoiid, t1.tagName, t1.productId, t1.name, t1.price, t1.boxPrice, t1.sellStatus, t1.date
+    FROM foxx_food_manage t1 -- 今天
+    WHERE date = CURDATE()
+    UNION ALL
+    SELECT t2.wmpoiid, t2.tagName, t2.productId, t2.name, t2.price, t2.boxPrice, t2.sellStatus, t2.date
+    FROM foxx_food_manage t2 -- 昨天
+    WHERE date = DATE_SUB(CURDATE(),INTERVAL 1 DAY)
+    )  t
+    LEFT JOIN foxx_shop_reptile m USING(wmpoiid)
+    LEFT JOIN foxx_real_shop_info r ON t.wmpoiid = r.shop_id
+    GROUP BY t.wmpoiid, productId, price, boxPrice
+    HAVING COUNT(*) = 1 AND shop_name NOT LIKE '%大计划%'
+    ORDER BY t.wmpoiid, productId, insert_date`
+
+const mt_discounts_diff = `SELECT t.wmpoiid shop_id, m.reptile_type shop_name, IF(r.platform IS NULL, NULL, IF(r.platform = 1, '美团', '饿了么')) platform, r.person, 
+    '折扣商品详情' title, itemName, actInfo, actPrice, orderLimit, manual_sorting, isTop, 
+    CONCAT(FROM_UNIXTIME(startTime, '%Y%m%d'), ' 至 ', FROM_UNIXTIME(endTime, '%Y%m%d'))date, DATE_FORMAT(date,'%Y-%m-%d') insert_date
+    FROM
+    (
+    SELECT t1.wmpoiid, t1.itemName, t1.actInfo, t1.actPrice, t1.orderLimit, t1.manual_sorting, t1.isTop, t1.startTime, t1.endTime, t1.date
+    FROM foxx_market_activit_my_discounts t1 -- 今天
+    WHERE date = CURDATE()
+    UNION ALL
+    SELECT t2.wmpoiid, t2.itemName, t2.actInfo, t2.actPrice, t2.orderLimit, t2.manual_sorting, t2.isTop, t2.startTime, t2.endTime, t2.date
+    FROM foxx_market_activit_my_discounts t2 -- 昨天
+    WHERE date = DATE_SUB(CURDATE(),INTERVAL 1 DAY)
+    )  t
+    LEFT JOIN foxx_shop_reptile m USING(wmpoiid)
+    LEFT JOIN foxx_real_shop_info r ON t.wmpoiid = r.shop_id
+    GROUP BY t.wmpoiid, itemName, actPrice, orderLimit
+    HAVING COUNT(*) = 1 AND shop_name NOT LIKE '%大计划%'
+    ORDER BY t.wmpoiid, itemName, insert_date`
+
+const mt_shop_cate_diff = `SELECT t.wmpoiid shop_id, wmpoiname shop_name, IF(r.platform IS NULL, NULL, IF(r.platform = 1, '美团', '饿了么')) platform, r.person, 
+    '店铺分类' title, mainCategory, supplementCategory, '-' date, insert_date
+    FROM
+    (
+    SELECT t1.wmpoiid, t1.wmpoiname, t1.mainCategory, t1.supplementCategory, t1.insert_date
+    FROM foxx_shop_category t1 -- 今天
+    WHERE insert_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(),INTERVAL 1 DAY) 
+    UNION ALL
+    SELECT t2.wmpoiid, t2.wmpoiname, t2.mainCategory, t2.supplementCategory, t2.insert_date
+    FROM foxx_shop_category t2 -- 昨天
+    WHERE insert_date BETWEEN DATE_SUB(CURDATE(),INTERVAL 1 DAY) AND CURDATE()
+    )  t
+    LEFT JOIN foxx_real_shop_info r ON t.wmpoiid = r.shop_id
+    GROUP BY t.wmpoiid, mainCategory, supplementCategory
+    HAVING COUNT(*) = 1 AND shop_name NOT LIKE '%大计划%'
+    ORDER BY t.wmpoiid, mainCategory, supplementCategory, insert_date`
 
 async function date(d) {}
 
@@ -1582,7 +1636,10 @@ async function shopActsDiff() {
       knx.raw(mt_shop_acts_diff),
       knx.raw(mt_spareas_diff),
       knx.raw(elm_spareas_diff),
-      knx.raw(elm_foods_diff)
+      knx.raw(elm_foods_diff),
+      knx.raw(mt_foods_diff),
+      knx.raw(mt_discounts_diff),
+      knx.raw(mt_shop_cate_diff)
     ])
     data = data.map(v => v[0])
     data = [
@@ -1598,7 +1655,19 @@ async function shopActsDiff() {
       })),
       ...data[4].map(v => ({
         ...v,
-        rule: `${v.category_name}\n${v.name}\n价格：${v.price} / ${v.activity_price}\n餐盒费：${v.package_fee}\n最小起购：${v.min_purchase_quantity}`
+        rule: `${v.category_name}  ${v.on_shelf == '下架' ? '下架' : ''}\n${v.name}\n价格：${v.price} / ${v.activity_price}\n餐盒费：${v.package_fee}\n最小起购：${v.min_purchase_quantity}`
+      })),
+      ...data[5].map(v => ({
+        ...v,
+        rule: `${v.tagName}  ${v.sellStatus == 1 ? '下架' : ''}\n${v.name}\n价格：${v.price / 100}\n餐盒费：${v.boxPrice}`
+      })),
+      ...data[6].map(v => ({
+        ...v,
+        rule: `${v.itemName}\n价格：${v.actInfo} / ${v.actPrice}\n限购：${v.orderLimit}`
+      })),
+      ...data[7].map(v => ({
+        ...v,
+        rule: `主营：${v.mainCategory}\n辅营：${v.supplementCategory}`
       }))
     ].sort((a, b) => a.shop_id - b.shop_id)
 
