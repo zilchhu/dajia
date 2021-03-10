@@ -1279,6 +1279,60 @@ const mt_shop_acts_diff = `SELECT t.wmpoiid shop_id, m.reptile_type shop_name, I
     HAVING COUNT(*) = 1
     ORDER BY t.wmpoiid, name, date`
 
+const mt_spareas_diff = `SELECT t.wmpoiid shop_id, m.reptile_type shop_name, IF(r.platform IS NULL, NULL, IF(r.platform = 1, '美团', '饿了么')) platform, r.person, 
+    '配送范围' title, longitude, latitude, logisticsAreas, minPrice, shippingFee, '-' date, insert_date
+    FROM
+    (
+    SELECT t1.wmpoiid, t1.longitude, t1.latitude, t1.logisticsAreas, t1.minPrice, t1.shippingFee, t1.insert_date
+    FROM foxx_spareas_info t1 -- 今天
+    WHERE insert_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(),INTERVAL 1 DAY) 
+    UNION ALL
+    SELECT t2.wmpoiid, t2.longitude, t2.latitude, t2.logisticsAreas, t2.minPrice, t2.shippingFee, t2.insert_date
+    FROM foxx_spareas_info t2 -- 昨天
+    WHERE insert_date BETWEEN DATE_SUB(CURDATE(),INTERVAL 1 DAY) AND CURDATE()
+    )  t
+    LEFT JOIN foxx_shop_reptile m USING(wmpoiid)
+    LEFT JOIN foxx_real_shop_info r ON t.wmpoiid = r.shop_id
+    GROUP BY t.wmpoiid, longitude, latitude, logisticsAreas, minPrice, shippingFee
+    HAVING COUNT(*) = 1
+    ORDER BY t.wmpoiid, longitude, latitude, insert_date`
+
+const elm_spareas_diff = `SELECT t.shop_id, e.shop_name, IF(r.platform IS NULL, NULL, IF(r.platform = 1, '美团', '饿了么')) platform, r.person, 
+    '配送范围' title, shop_product_desc, price_items, delivery_fee_items, '-' date,  insert_date
+    FROM
+    (
+    SELECT t1.shop_id, t1.shop_product_desc, t1.price_items, t1.delivery_fee_items, t1.insert_date
+    FROM ele_delivery_fee t1 -- 今天
+    WHERE insert_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(),INTERVAL 1 DAY) 
+    UNION ALL
+    SELECT t2.shop_id, t2.shop_product_desc, t2.price_items, t2.delivery_fee_items, t2.insert_date
+    FROM ele_delivery_fee t2 -- 昨天
+    WHERE insert_date BETWEEN DATE_SUB(CURDATE(),INTERVAL 1 DAY) AND CURDATE()
+    )  t
+    LEFT JOIN ele_info_manage e USING(shop_id)
+    LEFT JOIN foxx_real_shop_info r USING(shop_id)
+    GROUP BY t.shop_id, shop_product_desc, price_items, delivery_fee_items
+    HAVING COUNT(*) = 1
+    ORDER BY t.shop_id, shop_product_desc, insert_date`
+
+const elm_foods_diff = `SELECT t.shop_id, e.shop_name, IF(r.platform IS NULL, NULL, IF(r.platform = 1, '美团', '饿了么')) platform, r.person, 
+    '商品详情' title, category_name, global_id, name, activity_price, price, package_fee, min_purchase_quantity, '-' date,  insert_date
+    FROM
+    (
+    SELECT t1.shop_id, t1.category_name, t1.global_id, t1.name, t1.activity_price, t1.price, t1.package_fee, t1.min_purchase_quantity, t1.insert_date
+    FROM ele_food_manage t1 -- 今天
+    WHERE insert_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(),INTERVAL 1 DAY) 
+    UNION ALL
+    SELECT t2.shop_id, t2.category_name, t2.global_id, t2.name, t2.activity_price, t2.price, t2.package_fee, t2.min_purchase_quantity, t2.insert_date
+    FROM ele_food_manage t2 -- 昨天
+    WHERE insert_date BETWEEN DATE_SUB(CURDATE(),INTERVAL 1 DAY) AND CURDATE()
+    )  t
+    LEFT JOIN ele_info_manage e USING(shop_id)
+    LEFT JOIN foxx_real_shop_info r USING(shop_id)
+    GROUP BY t.shop_id, global_id, activity_price, price, package_fee, min_purchase_quantity
+    HAVING COUNT(*) = 1
+    ORDER BY t.shop_id, global_id, insert_date`
+
 async function date(d) {}
 
 async function addNewShop(
@@ -1523,9 +1577,30 @@ async function delMyt(shopId, loginName) {
 
 async function shopActsDiff() {
   try {
-    let data = await Promise.all([knx.raw(elm_shop_acts_diff), knx.raw(mt_shop_acts_diff)])
+    let data = await Promise.all([
+      knx.raw(elm_shop_acts_diff),
+      knx.raw(mt_shop_acts_diff),
+      knx.raw(mt_spareas_diff),
+      knx.raw(elm_spareas_diff),
+      knx.raw(elm_foods_diff)
+    ])
     data = data.map(v => v[0])
-    data = [...data[0], ...data[1]]
+    data = [
+      ...data[0],
+      ...data[1],
+      ...data[2].map(v => ({
+        ...v,
+        rule: `面积：${v.logisticsAreas}\n起送价：${v.minPrice}\n配送费：${v.shippingFee}`
+      })),
+      ...data[3].map(v => ({
+        ...v,
+        rule: `${v.shop_product_desc}\n起送价：${v.price_items}\n配送费：${v.delivery_fee_items}`
+      })),
+      ...data[4].map(v => ({
+        ...v,
+        rule: `${v.category_name}\n${v.name}\n价格：${v.price} / ${v.activity_price}\n餐盒费：${v.package_fee}\n最小起购：${v.min_purchase_quantity}`
+      }))
+    ].sort((a, b) => a.shop_id - b.shop_id)
 
     let res = new M(data).bind(split)
     let saveRes = await knx('test_change_t_')
