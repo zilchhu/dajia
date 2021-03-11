@@ -629,7 +629,7 @@ router.get('/shopActsDiff', async ctx => {
 router.post('/saveShopActsDiff', async ctx => {
   try {
     let { key, handle } = ctx.request.body
-    if (!key || !handle) {
+    if (!key) {
       ctx.body = { e: 'invalid params' }
       return
     }
