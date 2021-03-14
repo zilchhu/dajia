@@ -816,7 +816,7 @@ export default class Food {
     }
   }
 
-  async save2(name, attrs, minOrder, desc) {
+  async save2(name, attrs, minOrder, desc, notDeliverAlone) {
     let that = this
     try {
       const food = await this.find(name)
@@ -826,26 +826,27 @@ export default class Food {
       let category_id = temp.categoryId
       let wm_product_property_template_id = temp.wm_product_property_template_id
 
-      let { ok, properties_values, unreqs } = await isPropMatchReqs(temp.propertiesKeys, temp.properties_values)
-      if (!ok) return Promise.reject({ err: `properties required ${unreqs}` })
+      // let { ok, properties_values, unreqs } = await isPropMatchReqs(temp.propertiesKeys, temp.properties_values)
+      let properties_values = temp.properties_values
+      // // if (!ok) return Promise.reject({ err: `properties required ${unreqs}` })
 
-      if (ok) {
-        properties_values = Object.keys(properties_values).reduce((a, c) => {
-          let values = properties_values[c].map(cv => {
-            let r = temp.propertiesKeys.find(k => k.wm_product_lib_tag_name == cv.wm_product_lib_tag_name)
-            return {
-              ...r,
-              wm_product_property_template_id,
-              level: 2,
-              is_leaf: 1,
-              value: cv.value,
-              value_id: cv.value_id,
-              child: null
-            }
-          })
-          return { ...a, [c]: values }
-        }, {})
-      }
+      // if (ok) {
+      //   properties_values = Object.keys(properties_values).reduce((a, c) => {
+      //     let values = properties_values[c].map(cv => {
+      //       let r = temp.propertiesKeys.find(k => k.wm_product_lib_tag_name == cv.wm_product_lib_tag_name)
+      //       return {
+      //         ...r,
+      //         wm_product_property_template_id,
+      //         level: 2,
+      //         is_leaf: 1,
+      //         value: cv.value,
+      //         value_id: cv.value_id,
+      //         child: null
+      //       }
+      //     })
+      //     return { ...a, [c]: values }
+      //   }, {})
+      // }
 
       const props = await this.getProperties(category_id)
       let no = props.saleAttrs.length + 1
@@ -863,11 +864,13 @@ export default class Food {
         shipping_time_x: wmProductSpu.shipping_time_x,
         min_order_count: minOrder || wmProductSpu.min_order_count,
         wmProductPics: wmProductSpu.wmProductPics,
-        specialEffectPic: getSpecialEffectPic(wmProductSpu.wmProductPics),
+        specialEffectPic: wmProductSpu.specialEffectPic,
         properties_values: properties_values,
         description: desc || wmProductSpu.description,
         labelValues: wmProductSpu.labelValues || [],
-        labelList: wmProductSpu.labelList || [], // { id: 32, group_name: '单点不送', group_id: 18, sub_attr: '0' }
+        labelList: notDeliverAlone
+          ? { id: 32, group_name: '单点不送', group_id: 18, sub_attr: '0' }
+          : wmProductSpu.labelList || [], //
         newSpuAttrs: attrs
           ? wmProductSpu.newSpuAttrs.filter(a => a.name == '份量').concat(getNewSpuAttrs(attrs, no))
           : wmProductSpu.newSpuAttrs,
@@ -877,7 +880,11 @@ export default class Food {
           box_price: sku.box_price,
           spec: sku.spec || `（${sku.unit}）`,
           weight: sku.weight,
-          wmProductLadderBoxPrice: sku.wmProductLadderBoxPrice,
+          wmProductLadderBoxPrice: sku.wmProductLadderBoxPrice || {
+            status: 1,
+            ladder_num: sku.box_num,
+            ladder_price: sku.box_price
+          },
           wmProductStock: sku.wmProductStock || {
             id: '0',
             stock: -1,
@@ -909,6 +916,7 @@ export default class Food {
         productCardDisplayContent: wmProductSpu.productCardDisplayContent || ''
       }
 
+      // console.log(JSON.stringify(model))
       return this.save_(model)
     } catch (e) {
       return Promise.reject(e)

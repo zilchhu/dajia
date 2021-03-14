@@ -949,7 +949,7 @@ async function updatePlan(id, name, minOrder, price, boxPrice, actPrice, orderLi
   let results = {}
   try {
     const minOrderCount = await fallbackApp.food.getMinOrderCount(name)
-    const { ok } = await fallbackApp.food.setHighBoxPrice(0, true)
+    const { ok } = await fallbackApp.food.setHighBoxPrice2()
     if (ok) {
       if (price) {
         let skus = [
@@ -968,7 +968,7 @@ async function updatePlan(id, name, minOrder, price, boxPrice, actPrice, orderLi
         }
 
         if (minOrderCount != 1) {
-          const saveRes = await fallbackApp.food.save2(name, null, minOrder)
+          const saveRes = await fallbackApp.food.save2(name, null, minOrderCount)
           results.priceRes.saveRes = saveRes
         }
 
@@ -1010,16 +1010,23 @@ async function updatePlan(id, name, minOrder, price, boxPrice, actPrice, orderLi
   }
 }
 
+async function updateNotDeliverAlone(id, name) {
+  const fallbackApp = new FallbackApp(id)
+  try {
+    // const { ok } = await fallbackApp.food.setHighBoxPrice2()
+    if (true) {
+      return fallbackApp.food.save2(name, null, null, null, true)
+    } else return Promise.reject({ err: 'sync failed' })
+  } catch (e) {
+    return Promise.reject(e)
+  }
+}
+
 async function test_plan() {
   try {
-    let dataSource = await readXls(
-      'plan/美团择优门店折扣力度小于满减的商品(2).xlsx',
-      '美团择优门店折扣力度小于满减的商品'
-    )
-    let fails = await readJson('log/log.json')
-    dataSource = dataSource.filter(v => fails.find(k => k.meta[0] == v.id && k.meta[1] == v.itemName))
-    dataSource = dataSource.map((v, i) => [v.id, v.itemName, null, v.原价修改为, null, v.折扣价, null, i])
-    await loop(updatePlan, dataSource, false, { test: delFoods })
+    let data = readJson('log/log.json')
+    data = data.map(v => v.meta)
+    await loop(updateNotDeliverAlone, data, true, { test: delFoods })
   } catch (error) {
     console.error(error)
   }
@@ -1284,7 +1291,9 @@ async function test_delivery() {
     6950373
     9842782
     10083564
-    10014983`.split('\n').map(v => v.trim())
+    10014983`
+      .split('\n')
+      .map(v => v.trim())
     data = data.map(v => [v, 6.1])
     await loop(createDieliverAct, data, false)
   } catch (e) {
@@ -1586,12 +1595,12 @@ async function test_boxPrice() {
 // test_reduction2()
 // test_delivery()
 // test_reduction2()
-// test_plan()
+test_plan()
 // test_delTag()
 // test_delNewCustomer()
 // test_rename()
 // test_updateAct()1
 // test_delFoods()
 // test_testFood()
-test_updateAttrs2()
+// test_updateAttrs2()
 // test_updateImg()

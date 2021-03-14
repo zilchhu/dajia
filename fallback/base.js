@@ -19,6 +19,7 @@ let { cookie } = await knx('foxx_shop_reptile').first('cookie')
 
 let axiosConfig = {
   baseURL: 'https://waimaieapp.meituan.com',
+  timeout: 3500,
   responseType: 'json',
   headers: {
     Accept: '*/*',
@@ -75,8 +76,8 @@ instance.interceptors.response.use(
     }
 
     const shouldRetry =
-      (/ETIMEDOUT|ECONNRESET/.test(error.code) || error.msg == '服务器超时，请稍后再试') &&
-      config[namespace].retryCount < 3
+      (/ETIMEDOUT|ECONNRESET|ECONNABORTED/.test(error.code) || error.msg == '服务器超时，请稍后再试') &&
+      config[namespace].retryCount < 10
 
     if (shouldRetry) {
       config[namespace].retryCount += 1
