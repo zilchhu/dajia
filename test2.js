@@ -9,6 +9,8 @@ const axls2Json = util.promisify(xls2json)
 import sleep from 'sleep-promise'
 import knex from 'knex'
 import schedule from 'node-schedule'
+import flatten from 'flatten'
+
 const knx = knex({
   client: 'mysql',
   connection: {
@@ -449,6 +451,44 @@ async function updateImg(id, foodId, newUrl) {
     return Promise.resolve(foodUpdateImgRes)
   } catch (err) {
     return Promise.reject(err)
+  }
+}
+
+async function updateUnitC(id, name) {
+  const fallbackApp = new FallbackApp(id)
+  try {
+    let { ok } = await fallbackApp.food.setHighBoxPrice2()
+    if (ok) {
+      return fallbackApp.food.save2(name)
+    } else return Promise.reject('sync failed')
+  } catch (err) {
+    return Promise.reject(err)
+  }
+}
+
+async function test_updateImg() {
+  try {
+    let [data, _] = await knx.raw(`SELECT lq.*,f.wmPoiId wmpoiid2, f.picture picture2 FROM test_mt_food_lq_ lq 
+        LEFT JOIN foxx_food_manage f ON lq.name = f.name AND f.picture <> '' AND f.wmpoiid = 9230108
+        WHERE date = CURDATE() AND code = 3
+        GROUP BY lq.wmPoiId, lq.spuId, lq.code
+        ORDER BY lq.name`)
+    data = data.map(v => [v.wmPoiId, v.spuId, v.picture2])
+    await loop(updateImg, data, false)
+  } catch (err) {
+    console.log(err)
+  }
+}
+
+async function test_updateUnitC() {
+  try {
+    let [data, _] = await knx.raw(`SELECT lq.* FROM test_mt_food_lq_ lq 
+        WHERE code = 5
+        ORDER BY lq.wmPoiId`)
+    data = data.map((v, i) => [v.wmPoiId, v.name, i])
+    await loop(updateUnitC, data, false, { test: delFoods })
+  } catch (err) {
+    console.log(err)
   }
 }
 
@@ -973,6 +1013,7 @@ async function updatePlan(id, name, minOrder, price, boxPrice, actPrice, orderLi
         }
 
         if (!delActRes.noAct) {
+          await sleep(2000)
           const createActRes = await createAct(id, name, delActRes.actPrice, delActRes.orderLimit)
           results.createActRes = createActRes
         }
@@ -1024,9 +1065,27 @@ async function updateNotDeliverAlone(id, name) {
 
 async function test_plan() {
   try {
-    let data = readJson('log/log.json')
-    data = data.map(v => v.meta)
-    await loop(updateNotDeliverAlone, data, true, { test: delFoods })
+    let data = await readJson('log/log.json')
+    let discounts = await Promise.all(
+      data.map(async v =>
+        knx.raw(`SELECT t1.wmpoiid, t1.itemName, t1.actInfo, t1.actPrice, t1.orderLimit, t1.manual_sorting, t1.isTop, t1.startTime, t1.endTime, t1.date
+    FROM foxx_market_activit_my_discounts t1 -- 今天
+    WHERE date = CURDATE() AND wmpoiid = ${v.meta[0]} AND itemName = "${v.meta[1]}"`)
+      )
+    )
+    data = data.map((v, i) => [
+      v.meta[0],
+      v.meta[1],
+      v.meta[2],
+      v.meta[3],
+      v.meta[4],
+      discounts[1][0][0].actPrice,
+      discounts[1][0][0].orderLimit,
+      i
+    ])
+
+    // console.table(data)
+    await loop(updatePlan, data, false, { test: delFoods })
   } catch (error) {
     console.error(error)
   }
@@ -1569,6 +1628,41 @@ async function test_boxPrice() {
   }
 }
 
+async function listLowQuals(id) {
+  const fallbackApp = new FallbackApp(id)
+  try {
+    const { wmLowQualitySpus } = await fallbackApp.food.listLqs()
+    let data = wmLowQualitySpus.map(spu =>
+      spu.wmLowQualityEntityList.map(entity => ({
+        wmPoiId: id,
+        spuId: spu.spuId,
+        name: spu.name,
+        picture: spu.picture,
+        priceRange: spu.priceRange,
+        monthSaled: spu.monthSaled,
+        code: entity.code,
+        desc: entity.desc
+      }))
+    )
+    data = flatten(data)
+    if (data.length == 0) return Promise.resolve('no lqs')
+    return knx('test_mt_food_lq_').insert(data)
+  } catch (err) {
+    return Promise.reject(err)
+  }
+}
+
+async function test_lq() {
+  try {
+    const app = new FallbackApp()
+    let data = await app.poi.list()
+    data = data.map(v => [v.id])
+    await loop(listLowQuals, data, false)
+  } catch (e) {
+    console.log(e)
+  }
+}
+
 // test_stock()
 // test_saveFood()
 // test_updateAct()
@@ -1595,7 +1689,7 @@ async function test_boxPrice() {
 // test_reduction2()
 // test_delivery()
 // test_reduction2()
-test_plan()
+// test_plan()
 // test_delTag()
 // test_delNewCustomer()
 // test_rename()
@@ -1604,3 +1698,5 @@ test_plan()
 // test_testFood()
 // test_updateAttrs2()
 // test_updateImg()
+test_updateUnitC()
+// test_lq()

@@ -892,72 +892,13 @@ async function a(wmPoiId) {
     //   .where({ restaurantType: 'LEAF' })
     // data = data.map(v => [v.id])
     // await loop(updateCoupon, data, true)
-    // let data = [
-    //   7486501,
-    //   8195835,
-    //   7973175,
-    //   9014461,
-    //   9392676,
-    //   9876250,
-    //   9920776,
-    //   9963039,
-    //   10014983,
-    //   10061444,
-    //   10096784,
-    //   10156945,
-    //   10231556,
-    //   9457484,
-    //   10285968,
-    //   9236042,
-    //   7373263,
-    //   9802089,
-    //   4799060,
-    //   6950373,
-    //   8135116,
-    //   9314533,
-    //   9576423,
-    //   9901167,
-    //   10083564,
-    //   7740255,
-    //   9724838,
-    //   2924399,
-    //   7673028,
-    //   8996740,
-    //   9271561,
-    //   10093423,
-    //   10096753,
-    //   10148964,
-    //   10479865,
-    //   10549708,
-    //   8670629,
-    //   9153911,
-    //   9812382,
-    //   9820648,
-    //   9725155,
-    //   9391341,
-    //   9481181,
-    //   9483822,
-    //   10480104,
-    //   9199827,
-    //   7882136,
-    //   9230108,
-    //   9249572,
-    //   9355348,
-    //   10373360,
-    //   9206400,
-    //   8540299,
-    //   8999546,
-    //   9123504,
-    //   9134834,
-    //   9921225,
-    //   10603386,
-    //   9435009
-    // ]
     // data = data.map(v => [v])
     // await loop(closeBj, data, false)
     // let data = await readXls('plan/3-1批量修改.xls', '饿了么分类名修改')
     // data = data.map(v => [v.shop_id, v.category_name, v.修改后的分类名])
     // await loop(updateFoodCat, data, false)
+    // let res = await execRequest(instanceElm, y.requests.elm['推广福利/get'], [2000506173], xshard(2000506173))
+    // console.log(res)
   } catch (error) {
     console.error(error)
     fs.writeFileSync('log/log.json', JSON.stringify(error))
@@ -1672,7 +1613,7 @@ async function freshElm(userTasks, userRule) {
               .filter(v => v.status == 'fulfilled' && v.value.itemOfName.length > 0)
               .map(v => v.value.itemOfName[0])
               .map(v => ({ name: v.name, itemId: v.id, shopId: shopId }))
-            let image = y.rules.elm['店内海报']['甜品']
+            let image = y.rules.elm['店内海报'][shopType]
 
             return execRequest(
               instanceElm,

@@ -151,6 +151,16 @@ export default class Food {
     }
   }
 
+  async listLqs() {
+    let params = {
+      queryCount: 0,
+      pageNum: 1,
+      pageSize: 100,
+      wmPoiId: this.wmPoiId
+    }
+    return instance.get(urls.food.listLqs, { params })
+  }
+
   async searchTag(name) {
     try {
       const tags = await this.listTags()
@@ -852,6 +862,11 @@ export default class Food {
       let no = props.saleAttrs.length + 1
 
       // console.log(wmProductSpu.newSpuAttrs.map(a => a.name == '份量').concat(getNewSpuAttrs(attrs, no)))
+      let unitAttr = wmProductSpu.newSpuAttrs.findIndex(a => a.name == '份量')
+      if(unitAttr != -1 && wmProductSpu.newSpuAttrs[unitAttr].weight == -1 && wmProductSpu.newSpuAttrs[unitAttr].weightUnit == '') {
+        wmProductSpu.newSpuAttrs[unitAttr].weight = -2
+        wmProductSpu.newSpuAttrs[unitAttr].weightUnit = "1人份"
+      }
 
       let model = {
         id: wmProductSpu.id,
@@ -876,9 +891,9 @@ export default class Food {
           : wmProductSpu.newSpuAttrs,
         stockAndBoxPriceSkus: wmProductSpu.wmProductSkus.map(sku => ({
           price: sku.price,
-          unit: sku.unit,
+          unit: sku.unit || '1人份',
           box_price: sku.box_price,
-          spec: sku.spec || `（${sku.unit}）`,
+          spec: sku.spec || `（${sku.unit || '1人份'}）`,
           weight: sku.weight,
           wmProductLadderBoxPrice: sku.wmProductLadderBoxPrice || {
             status: 1,
@@ -898,7 +913,7 @@ export default class Food {
                   {
                     name: '份量',
                     name_id: 0,
-                    value: `${sku.unit}__默认`,
+                    value: `${sku.unit || '1人份'}__默认`,
                     value_id: 0,
                     no: 0
                   }

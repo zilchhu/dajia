@@ -1415,6 +1415,15 @@ requests:
         - request/shopId
         - request/playRules
 
+    推广福利/get:
+      url: https://app-api.shop.ele.me/alchemy/invoke/?method=shopCouponAPI.getWelfareDetails
+      body:
+        shopId: "2000506173"
+        type: "MAGIC_COIN"
+        status: "TO_RECEIVE"
+      requires:
+        - shopId
+        
     # 商品
     分类列表/get:
       url: https://app-api.shop.ele.me/nevermore.goods/invoke/?method=FoodService.queryCategoryWithFoodFilter

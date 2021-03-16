@@ -51,7 +51,8 @@ const urls = {
     delTag: '/reuse/product/food/w/deleteTagById',
     getTemp: 'reuse/product/properties/r/template',
     getProperties: 'reuse/product/properties/r/properties',
-    saveTag: 'reuse/product/food/w/saveTagInfo'
+    saveTag: 'reuse/product/food/w/saveTagInfo',
+    listLqs: 'reuse/product/food/quality/r/spuList'
   },
   poi: {
     list: '/v2/shop/businessStatus/r/poiListSearch'

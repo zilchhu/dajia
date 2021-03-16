@@ -641,6 +641,31 @@ router.post('/saveShopActsDiff', async ctx => {
   }
 })
 
+router.post('/saveFreshA', async ctx => {
+  try {
+    let { wmPoiId, a2, updated_at } = ctx.request.body
+    if (!wmPoiId || !updated_at) {
+      ctx.body = { e: 'invalid params' }
+      return
+    }
+    const res = await saveFreshA(wmPoiId, a2, updated_at)
+    ctx.body = { res }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
+
+router.get('/freshas', async ctx => {
+  try {
+    let data = await knx('new_shop_track_copy1').select()
+    ctx.body = { res: data }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
+
 koa.use(router.routes())
 
 koa.listen(9005, () => console.log('running at 9005'))
@@ -709,16 +734,17 @@ const sum_sql2 = `
   GROUP BY real_shop, ym ORDER BY ym DESC
 `
 
-const fresh_sql = `SELECT a.*, e.cost_ratio, IFNULL(b.shop_name, c.reptile_type) AS name, IF(ISNULL(b.shop_name),'美团', '饿了么') AS platform, f.new_person
-FROM foxx_new_shop_track a
-LEFT JOIN ele_info_manage b ON a.wmpoiid = b.shop_id 
-LEFT JOIN foxx_shop_reptile c USING(wmpoiid)
-LEFT JOIN foxx_new_shop d ON a.wmpoiid = d.shop_id
-LEFT JOIN foxx_operating_data e ON a.wmpoiid = e.shop_id AND a.date = e.date
-LEFT JOIN foxx_real_shop_info f ON a.wmpoiid = f.shop_id 
-WHERE (b.shop_name IS NOT NULL OR c.reptile_type IS NOT NULL)
-AND d.status <> 9 AND DATEDIFF(a.date, d.shop_start_date) BETWEEN 1 AND 30
-ORDER BY a.wmpoiid, a.date DESC`
+const fresh_sql = `SELECT a.*, e.cost_ratio, IFNULL(b.shop_name, c.reptile_type) AS name, IF(ISNULL(b.shop_name),'美团', '饿了么') AS platform, f.new_person, g.a2
+    FROM foxx_new_shop_track a
+    LEFT JOIN ele_info_manage b ON a.wmpoiid = b.shop_id 
+    LEFT JOIN foxx_shop_reptile c USING(wmpoiid)
+    LEFT JOIN foxx_new_shop d ON a.wmpoiid = d.shop_id
+    LEFT JOIN foxx_operating_data e ON a.wmpoiid = e.shop_id AND a.date = e.date
+    LEFT JOIN foxx_real_shop_info f ON a.wmpoiid = f.shop_id 
+    LEFT JOIN new_shop_track_copy1 g ON a.wmpoiid = g.wmpoiid AND g.updated_at = CURDATE()
+    WHERE (b.shop_name IS NOT NULL OR c.reptile_type IS NOT NULL)
+    AND d.status <> 9 AND DATEDIFF(a.date, d.shop_start_date) BETWEEN 1 AND 30 AND f.new_person IS NOT NULL
+    ORDER BY a.wmpoiid, a.date DESC`
 
 const perf_sql = d => `WITH a AS (
     SELECT city, person, real_shop, income_sum, income_avg, income_score, cost_sum, cost_avg, cost_sum_ratio, cost_score, consume_sum, consume_avg, consume_sum_ratio, consume_score, score, date
@@ -1655,11 +1681,15 @@ async function shopActsDiff() {
       })),
       ...data[4].map(v => ({
         ...v,
-        rule: `${v.category_name}  ${v.on_shelf == '下架' ? '下架' : ''}\n${v.name}\n价格：${v.price} / ${v.activity_price}\n餐盒费：${v.package_fee}\n最小起购：${v.min_purchase_quantity}`
+        rule: `${v.category_name}  ${v.on_shelf == '下架' ? '下架' : ''}\n${v.name}\n价格：${v.price} / ${
+          v.activity_price
+        }\n餐盒费：${v.package_fee}\n最小起购：${v.min_purchase_quantity}`
       })),
       ...data[5].map(v => ({
         ...v,
-        rule: `${v.tagName}  ${v.sellStatus == 1 ? '下架' : ''}\n${v.name}\n价格：${v.price / 100}\n餐盒费：${v.boxPrice}`
+        rule: `${v.tagName}  ${v.sellStatus == 1 ? '下架' : ''}\n${v.name}\n价格：${v.price / 100}\n餐盒费：${
+          v.boxPrice
+        }`
       })),
       ...data[6].map(v => ({
         ...v,
@@ -1727,6 +1757,21 @@ async function saveShopActsDiff(key, handle) {
     return knx('test_change_t_')
       .where({ key })
       .update({ handle })
+  } catch (e) {
+    return Promise.reject(e)
+  }
+}
+
+async function saveFreshA(wmpoiid, a2, updated_at) {
+  try {
+    return knx('new_shop_track_copy1')
+      .insert({
+        wmpoiid,
+        a2,
+        updated_at
+      })
+      .onConflict(['wmpoiid', 'updated_at'])
+      .merge()
   } catch (e) {
     return Promise.reject(e)
   }
@@ -2128,7 +2173,7 @@ async function fresh() {
       red_packet_recharge: '高拥返现',
       ranknum: '商圈排名',
       extend: '延迟发单',
-      placeholder: ''
+      a2: '优化'
     }
     let dates = distinct(xs, 'date').sort((a, b) => b - a)
     let ys = names.map(name =>
