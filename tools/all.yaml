@@ -218,14 +218,16 @@ rules:
     贡茶: [奶茶, 煎饼果子/卷饼/手抓饼]
 
   店内海报:
-    甜品: //p0.meituan.net/business/5721aee0ede6dc8e591992ad23aae289701972.png
+    甜品: //p0.meituan.net/business/5eb5b7bf19febaacced4209d3235e6ac159109.png
     贡茶: //p0.meituan.net/business/bc720a60576ece71c0fd1c41bff95144188130.png
 
   品牌故事:
     甜品: 89016
     贡茶: 169026
 
-  店铺招牌: http://p0.meituan.net/business/433dc89983bafac0f4e525cf69635765140960.png
+  店铺招牌: 
+    甜品: http://p0.meituan.net/business/06e2065297aa20627ff209591f3bd7f1158848.png
+    贡茶: http://p0.meituan.net/business/5666fd6f3bc5df6865d3bd03bba3ec1d140706.png
 
   elm:
     店铺招牌: 14436709
@@ -817,7 +819,6 @@ requests:
       body:
         wmPoiIdStr: 10085676
         acctId: 23262521
-        token: 0k67YtjxZVQG8ST2AzIafR-TOztFmoBk02Fs8kaU_uIQ*
         keyWords: 招牌芋圆
         pageNum: 1
         pageSize: 50

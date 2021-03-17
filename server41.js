@@ -656,6 +656,48 @@ router.post('/saveFreshA', async ctx => {
   }
 })
 
+router.get('/notes', async ctx => {
+  try {
+    let data = await knx('test_notes_t_')
+      .select()
+      .orderBy('updated_at', 'desc')
+    ctx.body = { res: data.reverse() }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
+
+router.post('/saveNote', async ctx => {
+  try {
+    let { key, title, description, content } = ctx.request.body
+    if (!content) {
+      ctx.body = { e: 'invalid params' }
+      return
+    }
+    const res = await saveNote(key, title, description, content)
+    ctx.body = { res }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
+
+router.post('/delNote', async ctx => {
+  try {
+    let { key } = ctx.request.body
+    if (!key) {
+      ctx.body = { e: 'invalid params' }
+      return
+    }
+    const res = await delNote(key)
+    ctx.body = { res }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
+
 router.get('/freshas', async ctx => {
   try {
     let data = await knx('new_shop_track_copy1').select()
@@ -1772,6 +1814,33 @@ async function saveFreshA(wmpoiid, a2, updated_at) {
       })
       .onConflict(['wmpoiid', 'updated_at'])
       .merge()
+  } catch (e) {
+    return Promise.reject(e)
+  }
+}
+
+async function saveNote(key, title, description, content) {
+  try {
+    return knx('test_notes_t_')
+      .insert({
+        key,
+        title,
+        description,
+        content,
+        updated_at: dayjs().format('YYYY-MM-DD HH:mm:ss')
+      })
+      .onConflict('key')
+      .merge()
+  } catch (e) {
+    return Promise.reject(e)
+  }
+}
+
+async function delNote(key) {
+  try {
+    return knx('test_notes_t_')
+      .where({ key })
+      .del()
   } catch (e) {
     return Promise.reject(e)
   }

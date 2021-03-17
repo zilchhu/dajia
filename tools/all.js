@@ -1292,7 +1292,10 @@ async function freshMt(userTasks, userRule) {
           try {
             if (!sourcePoiId) return Promise.reject('invalid params')
             let acts = await execRequest(undefined, y.requests.mt['折扣商品/get'], [sourcePoiId])
-            const actsT = await execRequest(undefined, y.requests.mt['折扣商品/get'], [wmPoiId])
+            let actsT = []
+            try {
+              actsT = await execRequest(undefined, y.requests.mt['折扣商品/get'], [wmPoiId])
+            } catch (e) {}
             acts = acts
               .filter(item => !(item.priority === 1200 || item.priority === 1400 || item.priority === 1600))
               .filter(item => !actsT.find(k => k.itemName == item.itemName))
@@ -1407,7 +1410,9 @@ async function freshMt(userTasks, userRule) {
                 : searchRace2(y.requests.mt['商品列表4/search'], v, wmPoiId)
             )
             let goods = await Promise.allSettled(promises)
+            console.log(goods)
             goods = goods.filter(v => v.status == 'fulfilled' && v.value.length > 0).map(v => v.value[0])
+
             return execRequest(
               undefined,
               y.requests.mt['店内海报/create'],
@@ -1451,7 +1456,7 @@ async function freshMt(userTasks, userRule) {
         fn: async function() {
           try {
             const signages = await execRequest(undefined, y.requests.mt['店铺招牌/get'], {}, cookie(-1))
-            const signage = signages.find(v => v.signagePicUrl == y.rules['店铺招牌'])
+            const signage = signages.find(v => v.signagePicUrl == y.rules['店铺招牌'][wmPoiType])
             if (!signage) return Promise.reject({ err: 'signage not found' })
             if (signage.wmPoiIds.includes(parseInt(wmPoiId))) return Promise.reject({ err: 'signage has been binded' })
             let newPoiIds = [...signage.wmPoiIds, wmPoiId].join(',')

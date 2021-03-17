@@ -1698,5 +1698,5 @@ async function test_lq() {
 // test_testFood()
 // test_updateAttrs2()
 // test_updateImg()
-test_updateUnitC()
-// test_lq()
+// test_updateUnitC()
+test_lq()
