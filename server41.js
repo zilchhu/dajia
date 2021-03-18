@@ -716,6 +716,20 @@ router.post('/saveNote', async ctx => {
   }
 })
 
+router.post('/likeNote', async ctx => {
+  try {
+    let { key } = ctx.request.body
+    if (!key) {
+      ctx.body = { e: 'invalid params' }
+      return
+    }
+    const res = await likeNote(key, ctx.request.ip)
+    ctx.body = { res }
+  } catch (e) {
+    ctx.body = { e }
+  }
+})
+
 router.post('/delNote', async ctx => {
   try {
     let { key } = ctx.request.body
@@ -1865,6 +1879,21 @@ async function saveNote(key, title, description, content, images) {
       })
       .onConflict('key')
       .merge()
+  } catch (e) {
+    return Promise.reject(e)
+  }
+}
+
+async function likeNote(key, ip) {
+  try {
+    const data = await knx('test_notes_t_')
+      .where({ key })
+      .first()
+    if (!data) return Promise.reject('no data')
+    if (data.likes.includes(ip)) return Promise.reject('liked')
+    return knx('test_notes_t_')
+      .where({ key })
+      .update({ likes: data.likes != '' ? `${data.likes}|${ip}` : ip })
   } catch (e) {
     return Promise.reject(e)
   }
