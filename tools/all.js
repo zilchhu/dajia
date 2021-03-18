@@ -44,7 +44,9 @@ const router = new Router()
 
 const y = readYaml('tools/all.yaml')
 
-let singleCookie = await knx('foxx_shop_reptile').first('cookie')
+let singleCookie = await knx('foxx_shop_reptile')
+  // .where('reptile_type', 'like', '%大计划%')
+  .first('cookie')
 singleCookie = singleCookie.cookie
 
 y.headers['基本设置']['Cookie'] = singleCookie

@@ -46,7 +46,7 @@ router.post('/custom', async ctx => {
   try {
     let { sql } = ctx.request.body
     console.log(sql)
-    if (!sql) {
+    if (!sql || sql.toLowerCase().includes('delete')) {
       ctx.body = { err: 'invalid params' }
       return
     }
@@ -59,7 +59,7 @@ router.post('/custom', async ctx => {
 router.post('/customs', async ctx => {
   try {
     let { sqls } = ctx.request.body
-    if (!sqls) {
+    if (!sqls || sqls.some(v => v.toLowerCase().includes('delete'))) {
       ctx.body = { err: 'invalid params' }
       return
     }
@@ -72,7 +72,7 @@ router.post('/customs', async ctx => {
 router.post('/customs2', async ctx => {
   try {
     let { sqls } = ctx.request.body
-    if (!sqls) {
+    if (!sqls || sqls.some(v => v.sql.toLowerCase().includes('delete'))) {
       ctx.body = { err: 'invalid params' }
       return
     }

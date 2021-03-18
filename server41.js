@@ -2,8 +2,11 @@ import Koa from 'koa'
 import Router from 'koa-router'
 import bodyParser from 'koa-bodyparser'
 import cors from 'koa2-cors'
+import multer from '@koa/multer'
+import serve from 'koa-static'
 import flatten from 'flatten'
 import fs from 'fs'
+import path from 'path'
 import axios from 'axios'
 import md5 from 'md5'
 
@@ -94,6 +97,16 @@ class M {
 
 const koa = new Koa()
 const router = new Router()
+const upload = multer({
+  storage: multer.diskStorage({
+    destination: function(req, file, cb) {
+      cb(null, './uploads')
+    },
+    filename: function(req, file, cb) {
+      cb(null, file.originalname + '-' + Date.now() + path.extname(file.originalname))
+    }
+  })
+})
 
 koa.use(cors())
 
@@ -104,6 +117,26 @@ koa.use(
     }
   })
 )
+
+koa.use(serve('./uploads/'))
+
+router.post('/upload', async (ctx, next) => {
+  let err = await upload
+    .single('file')(ctx, next)
+    .then(res => res)
+    .catch(err => err)
+  if (err) {
+    ctx.body = {
+      code: 0,
+      e: err.message
+    }
+  } else {
+    ctx.body = {
+      code: 1,
+      res: ctx.file
+    }
+  }
+})
 
 router.get('/date/:date', async ctx => {})
 
@@ -661,7 +694,7 @@ router.get('/notes', async ctx => {
     let data = await knx('test_notes_t_')
       .select()
       .orderBy('updated_at', 'desc')
-    ctx.body = { res: data.reverse() }
+    ctx.body = { res: data }
   } catch (e) {
     console.log(e)
     ctx.body = { e }
@@ -670,12 +703,12 @@ router.get('/notes', async ctx => {
 
 router.post('/saveNote', async ctx => {
   try {
-    let { key, title, description, content } = ctx.request.body
+    let { key, title, description, content, images } = ctx.request.body
     if (!content) {
       ctx.body = { e: 'invalid params' }
       return
     }
-    const res = await saveNote(key, title, description, content)
+    const res = await saveNote(key, title, description, content, images)
     ctx.body = { res }
   } catch (e) {
     console.log(e)
@@ -1819,7 +1852,7 @@ async function saveFreshA(wmpoiid, a2, updated_at) {
   }
 }
 
-async function saveNote(key, title, description, content) {
+async function saveNote(key, title, description, content, images) {
   try {
     return knx('test_notes_t_')
       .insert({
@@ -1827,6 +1860,7 @@ async function saveNote(key, title, description, content) {
         title,
         description,
         content,
+        images,
         updated_at: dayjs().format('YYYY-MM-DD HH:mm:ss')
       })
       .onConflict('key')
