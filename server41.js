@@ -9,6 +9,7 @@ import fs from 'fs'
 import path from 'path'
 import axios from 'axios'
 import md5 from 'md5'
+import uuid from 'uuid'
 
 import Poi from './fallback/poi.js'
 // import { getAllElmShops } from './tools/all.js'
@@ -724,6 +725,20 @@ router.post('/likeNote', async ctx => {
       return
     }
     const res = await likeNote(key, ctx.request.ip)
+    ctx.body = { res }
+  } catch (e) {
+    ctx.body = { e }
+  }
+})
+
+router.post('/commentNote', async ctx => {
+  try {
+    let { key, comment } = ctx.request.body
+    if (!key || !comment) {
+      ctx.body = { e: 'invalid params' }
+      return
+    }
+    const res = await commentNote(key, ctx.request.ip, comment)
     ctx.body = { res }
   } catch (e) {
     ctx.body = { e }
@@ -1894,6 +1909,25 @@ async function likeNote(key, ip) {
     return knx('test_notes_t_')
       .where({ key })
       .update({ likes: data.likes != '' ? `${data.likes}|${ip}` : ip })
+  } catch (e) {
+    return Promise.reject(e)
+  }
+}
+
+async function commentNote(key, ip, comment) {
+  try {
+    const data = await knx('test_notes_t_')
+      .where({ key })
+      .first()
+    if (!data) return Promise.reject('no data')
+    let com = { id: uuid.v4(), ip, comment, replies: [], inserted_at: dayjs().format('YYYY-MM-DD HH:mm:ss') }
+    let coms = data.comments ? [...JSON.parse(data.comments), com] : [com]
+
+    const res = await knx('test_notes_t_')
+      .where({ key })
+      .update({ comments: JSON.stringify(coms) })
+    if(res != 1) return Promise.reject('error')
+    return Promise.resolve(JSON.stringify(coms))
   } catch (e) {
     return Promise.reject(e)
   }
