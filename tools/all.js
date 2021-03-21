@@ -48,6 +48,7 @@ let singleCookie = await knx('foxx_shop_reptile')
   // .where('reptile_type', 'like', '%大计划%')
   .first('cookie')
 singleCookie = singleCookie.cookie
+// singleCookie = "_lxsdk_cuid=1783f1010f2c8-0e0093e53152ba-13e3563-1fa400-1783f1010f3c8; _lxsdk=1783f1010f2c8-0e0093e53152ba-13e3563-1fa400-1783f1010f3c8; mtcdn=K; userTicket=OvHjUDUuybdMIOUdDcBTzgFrhFfwreIHGizuyUWf; u=97130574; n=Pjl617135409; _ga=GA1.2.1024151421.1615966028; _gid=GA1.2.688150990.1615966028; device_uuid=!b0bafb3f-51d6-4db9-a54f-8a65d0806873; uuid_update=true; wpush_server_url=wss://wpush.meituan.com; shopCategory=food; acctId=94861229; token=0suQC0euCzaVZAQmxsFlRndRl14_WjA8zUsHJauuq_Zs*; brandId=-1; wmPoiId=11270787; isOfflineSelfOpen=0; city_id=110105; isChain=0; existBrandPoi=false; ignore_set_router_proxy=false; region_id=1000110100; region_version=1615966500; newCategory=false; bsid=s7nRKxwEpQWVfQI9PXYd9DcWHlS0mVffFIqLtsMGrotc-wszcD-XMSeFaapuAVSAiLobRxwGTdOMMj0Mrg436Q; logistics_support=1; cityId=440300; provinceId=440000; city_location_id=110100; location_id=110105; pushToken=0suQC0euCzaVZAQmxsFlRndRl14_WjA8zUsHJauuq_Zs*; set_info=%7B%22wmPoiId%22%3A11270787%2C%22region_id%22%3A%221000110100%22%2C%22region_version%22%3A1615966500%7D; JSESSIONID=15w4zxe2titx01f1gdl91je4ql; setPrivacyTime=1_20210319; logan_custom_report=; logan_session_token=agihjwkae4m05sosdbnm; _lxsdk_s=178494b46fe-7f8-ee7-ebb%7C%7C29"
 
 y.headers['基本设置']['Cookie'] = singleCookie
 y.headers['店铺设置']['Cookie'] = singleCookie
@@ -365,7 +366,7 @@ function execRequest(inst = instance, req, args, headers) {
         {}
       )
     }
-    console.log(body)
+    // console.log(body)
     // return
     return inst.post(url, body, { headers })
   } catch (err) {
@@ -901,6 +902,12 @@ async function a(wmPoiId) {
     // await loop(updateFoodCat, data, false)
     // let res = await execRequest(instanceElm, y.requests.elm['推广福利/get'], [2000506173], xshard(2000506173))
     // console.log(res)
+
+    let buff = fs.readFileSync(`image/小酥肉根套餐(天天神券可用).gif`)
+    let base64data = buff.toString('base64')
+
+    const upR = await execRequest(undefined, y.requests.mt['上传图片'], [base64data], y.headers['店铺设置'])
+    console.log(upR)
   } catch (error) {
     console.error(error)
     fs.writeFileSync('log/log.json', JSON.stringify(error))
@@ -1127,9 +1134,9 @@ koa.listen(9010, () => console.log('running at 9010'))
 
 async function freshMt(userTasks, userRule) {
   try {
-    const { wmPoiId, wmPoiType, wmPoiReducType, sourcePoiId } = userRule
+    const { wmPoiId, wmPoiType, sourcePoiId, reducSourcePoiId } = userRule
 
-    if (!wmPoiId || !wmPoiType || !wmPoiReducType) return Promise.reject('invalid params')
+    if (!wmPoiId || !wmPoiType ) return Promise.reject('invalid params')
 
     const allTasks = [
       {
@@ -1156,14 +1163,18 @@ async function freshMt(userTasks, userRule) {
         name: '满减活动',
         fn: async function() {
           try {
-            const policy = y.rules['满减活动'][wmPoiReducType].map(([a, b]) => ({
-              price: a,
+            if(!reducSourcePoiId) return Promise.reject('no reducid')
+            const fallbackApp = new FallbackApp(reducSourcePoiId)
+            let spolicy = await fallbackApp.act.reduction.find()
+            spolicy = JSON.parse(spolicy.policy)
+            const policy = spolicy.policy_detail.map(v => ({
+              price: v.price,
               discounts: [
                 {
                   code: 1,
                   type: 'default',
-                  discount: b,
-                  poi_charge: b,
+                  discount: v.discounts[0].discount,
+                  poi_charge: v.discounts[0].discount,
                   mt_charge: 0,
                   agent_charge: 0
                 }

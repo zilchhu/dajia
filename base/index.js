@@ -3,7 +3,6 @@ import md5 from 'md5'
 import dayjs from 'dayjs'
 import qs from 'qs'
 import omit from 'omit'
-import fetch from 'node-fetch'
 
 import urls_ from './url.js'
 
@@ -39,7 +38,7 @@ instance.interceptors.request.use(
 
 instance.interceptors.response.use(
   res => {
-    if(res.data.error) {
+    if (res.data.error) {
       return Promise.reject(res.data.error)
     } else {
       return res.data.data
@@ -79,6 +78,15 @@ export function time(time) {
 
 export default instance
 export const urls = urls_
+
+export async function prepMeal(poiCode, orderId) {
+  try {
+    let res = await instance.get(urls_.order.preparationMealComplete, { params: { order_id: orderId } })
+    console.log(poiCode, orderId, res)
+  } catch (e) {
+    console.error(e)
+  }
+}
 
 let a = `https://waimaiopen.meituan.com/api/v1/foodCat/update?app_id=5339&app_poi_code=t_fLkr2jOW5A&category_name=晚餐套餐&category_name_origin=&sequence=&timestamp=16068090158fb39ea54dbcb28b9795004bd3fb3eb5`
 

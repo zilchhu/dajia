@@ -702,6 +702,14 @@ requests:
         - wmPoiIdAndActIds
 
     ### 商品
+    上传图片:
+      url: https://waimaie.meituan.com/reuse/product/uploadTool/w/uploadImg
+      body:
+        multipart: ''
+        needPicPropaganda: 1
+      requires:
+        - multipart
+
     商品列表/search:
       url: https://waimaie.meituan.com/reuse/product/food/r/searchByName
       params:

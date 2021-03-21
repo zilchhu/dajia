@@ -646,6 +646,316 @@ router.get('/order/elm/:shopId', async ctx => {
   }
 })
 
+router.get('/probs/a', async ctx => {
+  try {
+    let [data, _] = await knx.raw(原价扣点城市折扣与原价差距大于2)
+    ctx.body = { res: data.map((v, i) => ({ ...v, key: i })) }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
+
+router.get('/probs/b', async ctx => {
+  try {
+    let [data, _] = await knx.raw(商品无餐盒费)
+    ctx.body = { res: data.map((v, i) => ({ ...v, key: i, 原价: fixed2(v.原价) })) }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
+
+router.get('/probs/c', async ctx => {
+  try {
+    let [data, _] = await knx.raw(美团薯饼虾饼鸡柳设置两份起购)
+    ctx.body = { res: data.map((v, i) => ({ ...v, key: i })) }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
+
+router.get('/probs/d', async ctx => {
+  try {
+    let [data, _] = await knx.raw(餐盒费为0常规餐品设置餐盒费1)
+    ctx.body = { res: data.map((v, i) => ({ ...v, key: i })) }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
+
+router.get('/probs/e', async ctx => {
+  try {
+    let [data, _] = await knx.raw(_0_01两份起购餐盒费调整为1_5)
+    ctx.body = { res: data.map((v, i) => ({ ...v, key: i })) }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
+
+router.get('/probs/f', async ctx => {
+  try {
+    let [data, _] = await knx.raw(折扣餐品原价_餐盒费会起送)
+    ctx.body = { res: data.map((v, i) => ({ ...v, key: i })) }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
+
+router.get('/probs/g', async ctx => {
+  try {
+    let [data, _] = await knx.raw(原价扣点城市产品原价与折扣价差距超过1_1)
+    ctx.body = { res: data.map((v, i) => ({ ...v, key: i })) }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
+
+router.get('/probs/h', async ctx => {
+  try {
+    let [data, _] = await knx.raw(_0元购有餐盒费)
+    ctx.body = { res: data.map((v, i) => ({ ...v, key: i })) }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
+
+router.get('/probs/i', async ctx => {
+  try {
+    let [data, _] = await knx.raw(加料门店)
+    ctx.body = { res: data.map((v, i) => ({ ...v, key: i })) }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
+
+router.get('/probs/j', async ctx => {
+  try {
+    let [data, _] = await knx.raw(零元商品有餐盒费)
+    ctx.body = { res: data.map((v, i) => ({ ...v, key: i })) }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
+
+router.get('/probs/k', async ctx => {
+  try {
+    let [data, _] = await knx.raw(两份起购餐品价格错误)
+    ctx.body = { res: data.map((v, i) => ({ ...v, key: i, originalPrice: fixed2(v.originalPrice) })) }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
+
+router.get('/probs/l', async ctx => {
+  try {
+    let [data, _] = await knx.raw(津贴联盟)
+    ctx.body = { res: data.map((v, i) => ({ ...v, key: i, 实收: fixed2(v.实收) })) }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
+
+router.get('/probs/m', async ctx => {
+  try {
+    let [data, _] = await knx.raw(饿了么所有门店配送费批量检查)
+    ctx.body = { res: data.map((v, i) => ({ ...v, key: i })) }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
+
+router.get('/probs/n', async ctx => {
+  try {
+    let [data, _] = await knx.raw(原价扣点城市折扣与原价差距大1)
+    ctx.body = { res: data.map((v, i) => ({ ...v, key: i })) }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
+
+router.get('/probs/o', async ctx => {
+  try {
+    let [data, _] = await knx.raw(饿了么无餐盒费_1)
+    ctx.body = { res: data.map((v, i) => ({ ...v, key: i })) }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
+
+router.get('/probs/p', async ctx => {
+  try {
+    let [data, _] = await knx.raw(饿了么两份起购无餐盒费_0_5)
+    ctx.body = { res: data.map((v, i) => ({ ...v, key: i })) }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
+
+router.get('/probs/q', async ctx => {
+  try {
+    let [data, _] = await knx.raw(饿了么_0_01两份起购餐盒费调整为1_5)
+    ctx.body = { res: data.map((v, i) => ({ ...v, key: i })) }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
+
+router.get('/probs/r', async ctx => {
+  try {
+    let [data, _] = await knx.raw(饿了么贡茶粉面套餐价格错误)
+    ctx.body = { res: data.map((v, i) => ({ ...v, key: i })) }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
+
+router.get('/probs/s', async ctx => {
+  try {
+    let [data, _] = await knx.raw(饿了么甜品粉面套餐价格错误)
+    ctx.body = { res: data.map((v, i) => ({ ...v, key: i })) }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
+
+router.get('/probs/t', async ctx => {
+  try {
+    let [data, _] = await knx.raw(饿了么折扣餐品原价_餐盒费会起送)
+    ctx.body = { res: data.map((v, i) => ({ ...v, key: i })) }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
+
+router.get('/probs/u', async ctx => {
+  try {
+    let [data, _] = await knx.raw(零元购有餐盒费)
+    ctx.body = { res: data.map((v, i) => ({ ...v, key: i })) }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
+
+router.get('/probs/v', async ctx => {
+  try {
+    let [data, _] = await knx.raw(饿了么两份起购餐品价格错误)
+    ctx.body = { res: data.map((v, i) => ({ ...v, key: i })) }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
+
+router.get('/probs/w', async ctx => {
+  try {
+    let [data, _] = await knx.raw(单折扣起送)
+    ctx.body = { res: data.map((v, i) => ({ ...v, key: i })) }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
+
+router.get('/probs/x', async ctx => {
+  try {
+    let [data, _] = await knx.raw(成本表查漏)
+    ctx.body = { res: data.map((v, i) => ({ ...v, key: i })) }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
+
+router.get('/probs/y', async ctx => {
+  try {
+    let [data, _] = await knx.raw(查询点金0曝光的时间)
+    ctx.body = { res: data.map((v, i) => ({ ...v, key: i })) }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
+
+router.get('/probs/z', async ctx => {
+  try {
+    let [data, _] = await knx.raw(美团配送范围对比昨日)
+    ctx.body = { res: data.map((v, i) => ({ ...v, key: i })) }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
+
+router.get('/probs/aa', async ctx => {
+  try {
+    let [data, _] = await knx.raw(检查折扣遗漏的商品)
+    ctx.body = { res: data.map((v, i) => ({ ...v, key: i, price: fixed2(v.price) })) }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
+
+router.get('/probs/ab', async ctx => {
+  try {
+    let [data, _] = await knx.raw(折扣到期商品检查)
+    ctx.body = { res: data.map((v, i) => ({ ...v, key: i })) }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
+
+router.get('/probs/ac', async ctx => {
+  try {
+    let [data, _] = await knx.raw(减配活动检查)
+    ctx.body = { res: data.map((v, i) => ({ ...v, key: i })) }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
+
+router.get('/probs/ad', async ctx => {
+  try {
+    let [data, _] = await knx.raw(假减配检查)
+    ctx.body = { res: data.map((v, i) => ({ ...v, key: i })) }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
+
+router.get('/probs/ae', async ctx => {
+  try {
+    let [data, _] = await knx.raw(满减活动检查)
+    ctx.body = { res: data.map((v, i) => ({ ...v, key: i })) }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
+
 router.get('/shopActsDiff', async ctx => {
   try {
     let data = await knx('test_change_t_').select()
@@ -1517,6 +1827,1590 @@ const mt_shop_cate_diff = `SELECT t.wmpoiid shop_id, wmpoiname shop_name, IF(r.p
     HAVING COUNT(*) = 1 AND shop_name NOT LIKE '%大计划%'
     ORDER BY t.wmpoiid, mainCategory, supplementCategory, insert_date`
 
+const 原价扣点城市折扣与原价差距大于2 = ` -- 原价扣点城市折扣与原价差距大于2
+  WITH
+  a AS (
+    -- 门店信息
+    SELECT
+      shop_id,
+      F_GET_SHOP_NAME(shop_id) shop_name,
+      CASE platform
+        WHEN 1 THEN '美团'
+        ELSE '饿了么'
+      END platform,
+      person,
+      real_shop_name
+    FROM foxx_real_shop_info
+    WHERE
+      is_original_price_deduction_point = 1 AND
+      is_delete = 0
+  ),
+  b AS (
+  --  查询饿了么原价扣点城市商品
+    SELECT
+      shop_id,
+      name,
+      price,
+      activity_price,
+      2 platform
+    FROM ele_food_manage
+    WHERE 
+      insert_date > CURRENT_DATE AND
+  -- 		筛选原价扣点城市的id
+      shop_id IN (
+        SELECT shop_id FROM foxx_real_shop_info WHERE platform = 2 AND is_original_price_deduction_point = 1 AND is_delete = 0
+      )
+  ),
+  c AS (
+  --  查询美团原价扣点城市商品
+    SELECT 
+      wmpoiid,
+      itemName,
+      actPrice,
+      actInfo,
+      1 platform
+    FROM 
+      foxx_market_activit_my_discounts 
+    WHERE 
+      date = CURRENT_DATE AND
+      activity_state = '生效' AND
+  -- -- 		筛选原价扣点城市的id
+      wmpoiid IN (
+        SELECT shop_id FROM foxx_real_shop_info WHERE platform = 1 AND is_original_price_deduction_point = 1 AND is_delete = 0
+      )
+  ),
+  d AS (
+  -- 合并美团饿了么数据
+    SELECT * FROM b
+    UNION ALL
+    SELECT * FROM c
+  )
+  -- 联结门店信息
+  SELECT
+    a.shop_id 门店id,
+    a.shop_name 门店,
+    a.platform 平台,
+    a.person,
+    a.real_shop_name,
+    d.name 品名,
+    d.price 原价,
+    d.activity_price 折扣价
+  FROM a JOIN d ON a.shop_id = d.shop_id
+  WHERE 
+    d.activity_price > 0 AND
+    d.price - d.activity_price > 2;`
+
+const 商品无餐盒费 = `WITH
+  a AS (
+    -- 门店信息
+    SELECT
+      shop_id,
+      F_GET_SHOP_NAME(shop_id) shop_name,
+      CASE platform
+        WHEN 1 THEN '美团'
+        ELSE '饿了么'
+      END platform,
+      person,
+      real_shop_name
+    FROM foxx_real_shop_info
+    WHERE 
+      is_delete = 0
+  ),
+  b AS (
+  -- 饿了么无餐盒费
+    SELECT
+      shop_id,
+      name,
+      category_name,
+      price,
+      package_fee,
+      min_purchase_quantity
+    FROM ele_food_manage
+    WHERE 
+      insert_date > CURRENT_DATE AND
+      package_fee = 0
+  ),
+  c AS (
+  -- 	美团无餐盒费
+    SELECT
+      wmpoiid,
+      name,
+      tagName,
+      price / 100 price,
+      boxPrice,
+      minOrderCount
+    FROM foxx_food_manage
+    WHERE
+      date = CURRENT_DATE AND
+      boxPrice = 0
+  ),
+  d AS (
+    SELECT * FROM b
+    UNION ALL
+    SELECT * FROM c
+  )
+  SELECT
+    a.shop_id,
+    a.shop_name,
+    a.platform,
+    a.person,
+    d.name 品名,
+    d.category_name 分类,
+    d.price 原价,
+    d.package_fee 餐盒费,
+    d.min_purchase_quantity 起购数
+  FROM a JOIN d ON a.shop_id = d.shop_id
+  WHERE
+    price BETWEEN 1 AND 30 AND
+    d.category_name NOT LIKE '%福利%' AND
+    d.category_name NOT LIKE '%料%' AND
+    d.category_name NOT LIKE '%餐具%' AND
+    d.category_name NOT LIKE '%先扫%' AND
+    d.category_name NOT LIKE '%保温袋%' AND
+    d.name NOT LIKE '%红包%' AND
+    d.name NOT LIKE '%店铺升级%'`
+
+const 美团薯饼虾饼鸡柳设置两份起购 = `SELECT
+    food.wmpoiid 门店id,
+    shop.reptile_type 店名,
+    food.productId 餐品id,
+    food.tagname 分类名,
+    food.name 品名,
+    food.sellCount 销量,
+    food.minOrderCount 起购数,
+    food.boxPrice 餐盒费,
+    food.price/100 原价,
+    act.actPrice 折扣价,
+    act.orderLimit 每单折扣限购
+    FROM
+    (
+    SELECT * from foxx_food_manage where 
+    date = curdate()
+    ) food
+    LEFT JOIN  
+    (
+    SELECT * from foxx_market_activit_my_discounts where 
+    date = curdate()
+    ) act
+    ON food.wmpoiid = act.wmpoiid and food.name = act.itemName
+    join 
+    (SELECT * from foxx_shop_reptile
+    ) shop
+    ON shop.wmpoiid = food.wmpoiid
+    where  shop.deduction is null and act.actPrice < 5 and act.actPrice > 0 and food.minOrderCount < 2 and (food.name like '%薯饼%' or food.name like '%鸡柳%' or food.name like '%虾饼%' )
+    ORDER BY shop.reptile_type,sellCount desc`
+
+const 餐盒费为0常规餐品设置餐盒费1 = ` SELECT
+    food.wmpoiid 门店id,
+    shop.reptile_type 店名,
+    food.productId 餐品id,
+    food.tagname 分类名,
+    food.name 品名,
+    food.sellCount 销量,
+    food.minOrderCount 起购数,
+    food.boxPrice 餐盒费,
+    food.price/100 原价,
+    act.actPrice 折扣价,
+    act.orderLimit 每单折扣限购
+    FROM
+    (
+    SELECT * from foxx_food_manage where 
+    date = curdate()
+    ) food
+    LEFT JOIN  
+    (
+    SELECT * from foxx_market_activit_my_discounts where 
+    date = curdate()
+    ) act
+    ON food.wmpoiid = act.wmpoiid and food.name = act.itemName
+    join 
+    (SELECT * from foxx_shop_reptile
+    ) shop
+    ON shop.wmpoiid = food.wmpoiid
+
+    WHERE 
+    shop.reptile_type NOT LIKE '%大计划%' 
+    AND shop.reptile_type NOT LIKE '%抚州%' 
+    AND shop.reptile_type NOT LIKE '%炸鸡%' 
+    AND food.boxPrice = 0 
+    AND food.price / 100 <> 0 
+    AND food.minOrderCount < 2
+    AND food.NAME NOT LIKE '%加料%' 
+    AND food.NAME NOT LIKE '%保温袋%' 
+    AND food.NAME NOT LIKE '%码领%' 
+    AND food.NAME NOT LIKE '%福利%' 
+    AND food.NAME NOT LIKE '%美团会员%' 
+    AND food.NAME NOT LIKE '%福袋%' 
+    AND food.NAME NOT LIKE '%勿拍%' 
+    AND food.tagname NOT LIKE '%放心%'
+    ORDER BY shop.reptile_type,sellCount desc`
+
+const _0_01两份起购餐盒费调整为1_5 = ` SELECT
+    food.wmpoiid 门店id,
+    shop.reptile_type 店名,
+    food.productId 餐品id,
+    food.tagname 分类名,
+    food.name 品名,
+    food.sellCount 销量,
+    food.minOrderCount 起购数,
+    food.boxPrice 餐盒费,
+    food.price/100 原价,
+    act.actPrice 折扣价,
+    act.orderLimit 每单折扣限购
+    FROM
+    (
+    SELECT * from foxx_food_manage where 
+    date = curdate()
+    ) food
+    LEFT JOIN  
+    (
+    SELECT * from foxx_market_activit_my_discounts where 
+    date = curdate()
+    ) act
+    ON food.wmpoiid = act.wmpoiid and food.name = act.itemName
+    join 
+    (SELECT * from foxx_shop_reptile
+    ) shop
+    ON shop.wmpoiid = food.wmpoiid
+
+    WHERE act.actPrice = 0.01
+    and food.boxPrice < 1.5
+    and shop.reptile_type NOT LIKE '%大计划%' 
+    and food.price/100 > 10
+    ORDER BY shop.reptile_type,sellCount desc`
+
+const 折扣餐品原价_餐盒费会起送 = ` SELECT
+    food.wmpoiid 门店id,
+    shop.reptile_type 店名,
+    food.productId 餐品id,
+    food.tagname 分类名,
+    food.name 品名,
+    food.sellCount 销量,
+    food.minOrderCount 起购数,
+    food.boxPrice 餐盒费,
+    food.price/100 原价,
+    act.actPrice 折扣价,
+    act.orderLimit 每单折扣限购
+    FROM
+    (
+    SELECT * from foxx_food_manage where 
+    date = curdate()
+    ) food
+    LEFT JOIN  
+    (
+    SELECT * from foxx_market_activit_my_discounts where 
+    date = curdate()
+    ) act
+    ON food.wmpoiid = act.wmpoiid and food.name = act.itemName
+    join 
+    (SELECT * from foxx_shop_reptile
+    ) shop
+    ON shop.wmpoiid = food.wmpoiid
+
+    WHERE food.price/100 <20
+    and (food.price/100 + food.boxPrice) > 15
+    and food.minOrderCount = 1
+    and act.actPrice is not null
+    and act.actPrice < 14
+    and food.name not like '%福袋%'
+    ORDER BY shop.reptile_type,sellCount desc`
+
+const 原价扣点城市产品原价与折扣价差距超过1_1 = ` SELECT
+    food.wmpoiid 门店id,
+    shop.reptile_type 店名,
+    food.productId 餐品id,
+    food.tagname 分类名,
+    food.name 品名,
+    food.sellCount 销量,
+    food.minOrderCount 起购数,
+    food.boxPrice 餐盒费,
+    food.price/100 原价,
+    act.actPrice 折扣价,
+    act.orderLimit 每单折扣限购
+    FROM
+    (
+    SELECT * from foxx_food_manage where 
+    date = curdate()
+    ) food
+    LEFT JOIN  
+    (
+    SELECT * from foxx_market_activit_my_discounts where 
+    date = curdate()
+    ) act
+    ON food.wmpoiid = act.wmpoiid and food.name = act.itemName
+    join 
+    (SELECT * from foxx_shop_reptile
+    ) shop
+    ON shop.wmpoiid = food.wmpoiid
+
+    WHERE shop.deduction = 1
+    and (food.price/100 - act.actPrice)>1.1
+
+    ORDER BY shop.reptile_type,sellCount desc`
+
+const _0元购有餐盒费 = `SELECT
+    food.wmpoiid 门店id,
+    shop.reptile_type 店名,
+    food.productId 餐品id,
+    food.tagname 分类名,
+    food.name 品名,
+    food.sellCount 销量,
+    food.minOrderCount 起购数,
+    food.boxPrice 餐盒费,
+    food.price/100 原价,
+    act.actPrice 折扣价,
+    act.orderLimit 每单折扣限购
+    FROM
+    (
+    SELECT * from foxx_food_manage where 
+    date = curdate()
+    ) food
+    LEFT JOIN  
+    (
+    SELECT * from foxx_market_activit_my_discounts where 
+    date = curdate()
+    ) act
+    ON food.wmpoiid = act.wmpoiid and food.name = act.itemName
+    join 
+    (SELECT * from foxx_shop_reptile
+    ) shop
+    ON shop.wmpoiid = food.wmpoiid
+
+    WHERE shop.reptile_type not like '%大计划%' 
+    and food.price/100 = 0
+    and food.boxPrice > 0
+    ORDER BY shop.reptile_type,sellCount desc`
+
+const 加料门店 = `SELECT
+    food.wmpoiid 门店id,
+    shop.reptile_type 店名,
+    food.productId 餐品id,
+    food.tagname 分类名,
+    food.name 品名,
+    food.sellCount 销量,
+    food.minOrderCount 起购数,
+    food.boxPrice 餐盒费,
+    food.price/100 原价,
+    act.actPrice 折扣价,
+    act.orderLimit 每单折扣限购
+    FROM
+    (
+    SELECT * from foxx_food_manage where 
+    date = curdate()
+    ) food
+    LEFT JOIN  
+    (
+    SELECT * from foxx_market_activit_my_discounts where 
+    date = curdate()
+    ) act
+    ON food.wmpoiid = act.wmpoiid and food.name = act.itemName
+    join 
+    (SELECT * from foxx_shop_reptile
+    ) shop
+    ON shop.wmpoiid = food.wmpoiid
+
+    WHERE shop.reptile_type not like '%大计划%' 
+    and food.name like '%加料%'
+    and shop.deduction = 1
+    and act.actPrice is not null`
+
+const 零元商品有餐盒费 = `-- 零元商品有餐盒费
+  WITH
+  a AS (
+    -- 门店信息
+    SELECT
+      shop_id,
+      F_GET_SHOP_NAME(shop_id) shop_name,
+      CASE platform
+        WHEN 1 THEN '美团'
+        ELSE '饿了么'
+      END platform,
+      person,
+      real_shop_name
+    FROM foxx_real_shop_info
+    WHERE 
+      is_delete = 0
+  ),
+  b AS (
+  -- 饿了么零元商品
+    SELECT
+      shop_id,
+      name,
+      category_name,
+      price,
+      package_fee,
+      min_purchase_quantity
+    FROM ele_food_manage
+    WHERE 
+      insert_date > CURRENT_DATE AND
+      price = 0
+  ),
+  c AS (
+  -- 	美团零元商品
+    SELECT
+      wmpoiid,
+      name,
+      tagName,
+      price / 100 price,
+      boxPrice,
+      minOrderCount
+    FROM foxx_food_manage
+    WHERE
+      date = CURRENT_DATE AND
+      price = 0
+  ),
+  d AS (
+    SELECT * FROM b
+    UNION ALL
+    SELECT * FROM c
+  )
+  SELECT
+    a.shop_id,
+    a.shop_name,
+    a.platform,
+    a.person,
+    d.name 品名,
+    d.category_name 分类,
+    d.price 原价,
+    d.package_fee 餐盒费,
+    d.min_purchase_quantity 起购数
+  FROM a JOIN d ON a.shop_id = d.shop_id
+  WHERE
+    package_fee > 0`
+
+const 两份起购餐品价格错误 = `-- 两份起购餐品价格错误
+    WITH
+    a AS (
+      -- 门店信息
+      SELECT
+        shop_id,
+        F_GET_SHOP_NAME(shop_id) shop_name,
+        CASE platform
+          WHEN 1 THEN '美团'
+          ELSE '饿了么'
+        END platform,
+        person,
+        real_shop_name
+      FROM foxx_real_shop_info
+      WHERE 
+        is_delete = 0
+    ),
+    b AS (
+    --  饿了么多份起购商品
+      SELECT
+        shop_id,
+        name,
+        category_name,
+        price,
+        package_fee,
+        min_purchase_quantity,
+        ( package_fee + price ) * min_purchase_quantity originalPrice
+      FROM ele_food_manage 
+      WHERE 
+      -- 	筛选出拆分卖的商品
+        insert_date > CURRENT_DATE AND
+        min_purchase_quantity > 2 AND
+        ( package_fee + price ) * min_purchase_quantity NOT BETWEEN 13.8 AND 15 AND
+        price < 10
+    ),
+    c AS (
+    -- 美团多份起购商品价格问题
+      SELECT
+        wmpoiid,
+        name,
+        tagName,
+        price / 100 price,
+        boxPrice,
+        minOrderCount,
+        ( boxPrice + price ) * minOrderCount originalPrice
+      FROM foxx_food_manage
+      WHERE
+    -- 	筛选出拆分卖的商品
+        date = CURRENT_DATE AND
+        minOrderCount > 1 AND
+        ( boxPrice + price / 100 ) * minOrderCount NOT BETWEEN 13.8 AND 15 AND
+        price < 1000
+    ),
+    d AS (
+      SELECT * FROM b
+      UNION ALL
+      SELECT * FROM c
+    )
+    SELECT
+      a.shop_id,
+      shop_name,
+      platform,
+      person,
+      name,
+      category_name,
+      price,
+      package_fee,
+      min_purchase_quantity,
+      originalPrice
+    FROM a JOIN d ON a.shop_id = d.shop_id`
+
+const 津贴联盟 = `WITH
+    a AS (
+      SELECT
+        wmpoiid, 
+        count(date) 订单数, 
+        SUM(settleAmount) 实收,
+        SUM(lm_fee) 联盟津贴, 
+        SUM(jp_fee) 减配送费,
+        SUM(sjdj_fee) 商家代金券,
+        SUM(zf_fee) 超值联盟,
+        SUM(xk_fee) 新客立减,
+        SUM(hb_fee) 会员红包 
+      FROM foxx_order_manag_historical
+      WHERE date = CURRENT_DATE
+      GROUP BY wmpoiid,date 
+      HAVING SUM(zf_fee)>0 
+      ORDER BY SUM(zf_fee) DESC
+    ),
+    b AS (
+        -- 门店信息
+      SELECT
+        shop_id,
+        F_GET_SHOP_NAME(shop_id) shop_name,
+        CASE platform
+          WHEN 1 THEN '美团'
+          ELSE '饿了么'
+        END platform,
+        person,
+        real_shop_name
+      FROM foxx_real_shop_info
+      WHERE 
+        platform = 1 AND
+        is_delete = 0
+    )
+    SELECT
+      shop_id,
+      shop_name,
+      platform,
+      person,
+      订单数, 
+      实收,
+      联盟津贴, 
+      减配送费,
+      商家代金券,
+      超值联盟,
+      新客立减,
+      会员红包 
+FROM a JOIN b ON a.wmpoiid = b.shop_id`
+
+const 饿了么所有门店配送费批量检查 = `-- 饿了么所有门店配送费批量检查
+    WITH a AS (
+    SELECT
+      shop_id,
+      rule,
+      conflict_message,
+      descs,
+      date 
+    FROM
+      ele_activity_full_reduction 
+    WHERE
+      title LIKE "%减配送费%" 
+      AND insert_date > CURRENT_DATE 
+      AND descs = '进行中'
+      AND ( conflict_message <> "已暂停" OR ISNULL( conflict_message ) ) 
+    ),
+    b AS ( SELECT shop_id, shop_name FROM ele_info_manage WHERE status = 0 ),
+    c AS (
+    SELECT
+      b.*,
+      a.rule,
+      a.conflict_message,
+      a.date 
+    FROM
+      a
+      RIGHT JOIN b ON a.shop_id = b.shop_id 
+    ),
+    d AS (
+    SELECT
+      shop_id,
+      shop_product_desc,
+      price_items,
+      delivery_fee_items 
+    FROM
+      ele_delivery_fee 
+    WHERE
+      CURDATE() < insert_date 
+      AND shop_product_desc IN ( '蜂鸟快送', '蜂鸟众包', '蜂鸟专送', '自配送', 'e配送' ) 
+    ) 
+    SELECT
+    c.shop_id 店铺id,
+    c.shop_name 店铺名称,
+    d.shop_product_desc 配送方式,
+    c.conflict_message 活动状态,
+    c.rule 活动规则,
+    d.delivery_fee_items 配送费,
+    d.price_items 起送价,
+    c.date 活动时间 
+    FROM
+    c
+    LEFT JOIN d ON c.shop_id = d.shop_id 
+    WHERE rule LIKE  "%（%"
+    ORDER BY
+    d.delivery_fee_items`
+
+const 原价扣点城市折扣与原价差距大1 = `WITH
+    a AS (
+    --  表一
+    SELECT * FROM ele_info_manage
+    ),
+    b AS (
+    --  表二
+    SELECT * FROM ele_food_manage WHERE insert_date > CURRENT_DATE
+
+    )
+    SELECT
+    a.shop_name 门店,
+    b.shop_id 门店id,
+    b.name 品名,
+    b.category_name 分类,
+    b.max_price 原价,
+    b.activity_price 折扣价,
+    b.package_fee 餐盒费,
+    b.min_purchase_quantity 起购数,
+    b.recent_sales 销量,
+    b.on_shelf 上下架状态
+    FROM 
+    a
+    JOIN b ON a.shop_id = b.shop_id
+    where a.deduction = 1 
+    and b.activity_price > 0 
+    and b.max_price - b.activity_price > 1`
+
+const 饿了么无餐盒费_1 = `WITH
+    a AS (
+    --  表一
+    SELECT * FROM ele_info_manage
+    ),
+    b AS (
+    --  表二
+    SELECT * FROM ele_food_manage WHERE insert_date > CURRENT_DATE
+
+    )
+    SELECT
+    a.shop_name 门店,
+    b.shop_id 门店id,
+    b.name 品名,
+    b.category_name 分类,
+    b.max_price 原价,
+    b.activity_price 折扣价,
+    b.package_fee 餐盒费,
+    b.min_purchase_quantity 起购数,
+    b.recent_sales 销量,
+    b.on_shelf 上下架状态
+    FROM 
+    a
+    JOIN b ON a.shop_id = b.shop_id
+    where b.package_fee = 0 
+    and b.min_purchase_quantity= 1
+    and b.category_name not like '%福利%' 
+    and b.category_name not like '%加料%' 
+    and b.category_name not like '%餐具%'
+    and b.category_name not like '%先扫%'
+    and b.category_name not like '%保温袋%'
+    and b.name not like '%红包%'
+    and b.name not like '%店铺升级%'`
+
+const 饿了么两份起购无餐盒费_0_5 = `WITH
+    a AS (
+    --  表一
+    SELECT * FROM ele_info_manage
+    ),
+    b AS (
+    --  表二
+    SELECT * FROM ele_food_manage WHERE insert_date > CURRENT_DATE
+
+    )
+    SELECT
+    a.shop_name 门店,
+    b.shop_id 门店id,
+    b.name 品名,
+    b.category_name 分类,
+    b.max_price 原价,
+    b.activity_price 折扣价,
+    b.package_fee 餐盒费,
+    b.min_purchase_quantity 起购数,
+    b.recent_sales 销量,
+    b.on_shelf 上下架状态
+    FROM 
+    a
+    JOIN b ON a.shop_id = b.shop_id
+    where b.package_fee = 0 
+    and b.min_purchase_quantity= 2
+    and b.max_price < 8
+    and b.category_name not like '%福利%' 
+    and b.category_name not like '%加料%' 
+    and b.category_name not like '%餐具%'
+    and b.category_name not like '%先扫%'
+    and b.category_name not like '%保温袋%'`
+
+const 饿了么_0_01两份起购餐盒费调整为1_5 = `WITH
+    a AS (
+    --  表一
+    SELECT * FROM ele_info_manage
+    ),
+    b AS (
+    --  表二
+    SELECT * FROM ele_food_manage WHERE insert_date > CURRENT_DATE
+
+    )
+    SELECT
+    a.shop_name 门店,
+    b.shop_id 门店id,
+    b.name 品名,
+    b.category_name 分类,
+    b.max_price 原价,
+    b.activity_price 折扣价,
+    b.package_fee 餐盒费,
+    b.min_purchase_quantity 起购数,
+    b.recent_sales 销量,
+    b.on_shelf 上下架状态
+    FROM 
+    a
+    JOIN b ON a.shop_id = b.shop_id
+    where a.shop_name not like '%甜品%' 
+    and b.min_purchase_quantity = 2 
+    and b.activity_price = 0.01 
+    and b.package_fee < 1.5 `
+
+const 饿了么贡茶粉面套餐价格错误 = `WITH
+    a AS (
+    --  表一
+    SELECT * FROM ele_info_manage
+    ),
+    b AS (
+    --  表二
+    SELECT * FROM ele_food_manage WHERE insert_date > CURRENT_DATE
+
+    )
+    SELECT
+    a.shop_name 门店,
+    b.shop_id 门店id,
+    b.name 品名,
+    b.category_name 分类,
+    b.max_price 原价,
+    b.activity_price 折扣价,
+    b.package_fee 餐盒费,
+    b.min_purchase_quantity 起购数,
+    b.recent_sales 销量,
+    b.on_shelf 上下架状态
+    FROM 
+    a JOIN b ON a.shop_id = b.shop_id
+    where a.deduction is null
+    and a.shop_name not like '%甜品%'
+    and (b.name like '%车仔面+牛筋丸%'
+    or b.name like '%乌冬面+牛筋丸%'
+    or b.name like '%酸辣粉+牛筋丸%'
+    or b.name like '%乌冬面+咖喱鱼丸%'
+    or b.name like '%酸辣粉+咖喱鱼丸%'
+    or b.name like '%车仔面+咖喱鱼丸%'
+    or b.name like '%酸辣粉+火山石烤肉肠%'
+    or b.name like '%车仔面+火山石烤纯肉肠%'
+    or b.name like '%乌冬面+火山石烤纯肉肠%')
+    and ( b.price < 24 or b.activity_price < 14 )`
+
+const 饿了么甜品粉面套餐价格错误 = `WITH
+    a AS (
+    --  表一
+    SELECT * FROM ele_info_manage
+    ),
+    b AS (
+    --  表二
+    SELECT * FROM ele_food_manage WHERE insert_date > CURRENT_DATE
+
+    )
+    SELECT
+    a.shop_name 门店,
+    b.shop_id 门店id,
+    b.name 品名,
+    b.category_name 分类,
+    b.max_price 原价,
+    b.activity_price 折扣价,
+    b.package_fee 餐盒费,
+    b.min_purchase_quantity 起购数,
+    b.recent_sales 销量,
+    b.on_shelf 上下架状态
+    FROM 
+    a JOIN b ON a.shop_id = b.shop_id
+    where a.deduction is null
+    and a.shop_name  like '%甜品%'
+    and (b.name like '%车仔面+牛筋丸%'
+    or b.name like '%乌冬面+牛筋丸%'
+    or b.name like '%酸辣粉+牛筋丸%'
+    or b.name like '%乌冬面+咖喱鱼丸%'
+    or b.name like '%酸辣粉+咖喱鱼丸%'
+    or b.name like '%车仔面+咖喱鱼丸%'
+    or b.name like '%酸辣粉+火山石烤肉肠%'
+    or b.name like '%车仔面+火山石烤纯肉肠%'
+    or b.name like '%乌冬面+火山石烤纯肉肠%')
+    and ( b.price < 24 or b.activity_price < 14 )`
+
+const 饿了么折扣餐品原价_餐盒费会起送 = `WITH
+    a AS (
+    --  表一
+    SELECT * FROM ele_info_manage
+    ),
+    b AS (
+    --  表二
+    SELECT * FROM ele_food_manage WHERE insert_date > CURRENT_DATE
+
+    )
+    SELECT
+    a.shop_name 门店,
+    b.shop_id 门店id,
+    b.name 品名,
+    b.category_name 分类,
+    b.max_price 原价,
+    b.activity_price 折扣价,
+    b.package_fee 餐盒费,
+    b.min_purchase_quantity 起购数,
+    b.recent_sales 销量,
+    b.on_shelf 上下架状态
+    FROM 
+    a
+    JOIN b ON a.shop_id = b.shop_id
+    where b.activity_price > 0 
+    and max_price < 15
+    and b.price + b.package_fee > 15
+    and b.min_purchase_quantity = 1`
+
+const 零元购有餐盒费 = `WITH
+    a AS (
+    --  表一
+    SELECT * FROM ele_info_manage
+    ),
+    b AS (
+    --  表二
+    SELECT * FROM ele_food_manage WHERE insert_date > CURRENT_DATE
+
+    )
+    SELECT
+    a.shop_name 门店,
+    b.shop_id 门店id,
+    b.name 品名,
+    b.category_name 分类,
+    b.max_price 原价,
+    b.activity_price 折扣价,
+    b.package_fee 餐盒费,
+    b.min_purchase_quantity 起购数,
+    b.recent_sales 销量,
+    b.on_shelf 上下架状态
+    FROM 
+    a
+    JOIN b ON a.shop_id = b.shop_id
+
+    where b.max_price = 0
+    and b.package_fee > 0`
+
+const 饿了么两份起购餐品价格错误 = `WITH
+    a AS (
+    --  表一
+    SELECT * FROM ele_info_manage
+    ),
+    b AS (
+    --  表二
+    SELECT * FROM ele_food_manage WHERE insert_date > CURRENT_DATE
+
+    )
+    SELECT
+    a.shop_name 门店,
+    b.shop_id 门店id,
+    b.name 品名,
+    b.category_name 分类,
+    b.max_price 原价,
+    b.activity_price 折扣价,
+    b.package_fee 餐盒费,
+    b.min_purchase_quantity 起购数,
+    b.recent_sales 销量,
+    b.on_shelf 上下架状态
+    FROM 
+    a
+    JOIN b ON a.shop_id = b.shop_id
+    where a.deduction is null
+    and (b.name like '%薯饼%' or b.name like '%鸡柳%' or b.name like'%虾饼%' or b.name like '%肉肠%' or b.name like '%翅根%')
+    and b.min_purchase_quantity = 2
+    and ( b.package_fee + b.max_price ) < 7.2 and ( b.package_fee + b.max_price ) < 7.4 `
+
+const 单折扣起送 = `WITH
+    a AS (
+    -- 饿了么起送价格
+      SELECT 
+        shop_id,
+        price_items
+      FROM 
+        ele_delivery_fee
+      WHERE	
+        CURRENT_DATE < insert_date AND
+        shop_product_desc IN ('自配送','蜂鸟众包','蜂鸟快送','蜂鸟专送','e基础') AND
+        price_items > 10
+    ),
+    b1 AS (
+    -- 饿了么商品
+      SELECT
+        shop_id,
+        name,
+        specs_global_id,
+        category_name,
+        price,
+        package_fee,
+        min_purchase_quantity
+      FROM 
+        ele_food_manage
+      WHERE 
+        CURRENT_DATE < insert_date
+    ),
+    b2 as (
+    -- 饿了么折扣
+      SELECT
+        shop_id,
+        food_name,
+        food_id,
+        activi_price
+      FROM 
+        ele_food_activi_detai
+      WHERE
+        CURRENT_DATE < insert_date AND
+        activi_status = '进行中' AND
+        activi_tags <> '超值换购' AND
+        activi_price > 1
+    ),
+    b AS (
+    -- 折扣商品
+      SELECT
+        b1.shop_id,
+        category_name,
+        b1.name,
+        specs_global_id,
+        package_fee,
+        price,
+        min_purchase_quantity,
+        activi_price
+      FROM 
+        b1
+        LEFT JOIN b2 ON b1.shop_id= b2.shop_id 
+          AND b1.specs_global_id = b2.food_id
+      WHERE NOT ISNULL(food_id)
+    ),
+    c AS (
+    -- 饿了么起送商品
+      SELECT
+        b.shop_id,
+        a.price_items,
+        b.category_name,
+        b.name,
+        b.price,
+        b.activi_price,
+        b.package_fee,
+        ( b.price + b.package_fee ) * b.min_purchase_quantity originalPrice
+      FROM b JOIN a ON b.shop_id = a.shop_id
+      WHERE
+          -- 	对商品的筛选
+        category_name NOT LIKE '%粉面%' AND
+        category_name NOT LIKE '%套餐%' AND
+        b.name NOT LIKE '%雪媚娘%' AND
+        b.name NOT LIKE '%椰子冻%' AND
+        ( b.price + b.package_fee ) * b.min_purchase_quantity > price_items
+    ),
+    d AS (
+    -- 美团起送价
+      SELECT
+        wmpoiid,
+        minPrice
+      FROM
+        foxx_spareas_info 
+      WHERE
+        insert_date > CURRENT_DATE AND
+        minPrice > 10
+    ),
+    e1 AS (
+    -- 美团商品
+      SELECT
+        wmpoiid,
+        name,
+        tagName,
+        price / 100 AS price,
+        boxPrice,
+        minOrderCount
+      FROM
+        foxx_food_manage 
+      WHERE
+        date = CURRENT_DATE 
+    ),
+    e2 AS (
+    -- 美团折扣
+      SELECT 
+        wmpoiid,
+        actPrice,
+        itemName
+      FROM foxx_market_activit_my_discounts 
+      WHERE 
+        date = CURRENT_DATE AND
+        activity_state = '生效' AND
+        actPrice > 1
+    ),
+    e AS (
+    -- 折扣商品
+      SELECT
+        e1.wmpoiid,
+        name,
+        tagName,
+        price,
+        actPrice,
+        boxPrice,
+        minOrderCount
+      FROM 
+        e1 LEFT JOIN e2 
+        ON e1.wmpoiid = e2.wmpoiid
+        AND e1.name = e2.itemName
+      WHERE NOT ISNULL(actPrice)
+    ),
+    f AS (
+    -- 美团起送的商品
+      SELECT 
+        e.wmpoiid,
+        d.minPrice,
+        e.tagName,
+        e.name,
+        e.price,
+        e.actPrice,
+        e.boxPrice,
+        e.minOrderCount * (e.price + e.boxPrice) originalPrice
+      FROM
+        e JOIN d ON e.wmpoiid = d.wmpoiid
+      WHERE
+          -- 	对商品的筛选
+        tagName NOT LIKE '%粉面%' AND
+        tagName NOT LIKE '%套餐%' AND
+        e.name NOT LIKE '%雪媚娘%' AND
+        e.name NOT LIKE '%椰子冻%' AND
+        e.name NOT LIKE '%福袋%' AND
+        e.minOrderCount * (e.price + e.boxPrice) > minPrice
+    ),
+    g AS (
+      SELECT * FROM c
+      UNION ALL
+      SELECT * FROM f
+    ),
+    h AS (
+        -- 门店信息
+      SELECT
+        shop_id,
+        F_GET_SHOP_NAME(shop_id) shop_name,
+        CASE platform
+          WHEN 1 THEN '美团'
+          ELSE '饿了么'
+        END platform,
+        person,
+        real_shop_name
+      FROM foxx_real_shop_info
+      WHERE 
+        is_delete = 0
+    )
+    SELECT
+    h.shop_id,
+    h.shop_name,
+    h.platform,
+    h.person,
+    g.price_items,
+    g.category_name,
+    g.name,
+    g.price,
+    g.activi_price,
+    g.package_fee,
+    g.originalPrice
+    FROM g JOIN h ON g.shop_id = h.shop_id`
+
+const 成本表查漏 = `WITH
+    a AS (
+    -- 查询成本表商品
+      SELECT food_name FROM foxx_food_cost_info
+    ),
+    b AS (
+    -- 查询饿了么所有销售的商品
+      SELECT item_name FROM ele_food_sales_info where date = DATE_SUB(CURRENT_DATE, INTERVAL 1 DAY) GROUP BY item_name
+    ),
+    c AS (
+      -- 查询美团所有销售的商品
+      SELECT name item_name FROM foxx_food_amount_info where insert_date > DATE_SUB(CURRENT_DATE, INTERVAL 1 DAY) GROUP BY name
+    ),
+    d AS (
+    -- 合并商品数据
+    SELECT * FROM b
+    UNION
+    SELECT * FROM c
+    )
+    SELECT d.item_name
+    FROM d LEFT JOIN a ON d.item_name = a.food_name
+    WHERE a.food_name IS NULL`
+
+const 查询点金0曝光的时间 = `-- 查询点金0曝光的时间，可能是达到预算、没钱等原因
+  WITH
+  a AS (
+  -- 点进曝光数量为0的时间点
+    SELECT 
+      wmpoiid,
+      MIN(periodTime) OVER(PARTITION BY wmpoiid) endTime
+    FROM 
+      foxx_period_time_gold
+    WHERE 
+      DATE_ADD(date,INTERVAL 1 DAY) = CURRENT_DATE
+      AND periodTime > 10
+      AND showCount = 0
+    GROUP BY wmpoiid
+  ),
+  b AS (
+    -- 门店信息
+    SELECT
+      shop_id,
+      F_GET_SHOP_NAME(shop_id) shop_name,
+      CASE platform
+        WHEN 1 THEN '美团'
+        ELSE '饿了么'
+      END platform,
+      person,
+      real_shop_name
+    FROM foxx_real_shop_info
+    WHERE 
+      platform = 1 AND
+      is_delete = 0
+  )
+  SELECT
+    b.shop_id,
+    b.shop_name,
+    b.platform,
+    b.person,
+    endTime AS "点金0曝光时间"
+  FROM
+    a
+    JOIN b ON a.wmpoiid = b.shop_id
+  ORDER BY 
+    person,
+    endTime`
+
+const 美团配送范围对比昨日 = `WITH
+    a AS (
+      SELECT * FROM ( 
+        SELECT 
+          wmpoiid,
+          logisticsAreas - LEAD(logisticsAreas,1) OVER(
+            PARTITION BY wmpoiid 
+            ORDER BY insert_date DESC
+          ) AS chg
+        FROM foxx_spareas_info 
+        WHERE insert_date > DATE_SUB(CURRENT_DATE, INTERVAL 1 DAY)
+      ) chg
+    ),
+    b AS (
+        -- 门店信息
+      SELECT
+        shop_id,
+        F_GET_SHOP_NAME(shop_id) shop_name,
+        CASE platform
+          WHEN 1 THEN '美团'
+          ELSE '饿了么'
+        END platform,
+        person,
+        real_shop_name
+      FROM foxx_real_shop_info
+      WHERE 
+        platform = 1 AND
+        is_delete = 0
+    )
+    SELECT 
+      b.*,
+      a.chg
+    FROM a JOIN b ON a.wmpoiid = b.shop_id
+    WHERE chg <> 0`
+
+const 检查折扣遗漏的商品 = `WITH 
+    a AS(
+    --  饿了么应该上折扣的商品列表
+      SELECT
+        shop_id, 
+        specs_global_id,
+        name,
+        category_name,
+        price
+      FROM ele_food_manage
+      WHERE 
+        insert_date > CURRENT_DATE AND 
+        category_name LIKE '%折扣%'
+    ),
+    b AS (
+    --  饿了么已经上了折扣的商品列表
+      SELECT
+        shop_id, 
+        food_id
+      FROM ele_food_activi_detai 
+      WHERE
+        insert_date > CURRENT_DATE AND 
+        activi_status IN ('进行中','3天后结束','2天后结束','今天结束') 
+    ),
+    c AS (
+    -- 匹配饿了么没上折扣的商品
+      SELECT a.shop_id, name, category_name, price FROM a LEFT JOIN b ON a.shop_id = b.shop_id AND a.specs_global_id = b.food_id WHERE b.food_id IS NULL
+    ),
+    d AS(
+    --  美团应该上折扣的商品列表
+      SELECT 
+        wmpoiid,
+        name,
+        tagName,
+        price/100 AS price
+      FROM
+        foxx_food_manage 
+      WHERE 
+        date = CURRENT_DATE AND
+    --  解馋小吃没有折扣商品
+        tagName LIKE '%折扣%'
+    ),
+    e AS (
+    --  美团已经上了折扣的商品列表
+      SELECT 
+        wmpoiid, 
+        itemName 		
+      FROM 
+        foxx_market_activit_my_discounts 
+      WHERE 
+        date = CURRENT_DATE AND
+        activity_state = '生效'
+    ),
+    f AS (
+    --  美团折扣遗漏商品列表。通过名称链接的此表可能会出现一点问题
+      SELECT 
+        d.wmpoiid,
+        d.name, 
+        d.tagName, 
+        d.price
+      FROM 
+        d LEFT JOIN e 
+          ON d.wmpoiid = e.wmpoiid 
+          AND d.name = e.itemName 
+      WHERE ISNULL(e.itemName)
+    ),
+    g AS (
+      SELECT * FROM c
+      UNION ALL
+      SELECT * FROM f
+    ),
+    h AS (
+      -- 门店信息
+      SELECT
+        shop_id,
+        F_GET_SHOP_NAME(shop_id) shop_name,
+        CASE platform
+          WHEN 1 THEN '美团'
+          ELSE '饿了么'
+        END platform,
+        person,
+        real_shop_name
+      FROM foxx_real_shop_info
+      WHERE	is_delete = 0
+    )
+    -- 匹配门店信息
+    SELECT
+      h.shop_id,
+      h.shop_name,
+      h.platform,
+      h.person,
+      g.name,
+      g.category_name,
+      g.price
+    FROM g JOIN h                                                                             
+    ON g.shop_id = h.shop_id
+    ORDER BY platform`
+
+const 折扣到期商品检查 = `WITH
+    a AS (
+      SELECT
+        shop_id,
+        food_name,
+        activi_date,
+        activi_price,
+        effect_times,
+        activi_status
+      FROM ele_food_activi_detai
+      WHERE 
+        CURRENT_DATE < insert_date AND
+        activi_tags <> '超值换购' AND
+    --  三天内结束
+        (
+          activi_status LIKE '%后结束%'
+          OR activi_status LIKE '%天结束%'
+        )	
+    ),
+    b AS (
+      SELECT 
+        wmpoiid,
+        itemName,
+        start_date,
+        actPrice,
+        orderLimit,
+        activity_state
+      FROM foxx_market_activit_my_discounts a 
+      WHERE
+        CURRENT_DATE = date AND
+      -- 三天内结束
+        activity_state IN ('今天结束','两天后结束','三天后结束')
+    ),
+    c AS (
+      SELECT * FROM a
+      UNION ALL
+      SELECT * FROM b
+    ),
+    d AS (
+      SELECT
+        shop_id,
+        F_GET_SHOP_NAME(shop_id) shop_name,
+        CASE platform
+          WHEN 1 THEN '美团'
+          ELSE '饿了么'
+        END platform,
+        person,
+        real_shop_name
+      FROM foxx_real_shop_info
+      WHERE 
+        is_delete = 0
+    )
+    SELECT
+      d.shop_id,
+      d.shop_name,
+      d.platform,
+      d.person,
+      food_name,
+      activi_date,
+      activi_status,
+      food_name,
+      activi_date
+    FROM c JOIN d                                                                             
+    ON c.shop_id = d.shop_id
+    ORDER BY platform, food_name`
+
+const 减配活动检查 = `WITH
+    a AS (
+      SELECT
+    -- 	饿了么减配活动
+        shop_id,
+        rule,
+        conflict_message,
+        descs,
+        STR_TO_DATE( MID(date, 14), '%Y-%m-%d' ) date
+      FROM
+        ele_activity_full_reduction 
+      WHERE
+        title LIKE "%减配送费%" AND
+        insert_date BETWEEN DATE_SUB(CURRENT_DATE, INTERVAL 1 DAY) AND CURRENT_DATE AND
+        descs = '进行中' AND
+        ISNULL( conflict_message )
+    ),
+    b AS (
+    -- 饿了么配送信息
+      SELECT
+        shop_id,
+        shop_product_desc,
+        price_items,
+        delivery_fee_items
+      FROM
+        ele_delivery_fee
+      WHERE
+        CURRENT_DATE < insert_date AND
+        shop_product_desc IN ( '蜂鸟快送', '蜂鸟众包', '蜂鸟专送', '自配送', 'e配送', '混合送' ) 
+    ),
+    c AS (
+      SELECT
+        a.shop_id,
+        b.shop_product_desc,
+        a.rule,
+        b.delivery_fee_items,
+        MID(a.rule,LOCATE("减",a.rule)+1,LOCATE("元",a.rule)-LOCATE("减",a.rule)-1) detail,
+        TRUNCATE((MID(a.rule,LOCATE("减",a.rule)+1,LOCATE("元",a.rule)-LOCATE("减",a.rule)-1) - b.delivery_fee_items),2) sub_detail,
+        b.price_items,
+        a.date
+      FROM
+        b LEFT JOIN a ON b.shop_id = a.shop_id
+      WHERE shop_product_desc IS NOT NULL
+    ),
+    d AS (
+    -- 美团减配活动
+      SELECT 
+        wmpoiid,
+        detail,
+        DATE_FORMAT( end_time, '%Y-%m-%d' ) end_time
+      FROM foxx_market_activit_my 
+      WHERE date = CURRENT_DATE AND 
+      name LIKE "%减配%"
+      ),
+    e AS (
+    -- 美团配送信息
+      SELECT
+        wmpoiid,
+        logisticsAreas,
+        shippingFee,
+        minPrice
+      FROM foxx_spareas_info 
+      WHERE insert_date >= CURDATE()
+      ),
+    f AS (
+      SELECT
+        e.wmpoiid,
+        '暂无数据',
+        d.detail,
+        e.shippingFee,
+        MID(d.detail,LOCATE("减",d.detail)+1,LOCATE("元",d.detail)-LOCATE("减",d.detail)-1),
+        TRUNCATE((MID(d.detail,LOCATE("减",d.detail)+1,LOCATE("元",d.detail)-LOCATE("减",d.detail)-1) -e.shippingFee),2),
+        e.minPrice,
+        end_time
+      FROM 
+        e LEFT JOIN d ON d.wmpoiid = e.wmpoiid
+    ),
+    g AS (
+      SELECT * FROM c
+      UNION ALL
+      SELECT * FROM f
+    ),
+    h AS (
+      SELECT
+        shop_id,
+        F_GET_SHOP_NAME(shop_id) shop_name,
+        CASE platform
+          WHEN 1 THEN '美团'
+          ELSE '饿了么'
+        END platform,
+        person,
+        real_shop_name
+      FROM foxx_real_shop_info
+      WHERE is_delete = 0
+    )
+    SELECT
+      h.shop_id,
+      h.shop_name,
+      h.platform,
+      h.person,
+      g.shop_product_desc,
+      g.rule,
+      g.delivery_fee_items,
+      g.detail,
+      g.sub_detail,
+      g.price_items,
+      g.date
+    FROM g JOIN h ON g.shop_id = h.shop_id
+    ORDER BY platform, sub_detail`
+
+const 假减配检查 = `WITH
+    a AS (
+    SELECT 
+      shop_id,
+      shop_name,
+      order_id,
+      active_time
+    FROM ele_order_manag
+    WHERE insert_date > CURRENT_DATE
+      AND shop_id NOT IN ("2042678427","500795650","500795963")
+    ),
+    b AS (
+    SELECT
+      order_id,
+      delivery_fee_business,
+      delivery_fee_user
+    FROM ele_order_manag_add
+    WHERE insert_date > CURRENT_DATE
+    ),
+    c AS (
+    SELECT 
+      a.shop_id,
+      b.*
+    FROM a JOIN b ON a.order_id = b.order_id
+    WHERE delivery_fee_business = 0
+    AND delivery_fee_user > 0
+    ),
+    d AS (
+    SELECT * FROM c GROUP BY shop_id
+    ),
+    e AS (
+    SELECT shop_id,shop_name FROM ele_info_manage WHERE status = 0
+    ),
+    f AS (
+    SELECT
+      shop_id,
+      packName
+    FROM ele_packs_contract_service 
+    WHERE insert_date > CURRENT_DATE
+    )
+    SELECT 
+    d.shop_id,
+    e.shop_name,
+    packName,
+    d.order_id AS '示例单号',
+    d.delivery_fee_user AS '用户支付配送费',
+    d.delivery_fee_business AS '商家支付配送费'
+    FROM d JOIN e ON d.shop_id = e.shop_id
+    JOIN f ON d.shop_id = f.shop_id`
+
+const 满减活动检查 = `WITH 
+    a AS (-- 	查询满减活动
+      SELECT
+        shop_id,
+        title,
+        rule,
+        date,
+        descs
+      FROM
+        ele_activity_full_reduction 
+      WHERE
+        insert_date > CURDATE() AND
+        title IN ( "店铺满减", "智能满减", "百亿补贴" ) AND
+        ISNULL( conflict_message ) AND 
+        ( descs = '进行中' OR descs LIKE '%天后结束%' OR descs LIKE '%天结束%' ) 
+    ),
+    b AS (
+      SELECT
+        wmpoiid,
+        '店铺满减' title,
+        detail,
+        start_time,
+        status
+      FROM  foxx_market_activit_my_reduce 
+      WHERE
+        date = CURDATE() AND
+        my_activit_id = "满减" AND
+        ( status = '进行中' OR status LIKE '%天后结束%' OR status LIKE '%天结束%' ) 
+    ),
+    c AS (
+      SELECT * FROM a
+      UNION ALL
+      SELECT * FROM b
+    ),
+    d AS (
+      -- 门店信息
+      SELECT
+        shop_id,
+        F_GET_SHOP_NAME(shop_id) shop_name,
+        CASE platform
+          WHEN 1 THEN '美团'
+          ELSE '饿了么'
+        END platform,
+        person,
+        real_shop_name
+      FROM foxx_real_shop_info
+      WHERE 
+        is_delete = 0
+    )
+    SELECT
+      d.shop_id,
+      d.shop_name,
+      d.platform,
+      d.person,
+      c.title,
+      c.rule,
+      c.date,
+      c.descs 
+    FROM c RIGHT JOIN d ON c.shop_id = d.shop_id 
+    ORDER BY platform, rule`
+
 async function date(d) {}
 
 async function addNewShop(
@@ -1926,7 +3820,7 @@ async function commentNote(key, ip, comment) {
     const res = await knx('test_notes_t_')
       .where({ key })
       .update({ comments: JSON.stringify(coms) })
-    if(res != 1) return Promise.reject('error')
+    if (res != 1) return Promise.reject('error')
     return Promise.resolve(JSON.stringify(coms))
   } catch (e) {
     return Promise.reject(e)

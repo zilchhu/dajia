@@ -173,7 +173,7 @@ async function insertTableFromMysql(day_from_today = 1) {
     console.log(...arguments)
     await knx.raw(`SET @last_day = DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL ${day_from_today} DAY),'%Y%m%d');`)
     let [data, _] = await knx.raw(sql)
-    if (data.length < 1 || data.length > 600 || data.every(v => v.third_send == 0)) return Promise.reject('no data')
+    if (data.length < 300 || data.length > 600 || data.every(v => v.third_send == 0)) return Promise.reject('no data')
     const res = await knx('test_analyse_t_')
       .insert(data)
       .onConflict('id')

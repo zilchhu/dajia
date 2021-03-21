@@ -465,3 +465,6 @@ let poiPolicyT = {
     }
   ]
 }
+
+
+await new Act()

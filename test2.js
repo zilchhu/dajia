@@ -468,12 +468,7 @@ async function updateUnitC(id, name) {
 
 async function test_updateImg() {
   try {
-    let [data, _] = await knx.raw(`SELECT lq.*,f.wmPoiId wmpoiid2, f.picture picture2 FROM test_mt_food_lq_ lq 
-        LEFT JOIN foxx_food_manage f ON lq.name = f.name AND f.picture <> '' AND f.wmpoiid = 9230108
-        WHERE date = CURDATE() AND code = 3
-        GROUP BY lq.wmPoiId, lq.spuId, lq.code
-        ORDER BY lq.name`)
-    data = data.map(v => [v.wmPoiId, v.spuId, v.picture2])
+    let data = [[11270787, 4390048109, 'http://p0.meituan.net/wmproduct/1abeba87f61e76a2ee98be549f847bce198469.gif']]
     await loop(updateImg, data, false)
   } catch (err) {
     console.log(err)
@@ -1697,6 +1692,6 @@ async function test_lq() {
 // test_delFoods()
 // test_testFood()
 // test_updateAttrs2()
-// test_updateImg()
+test_updateImg()
 // test_updateUnitC()
-test_lq()
+// test_lq()
