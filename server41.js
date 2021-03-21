@@ -649,7 +649,10 @@ router.get('/order/elm/:shopId', async ctx => {
 router.get('/probs/a', async ctx => {
   try {
     let [data, _] = await knx.raw(原价扣点城市折扣与原价差距大于2)
-    ctx.body = { res: data.map((v, i) => ({ ...v, key: i })) }
+    let data2 = await knx('test_prob_t_')
+      .select()
+      .where({ type: 'a', updated_at: dayjs().format('YYYY-MM-DD') })
+    ctx.body = { res: data.map((v, i) => ({ ...v, key: i, handle: data2?.find(v => v.key == i)?.handle })) }
   } catch (e) {
     console.log(e)
     ctx.body = { e }
@@ -978,6 +981,21 @@ router.post('/saveShopActsDiff', async ctx => {
       return
     }
     const res = await saveShopActsDiff(key, handle)
+    ctx.body = { res }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
+
+router.post('/saveProbs', async ctx => {
+  try {
+    let { type, key, handle } = ctx.request.body
+    if (!type || key == null) {
+      ctx.body = { e: 'invalid params' }
+      return
+    }
+    const res = await saveProbs(type, key, handle)
     ctx.body = { res }
   } catch (e) {
     console.log(e)
@@ -3755,6 +3773,17 @@ async function saveShopActsDiff(key, handle) {
     return knx('test_change_t_')
       .where({ key })
       .update({ handle })
+  } catch (e) {
+    return Promise.reject(e)
+  }
+}
+
+async function saveProbs(type, key, handle) {
+  try {
+    return knx('test_prob_t_')
+      .insert({ type, key, handle, updated_at: dayjs().format('YYYY-MM-DD') })
+      .onConflict(['type', 'key', 'updated_at'])
+      .merge()
   } catch (e) {
     return Promise.reject(e)
   }
