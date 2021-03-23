@@ -872,7 +872,7 @@ router.get('/probs/v', async ctx => {
 router.get('/probs/w', async ctx => {
   try {
     let [data, _] = await knx.raw(单折扣起送)
-    ctx.body = { res: data.map((v, i) => ({ ...v, key: i })) }
+    ctx.body = { res: data.map((v, i) => ({ ...v, key: i, originalPrice: fixed2(v.originalPrice) })) }
   } catch (e) {
     console.log(e)
     ctx.body = { e }
@@ -1701,7 +1701,7 @@ const 线下指标美团关店次数 = (id, d = 7) => `SELECT
     GROUP BY DATE_FORMAT( insert_date, '%Y%m%d' )
     ORDER BY insert_date DESC`
 
-const elm_shop_acts_diff = `SELECT t.shop_id, e.shop_name, IF(r.platform IS NULL, NULL, IF(r.platform = 1, '美团', '饿了么')) platform, r.person, 
+const elm_shop_acts_diff = `SELECT t.shop_id, e.shop_name, IF(r.platform IS NULL, NULL, IF(r.platform = 1, '美团', '饿了么')) platform, IFNULL(r.new_person, r.person) person, 
     title, rule, date, insert_date
     FROM
     (
@@ -1719,7 +1719,7 @@ const elm_shop_acts_diff = `SELECT t.shop_id, e.shop_name, IF(r.platform IS NULL
     HAVING COUNT(*) = 1
     ORDER BY t.shop_id, title, insert_date`
 
-const mt_shop_acts_diff = `SELECT t.wmpoiid shop_id, m.reptile_type shop_name, IF(r.platform IS NULL, NULL, IF(r.platform = 1, '美团', '饿了么')) platform, r.person, 
+const mt_shop_acts_diff = `SELECT t.wmpoiid shop_id, m.reptile_type shop_name, IF(r.platform IS NULL, NULL, IF(r.platform = 1, '美团', '饿了么')) platform, IFNULL(r.new_person, r.person) person, 
     name title, detail rule, CONCAT(DATE_FORMAT(start_time,'%Y%m%d'),' 至 ', DATE_FORMAT(end_time,'%Y%m%d')) date, DATE_FORMAT(date,'%Y-%m-%d') insert_date
     FROM
     (
@@ -1737,7 +1737,7 @@ const mt_shop_acts_diff = `SELECT t.wmpoiid shop_id, m.reptile_type shop_name, I
     HAVING COUNT(*) = 1
     ORDER BY t.wmpoiid, name, date`
 
-const mt_spareas_diff = `SELECT t.wmpoiid shop_id, m.reptile_type shop_name, IF(r.platform IS NULL, NULL, IF(r.platform = 1, '美团', '饿了么')) platform, r.person, 
+const mt_spareas_diff = `SELECT t.wmpoiid shop_id, m.reptile_type shop_name, IF(r.platform IS NULL, NULL, IF(r.platform = 1, '美团', '饿了么')) platform, IFNULL(r.new_person, r.person) person, 
     '配送范围' title, longitude, latitude, logisticsAreas, minPrice, shippingFee, '-' date, insert_date
     FROM
     (
@@ -1755,7 +1755,7 @@ const mt_spareas_diff = `SELECT t.wmpoiid shop_id, m.reptile_type shop_name, IF(
     HAVING COUNT(*) = 1
     ORDER BY t.wmpoiid, longitude, latitude, insert_date`
 
-const elm_spareas_diff = `SELECT t.shop_id, e.shop_name, IF(r.platform IS NULL, NULL, IF(r.platform = 1, '美团', '饿了么')) platform, r.person, 
+const elm_spareas_diff = `SELECT t.shop_id, e.shop_name, IF(r.platform IS NULL, NULL, IF(r.platform = 1, '美团', '饿了么')) platform, IFNULL(r.new_person, r.person) person, 
     '配送范围' title, shop_product_desc, price_items, delivery_fee_items, '-' date,  insert_date
     FROM
     (
@@ -1773,7 +1773,7 @@ const elm_spareas_diff = `SELECT t.shop_id, e.shop_name, IF(r.platform IS NULL, 
     HAVING COUNT(*) = 1
     ORDER BY t.shop_id, shop_product_desc, insert_date`
 
-const elm_foods_diff = `SELECT t.shop_id, e.shop_name, IF(r.platform IS NULL, NULL, IF(r.platform = 1, '美团', '饿了么')) platform, r.person, 
+const elm_foods_diff = `SELECT t.shop_id, e.shop_name, IF(r.platform IS NULL, NULL, IF(r.platform = 1, '美团', '饿了么')) platform, IFNULL(r.new_person, r.person) person, 
     '商品详情' title, category_name, global_id, name, activity_price, price, package_fee, min_purchase_quantity, on_shelf, '-' date,  insert_date
     FROM
     (
@@ -1791,7 +1791,7 @@ const elm_foods_diff = `SELECT t.shop_id, e.shop_name, IF(r.platform IS NULL, NU
     HAVING COUNT(*) = 1
     ORDER BY t.shop_id, global_id, insert_date`
 
-const mt_foods_diff = `SELECT t.wmpoiid shop_id, m.reptile_type shop_name, IF(r.platform IS NULL, NULL, IF(r.platform = 1, '美团', '饿了么')) platform, r.person, 
+const mt_foods_diff = `SELECT t.wmpoiid shop_id, m.reptile_type shop_name, IF(r.platform IS NULL, NULL, IF(r.platform = 1, '美团', '饿了么')) platform, IFNULL(r.new_person, r.person) person, 
     '商品详情' title, tagName, productId, name, price, boxPrice, sellStatus, '-' date, DATE_FORMAT(date,'%Y-%m-%d') insert_date
     FROM
     (
@@ -1809,7 +1809,7 @@ const mt_foods_diff = `SELECT t.wmpoiid shop_id, m.reptile_type shop_name, IF(r.
     HAVING COUNT(*) = 1 AND shop_name NOT LIKE '%大计划%'
     ORDER BY t.wmpoiid, productId, insert_date`
 
-const mt_discounts_diff = `SELECT t.wmpoiid shop_id, m.reptile_type shop_name, IF(r.platform IS NULL, NULL, IF(r.platform = 1, '美团', '饿了么')) platform, r.person, 
+const mt_discounts_diff = `SELECT t.wmpoiid shop_id, m.reptile_type shop_name, IF(r.platform IS NULL, NULL, IF(r.platform = 1, '美团', '饿了么')) platform, IFNULL(r.new_person, r.person) person, 
     '折扣商品详情' title, itemName, actInfo, actPrice, orderLimit, manual_sorting, isTop, 
     CONCAT(FROM_UNIXTIME(startTime, '%Y%m%d'), ' 至 ', FROM_UNIXTIME(endTime, '%Y%m%d'))date, DATE_FORMAT(date,'%Y-%m-%d') insert_date
     FROM
@@ -1828,7 +1828,7 @@ const mt_discounts_diff = `SELECT t.wmpoiid shop_id, m.reptile_type shop_name, I
     HAVING COUNT(*) = 1 AND shop_name NOT LIKE '%大计划%'
     ORDER BY t.wmpoiid, itemName, insert_date`
 
-const mt_shop_cate_diff = `SELECT t.wmpoiid shop_id, wmpoiname shop_name, IF(r.platform IS NULL, NULL, IF(r.platform = 1, '美团', '饿了么')) platform, r.person, 
+const mt_shop_cate_diff = `SELECT t.wmpoiid shop_id, wmpoiname shop_name, IF(r.platform IS NULL, NULL, IF(r.platform = 1, '美团', '饿了么')) platform, IFNULL(r.new_person, r.person) person, 
     '店铺分类' title, mainCategory, supplementCategory, '-' date, insert_date
     FROM
     (
@@ -3208,7 +3208,8 @@ const 折扣到期商品检查 = `WITH
     ON c.shop_id = d.shop_id
     ORDER BY platform, food_name`
 
-const 减配活动检查 = `WITH
+const 减配活动检查 = `-- 减配活动检查
+    WITH
     a AS (
       SELECT
     -- 	饿了么减配活动
@@ -3220,10 +3221,10 @@ const 减配活动检查 = `WITH
       FROM
         ele_activity_full_reduction 
       WHERE
-        title LIKE "%减配送费%" AND
-        insert_date BETWEEN DATE_SUB(CURRENT_DATE, INTERVAL 1 DAY) AND CURRENT_DATE AND
-        descs = '进行中' AND
-        ISNULL( conflict_message )
+      title LIKE "%减配送费%" AND
+      insert_date > CURRENT_DATE AND
+      descs = '进行中' AND
+      ISNULL( conflict_message ) 
     ),
     b AS (
     -- 饿了么配送信息
@@ -3308,13 +3309,13 @@ const 减配活动检查 = `WITH
       h.shop_name,
       h.platform,
       h.person,
-      g.shop_product_desc,
-      g.rule,
-      g.delivery_fee_items,
-      g.detail,
-      g.sub_detail,
-      g.price_items,
-      g.date
+      g.shop_product_desc AS '合作方案',
+      g.rule AS '活动规则',
+      g.delivery_fee_items AS '基础配送费',
+      g.detail AS '减配力度',
+      g.sub_detail '力度偏差',
+      g.price_items '起送价',
+      g.date '到期时间'
     FROM g JOIN h ON g.shop_id = h.shop_id
     ORDER BY platform, sub_detail`
 
@@ -4259,7 +4260,7 @@ async function fresh() {
       off_shelf: '下架产品量',
       over_due_date: '特权有效期',
       kangaroo_name: '袋鼠店长',
-      red_packet_recharge: '高拥返现',
+      red_packet_recharge: '高佣返现',
       ranknum: '商圈排名',
       extend: '延迟发单',
       a2: '优化'
@@ -4274,8 +4275,9 @@ async function fresh() {
         return {
           key: `${name}-${field}`,
           name,
-          wmPoiId: xs.find(x => name.includes(x.name)).wmPoiId,
-          new_person: xs.find(x => name.includes(x.name)).new_person,
+          platform: xs.find(x => name.includes(x.name))?.platform,
+          wmPoiId: xs.find(x => name.includes(x.name))?.wmPoiId,
+          new_person: xs.find(x => name.includes(x.name))?.new_person,
           field: fields[field],
           ...values
         }
