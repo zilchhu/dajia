@@ -12,12 +12,16 @@ import md5 from 'md5'
 import uuid from 'uuid'
 
 import Poi from './fallback/poi.js'
+import PoiD from './fallback/poi_dajihua.js'
 // import { getAllElmShops } from './tools/all.js'
 import knex from 'knex'
 import { readXls } from './fallback/fallback_app.js'
 import { getAllElmShops } from './tools/all.js'
 
 import dayjs from 'dayjs'
+import { updatePlan2, delFoods } from './test2.js'
+
+import { loop2, price_update_server } from './server6.js'
 // import localeData from 'dayjs/plugin/localeData'
 // import weekday from 'dayjs/plugin/weekday'
 // import updateLocale from 'dayjs/plugin/updateLocale'
@@ -138,6 +142,30 @@ router.post('/upload', async (ctx, next) => {
     }
   }
 })
+
+price_update_server.on('connection', function(conn) {
+  conn.on('data', async function(message) {
+    console.log(message)
+    let data = await readXls(`uploads/${message}`, 'Sheet1')
+    data = data
+      .filter(v => v.店铺id != '')
+      .filter(v => !v.店铺id.includes('必填'))
+      .map((v, i) => [
+        v.店铺id,
+        v.分类名称,
+        v.商品名称,
+        v.最小购买量,
+        v.价格,
+        v.餐盒价格 == '' ? null : v.餐盒价格,
+        v.折扣价格 == '' ? null : v.折扣价格,
+        null,
+        i
+      ])
+    await loop2(updatePlan2, data, conn, { test: delFoods })
+  })
+  conn.on('close', function() {})
+})
+
 
 router.get('/date/:date', async ctx => {})
 
@@ -333,7 +361,8 @@ router.post('/comments', async ctx => {
 router.get('/shops/mt', async ctx => {
   try {
     const res = await new Poi().list()
-    ctx.body = { res }
+    const res2 = await new PoiD().list()
+    ctx.body = { res: [...res, ...res2] }
   } catch (e) {
     console.log(e)
     ctx.body = { e }
@@ -405,7 +434,8 @@ router.post('/addNewShop', async ctx => {
       phone,
       isD,
       isM,
-      rent
+      rent,
+      project_id
     } = ctx.request.body
     if (!platform || !shopId || !shopName || !roomId || !realName) {
       ctx.body = { e: 'invalid params' }
@@ -424,7 +454,8 @@ router.post('/addNewShop', async ctx => {
       phone,
       isD,
       isM,
-      rent
+      rent,
+      project_id
     )
     ctx.body = { res }
   } catch (e) {
@@ -1175,7 +1206,7 @@ const fresh_sql = `SELECT a.*, e.cost_ratio, IFNULL(b.shop_name, c.reptile_type)
     LEFT JOIN foxx_real_shop_info f ON a.wmpoiid = f.shop_id 
     LEFT JOIN new_shop_track_copy1 g ON a.wmpoiid = g.wmpoiid AND g.updated_at = CURDATE()
     WHERE (b.shop_name IS NOT NULL OR c.reptile_type IS NOT NULL)
-    AND d.status <> 9 AND DATEDIFF(a.date, d.shop_start_date) BETWEEN 1 AND 30 AND f.new_person IS NOT NULL
+    AND f.new_person IS NOT NULL
     ORDER BY a.wmpoiid, a.date DESC`
 
 const perf_sql = d => `WITH a AS (
@@ -3445,7 +3476,8 @@ async function addNewShop(
   phone,
   isD,
   isM,
-  rent
+  rent,
+  project_id
 ) {
   try {
     roomId = roomId.trim()
@@ -3457,6 +3489,18 @@ async function addNewShop(
       : (real_shop_id = Math.max(...realShops.map(v => v.real_shop_id)) + 1)
 
     if (platform == 2) {
+      // manager = await knx('ele_shop_manager')
+      // .where(
+      //   'insert_date',
+      //   '>',
+      //   dayjs()
+      //     .startOf('day')
+      //     .subtract(1, 'day')
+      //     .format('YYYYMMHH')
+      // )
+      // .andWhere({ shop_id: shopId })
+      // .first()
+
       const { ks_id } = await knx(`ele_info_manage`).first('ks_id')
       const res1 = await knx(`ele_info_manage`)
         .insert({ shop_id: shopId, shop_name: shopName, ks_id, status: 0 })
@@ -3464,8 +3508,13 @@ async function addNewShop(
         .merge()
       results.res1 = res1
     } else if (platform == 1) {
+      // bd = await knx('foxx_business_manager_info')
+      // .where({ wmpoiid: shopId })
+      // .first()
+      // bd = bd.name
+
       const res1 = await knx(`foxx_shop_reptile`)
-        .insert({ wmpoiid: shopId, reptile_type: shopName, project_id: 10000 })
+        .insert({ wmpoiid: shopId, reptile_type: shopName, project_id })
         .onConflict('wmpoiid')
         .merge()
       results.res1 = res1
@@ -3475,6 +3524,7 @@ async function addNewShop(
       .onConflict('wmpoiid')
       .merge()
     results.res2 = res2
+
     const res3 = await knx(`foxx_real_shop_info`)
       .insert({
         real_shop_id,

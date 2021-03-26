@@ -813,7 +813,7 @@ async function test_move() {
   }
 }
 
-async function delFoods(id) {
+export async function delFoods(id) {
   const fallbackApp = new FallbackApp(id)
 
   try {
@@ -1046,6 +1046,86 @@ async function updatePlan(id, name, minOrder, price, boxPrice, actPrice, orderLi
   }
 }
 
+export async function updatePlan2(id, cateName, name, minOrder, price, boxPrice, actPrice, orderLimit) {
+  const fallbackApp = new FallbackApp(id)
+  let results = {}
+  try {
+    const minOrderCount = await fallbackApp.food.getMinOrderCount(name)
+    const { ok } = await fallbackApp.food.setHighBoxPrice2()
+    if (ok) {
+      if (price) {
+        let skus = [
+          {
+            price,
+            wmProductLadderBoxPrice: boxPrice ? { ladder_num: 1, ladder_price: boxPrice, status: 1 } : null
+          }
+        ]
+
+        const delActRes = await delAct(id, name)
+        const updateSkusRes = await batchUpdateFoodSkus(id, name, skus)
+
+        results.priceRes = {
+          delActRes,
+          updateSkusRes
+        }
+
+        if (minOrderCount != 1) {
+          const saveRes = await fallbackApp.food.save2(name, null, minOrderCount)
+          results.priceRes.saveRes = saveRes
+        }
+
+        if (!delActRes.noAct) {
+          await sleep(2000)
+          const createActRes = await createAct(id, name, delActRes.actPrice, delActRes.orderLimit)
+          results.createActRes = createActRes
+        }
+      }
+
+      if (boxPrice) {
+        const boxPriceRes = await updateFoodBoxPrice(id, name, boxPrice)
+        results.boxPriceRes = boxPriceRes
+      }
+
+      if (actPrice) {
+        const delActRes = await delAct(id, name)
+        let ol = -1
+        if (delActRes.noAct && actPrice < 8) ol = 1
+        if (!delActRes.noAct) ol = delActRes.orderLimit
+        const actPriceRes = await createAct(id, name, actPrice, ol)
+        results.actPriceRes = actPriceRes
+      }
+
+      if (orderLimit) {
+        const delActRes = await delAct(id, name)
+        const orderLimitRes = await createAct(id, name, delActRes.actPrice, orderLimit)
+        results.orderLimitRes = orderLimitRes
+      }
+
+      if (minOrder) {
+        const minOrderRes = await fallbackApp.food.save2(name, null, minOrder)
+        results.minOrderCount = minOrderRes
+      }
+
+      return Promise.resolve(results)
+    } else return Promise.reject({ err: 'sync failed' })
+  } catch (err) {
+    return Promise.reject(err)
+  }
+}
+
+async function updatePlan3(id, name) {
+  const fallbackApp = new FallbackApp(id)
+  try {
+    const { ok } = await fallbackApp.food.setHighBoxPrice2()
+    if (ok) {
+      const saveRes = await fallbackApp.food.save3(name, null)
+      return Promise.resolve(saveRes)
+    } else return Promise.reject({ err: 'sync failed' })
+  } catch (err) {
+    return Promise.reject(err)
+  }
+}
+
 async function updateNotDeliverAlone(id, name) {
   const fallbackApp = new FallbackApp(id)
   try {
@@ -1061,26 +1141,8 @@ async function updateNotDeliverAlone(id, name) {
 async function test_plan() {
   try {
     let data = await readJson('log/log.json')
-    let discounts = await Promise.all(
-      data.map(async v =>
-        knx.raw(`SELECT t1.wmpoiid, t1.itemName, t1.actInfo, t1.actPrice, t1.orderLimit, t1.manual_sorting, t1.isTop, t1.startTime, t1.endTime, t1.date
-    FROM foxx_market_activit_my_discounts t1 -- 今天
-    WHERE date = CURDATE() AND wmpoiid = ${v.meta[0]} AND itemName = "${v.meta[1]}"`)
-      )
-    )
-    data = data.map((v, i) => [
-      v.meta[0],
-      v.meta[1],
-      v.meta[2],
-      v.meta[3],
-      v.meta[4],
-      discounts[1][0][0].actPrice,
-      discounts[1][0][0].orderLimit,
-      i
-    ])
-
-    // console.table(data)
-    await loop(updatePlan, data, false, { test: delFoods })
+    data = data.map((v, i) => [v.meta[0], v.meta[1], i])
+    await loop(updatePlan3, data, false, { test: delFoods })
   } catch (error) {
     console.error(error)
   }
@@ -1679,7 +1741,7 @@ async function test_lq() {
 // test_autotask()
 
 // test_boxPrice()
-// test_plan()
+test_plan()
 // test_updateMaterial()
 // test_reduction2()
 // test_delivery()
@@ -1694,4 +1756,4 @@ async function test_lq() {
 // test_updateAttrs2()
 // test_updateImg()
 // test_updateUnitC()
-test_lq()
+// test_lq()

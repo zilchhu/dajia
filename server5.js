@@ -118,6 +118,32 @@ router.get('/menus', async ctx => {
   }
 })
 
+router.get('/charts/layouts', async ctx => {
+  try {
+    ctx.body = await knx('test_chart_layout_').select()
+  } catch (e) {
+    console.error(e)
+    ctx.body = { e }
+  }
+})
+
+router.post('/charts/layout/update', async ctx => {
+  try {
+    let { ids, id, rect } = ctx.request.body
+    if (!ids || id == null || !rect) {
+      ctx.body = { e: 'invalid' }
+      return
+    }
+    ctx.body = await knx('test_chart_layout_')
+      .insert({ ids, id, rect })
+      .onConflict(['ids', 'id'])
+      .merge()
+  } catch (e) {
+    console.error(e)
+    ctx.body = { e }
+  }
+})
+
 router.post('/chart/add', async ctx => {
   try {
     let { chart } = ctx.request.body

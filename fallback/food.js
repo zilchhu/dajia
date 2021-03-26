@@ -863,9 +863,13 @@ export default class Food {
 
       // console.log(wmProductSpu.newSpuAttrs.map(a => a.name == '份量').concat(getNewSpuAttrs(attrs, no)))
       let unitAttr = wmProductSpu.newSpuAttrs.findIndex(a => a.name == '份量')
-      if(unitAttr != -1 && wmProductSpu.newSpuAttrs[unitAttr].weight == -1 && wmProductSpu.newSpuAttrs[unitAttr].weightUnit == '') {
+      if (
+        unitAttr != -1 &&
+        wmProductSpu.newSpuAttrs[unitAttr].weight == -1 &&
+        wmProductSpu.newSpuAttrs[unitAttr].weightUnit == ''
+      ) {
         wmProductSpu.newSpuAttrs[unitAttr].weight = -2
-        wmProductSpu.newSpuAttrs[unitAttr].weightUnit = "1人份"
+        wmProductSpu.newSpuAttrs[unitAttr].weightUnit = '1人份'
       }
 
       let model = {
@@ -1015,6 +1019,164 @@ export default class Food {
       }
     }
   }
+
+  async save3(name, attrs) {
+    let that = this
+    try {
+      const food = await this.find(name)
+      let { wmProductSpu } = await this.getEditView2(food.id)
+
+      const temp = await this.getTemplate(food.id, 1)
+      let category_id = temp.categoryId
+      let wm_product_property_template_id = temp.wm_product_property_template_id
+
+      // let { ok, properties_values, unreqs } = await isPropMatchReqs(temp.propertiesKeys, temp.properties_values)
+      let properties_values = temp.properties_values
+      // // if (!ok) return Promise.reject({ err: `properties required ${unreqs}` })
+
+      // if (ok) {
+      //   properties_values = Object.keys(properties_values).reduce((a, c) => {
+      //     let values = properties_values[c].map(cv => {
+      //       let r = temp.propertiesKeys.find(k => k.wm_product_lib_tag_name == cv.wm_product_lib_tag_name)
+      //       return {
+      //         ...r,
+      //         wm_product_property_template_id,
+      //         level: 2,
+      //         is_leaf: 1,
+      //         value: cv.value,
+      //         value_id: cv.value_id,
+      //         child: null
+      //       }
+      //     })
+      //     return { ...a, [c]: values }
+      //   }, {})
+      // }
+
+      const props = await this.getProperties(category_id)
+      let no = props.saleAttrs.length + 1
+
+      // console.log(wmProductSpu.newSpuAttrs.map(a => a.name == '份量').concat(getNewSpuAttrs(attrs, no)))
+      let unitAttr = wmProductSpu.newSpuAttrs.findIndex(a => a.name == '份量')
+      if (
+        unitAttr != -1 &&
+        wmProductSpu.newSpuAttrs[unitAttr].weight == -1 &&
+        wmProductSpu.newSpuAttrs[unitAttr].weightUnit == ''
+      ) {
+        wmProductSpu.newSpuAttrs[unitAttr].weight = -2
+        wmProductSpu.newSpuAttrs[unitAttr].weightUnit = '1人份'
+      }
+
+      let groupNames = Array.from(new Set(wmProductSpu.newSpuAttrs.map(v => v.name)))
+      let groups = groupNames.reduce((c, v) => ({ ...c, [v]: wmProductSpu.newSpuAttrs.filter(k => k.name == v) }), {})
+      let subGroupNames = groupNames.filter(v => v.includes('口味'))
+      for (let sgn of subGroupNames) {
+        groups[sgn] = groups[sgn]
+          .filter(v => !/烧烤味?粉?|甘梅味?|蒜香[酱油]?酱?|辣椒粉|酸甜酱/.test(v.value))
+          .concat(['辣椒粉', '酸甜酱'].map(k => ({ ...groups[sgn][0], value: k })))
+          .map((v, i) => ({ ...v, value_sequence: i + 1 }))
+      }
+      let newSpuAttrs = flatten(groupNames.map(name => groups[name]))
+      console.log(newSpuAttrs)
+
+      let model = {
+        id: wmProductSpu.id,
+        wm_poi_id: wmProductSpu.wm_poi_id,
+        tag_id: wmProductSpu.tag_id,
+        tag_name: wmProductSpu.tag_name,
+        category_id: category_id, //选中的品类id
+        name: wmProductSpu.name,
+        isShippingTimeSyncPoi: wmProductSpu.isShippingTimeSyncPoi || 2,
+        shipping_time_x: wmProductSpu.shipping_time_x,
+        min_order_count: wmProductSpu.min_order_count,
+        wmProductPics: wmProductSpu.wmProductPics,
+        specialEffectPic: wmProductSpu.specialEffectPic,
+        properties_values: properties_values,
+        description: wmProductSpu.description,
+        labelValues: wmProductSpu.labelValues || [],
+        labelList: wmProductSpu.labelList || [], //
+        newSpuAttrs,
+        stockAndBoxPriceSkus: wmProductSpu.wmProductSkus.map(sku => ({
+          price: sku.price,
+          unit: sku.unit || '1人份',
+          box_price: sku.box_price,
+          spec: sku.spec || `（${sku.unit || '1人份'}）`,
+          weight: sku.weight,
+          wmProductLadderBoxPrice: sku.wmProductLadderBoxPrice || {
+            status: 1,
+            ladder_num: sku.box_num,
+            ladder_price: sku.box_price
+          },
+          wmProductStock: sku.wmProductStock || {
+            id: '0',
+            stock: -1,
+            max_stock: -1,
+            auto_refresh: 1
+          },
+          attrList: sku.attrList.find(a => a.name == '份量')
+            ? sku.attrList.find(a => a.name == '份量').value
+              ? sku.attrList
+              : [
+                  {
+                    name: '份量',
+                    name_id: 0,
+                    value: `${sku.unit || '1人份'}__默认`,
+                    value_id: 0,
+                    no: 0
+                  }
+                ]
+            : sku.attrList
+        })),
+        unifiedPackagingFee: wmProductSpu.unifiedPackagingFee,
+        wmProductLadderBoxPrice: wmProductSpu.wmProductLadderBoxPrice,
+        wmProductStock: wmProductSpu.wmProductStock || {
+          id: '0',
+          stock: -1,
+          max_stock: -1,
+          auto_refresh: 1
+        },
+        productCardDisplayContent: wmProductSpu.productCardDisplayContent || ''
+      }
+
+      return this.save_(model)
+    } catch (e) {
+      return Promise.reject(e)
+    }
+
+    async function isPropMatchReqs(propertiesKeys, properties_values, wm_product_property_template_id) {
+      let unreqs = propertiesKeys
+        .filter(k => k.is_required == 1) // 1.require 2.not
+        .filter(k => !properties_values[k.wm_product_lib_tag_id])
+
+      if (unreqs.length == 0) {
+        return Promise.resolve({ ok: true, properties_values })
+      } else {
+        let r = unreqs.find(k => k.wm_product_lib_tag_name == '茶底')
+
+        if (r) {
+          let c = r.child.find(c => c.wm_product_lib_tag_name == '其他茶型')
+          return isPropMatchReqs(
+            propertiesKeys,
+            {
+              ...properties_values,
+              [r.wm_product_lib_tag_id]: [
+                {
+                  ...r,
+                  wm_product_property_template_id,
+                  level: c.level,
+                  is_leaf: c.is_leaf,
+                  value: c.wm_product_lib_tag_name,
+                  value_id: c.wm_product_lib_tag_id,
+                  child: null
+                }
+              ]
+            },
+            wm_product_property_template_id
+          )
+        }
+        return Promise.reject({ ok: false, unreqs })
+      }
+    }
+  }
 }
 
 async function test() {
@@ -1023,8 +1185,6 @@ async function test() {
       { name: '底料', values: ['椰汁底'] },
       { name: '温度', values: ['冷', '温热'] }
     ]
-    const res = await new Food(10307635).save2('芒果紫米捞', attrs, 1)
-    console.log(res)
   } catch (error) {
     console.error(error)
   }

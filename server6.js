@@ -28,3 +28,44 @@ async function testsSync(wmPoiId) {
     return Promise.reject(e)
   }
 }
+
+var echo2 = sockjs.createServer();
+var server2 = http.createServer();
+echo2.installHandlers(server2, {prefix:'/price_update'});
+server2.listen(9998, '0.0.0.0');
+export var price_update_server = echo2
+
+async function wrap(f, meta, conn) {
+  try {
+    conn.write(...meta)
+    const res = await f(...meta)
+    conn.write(JSON.stringify(res))
+  } catch (err) {
+    conn.write(err.message ?? err)
+  }
+}
+
+export async function loop2(f, dataSource, conn, del) {
+  try {
+    let count = dataSource.length
+    for (let data of dataSource) {
+      conn.write(count)
+      await wrap(f, data, conn)
+
+      if (del) {
+        let idx = data[data.length - 1]
+        let comp = dataSource[idx + 1] && dataSource[idx + 1][0] == data[0]
+        if (!comp) {
+          try {
+            conn.write(await del.test(data[0]))
+          } catch (err) {
+            conn.write(err.message ?? err)
+          }
+        }
+      }
+      count -= 1
+    }
+  } catch (err) {
+    conn.write(err.message)
+  }
+}
