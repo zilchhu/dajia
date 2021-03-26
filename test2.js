@@ -1140,9 +1140,21 @@ async function updateNotDeliverAlone(id, name) {
 
 async function test_plan() {
   try {
-    let data = await readJson('log/log.json')
-    data = data.map((v, i) => [v.meta[0], v.meta[1], i])
-    await loop(updatePlan3, data, false, { test: delFoods })
+    let data = await readXls('plan/龙华菜单调整.xls', '导表')
+    data = data
+      .filter(v => v.调整后原价 != '' || v.调整后折扣价 != '')
+      .map((v, i) => [
+        11289597,
+        v.分类名,
+        v.品名,
+        null,
+        v.调整后原价 == '' ? null : v.调整后原价,
+        v.餐盒费,
+        v.调整后折扣价 == '' ? null : v.调整后折扣价,
+        v.每单折扣限购 == '' ? null : v.每单折扣限购,
+        i
+      ])
+    await loop(updatePlan2, data, false, { test: delFoods })
   } catch (error) {
     console.error(error)
   }
@@ -1741,7 +1753,7 @@ async function test_lq() {
 // test_autotask()
 
 // test_boxPrice()
-test_plan()
+// test_plan()
 // test_updateMaterial()
 // test_reduction2()
 // test_delivery()

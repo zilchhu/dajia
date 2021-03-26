@@ -634,6 +634,38 @@ router.get('/indices/elm/:shopId/:day', async ctx => {
   }
 })
 
+router.get('/offsell/mt/:shopId/:day', async ctx => {
+  try {
+    let { shopId, day } = ctx.params
+    if (!shopId) {
+      ctx.body = { e: 'invalid params' }
+      return
+    }
+    let [data, _] = await knx.raw(`SELECT *, tagName AS category_name, boxPrice AS package_fee FROM foxx_food_manage WHERE date = ${day} AND wmpoiid = ${shopId} AND sellStatus = 1`)
+    ctx.set('Cache-Control', 'max-age=28800')
+    ctx.body = { res: data }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
+
+router.get('/offsell/elm/:shopId/:day', async ctx => {
+  try {
+    let { shopId, day } = ctx.params
+    if (!shopId) {
+      ctx.body = { e: 'invalid params' }
+      return
+    }
+    let [data, _] = await knx.raw(`SELECT * FROM ele_food_manage WHERE  DATE(insert_date) = ${day} AND shop_id = ${shopId} AND on_shelf = '下架'`)
+    ctx.set('Cache-Control', 'max-age=28800')
+    ctx.body = { res: data }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
+
 router.get('/order/mt/:shopId', async ctx => {
   try {
     let { shopId } = ctx.params
@@ -1197,7 +1229,7 @@ const sum_sql2 = `
   GROUP BY real_shop, ym ORDER BY ym DESC
 `
 
-const fresh_sql = `SELECT a.*, e.cost_ratio, IFNULL(b.shop_name, c.reptile_type) AS name, IF(ISNULL(b.shop_name),'美团', '饿了么') AS platform, f.new_person, g.a2
+const fresh_sql = `SELECT a.*, a.turnover - IFNULL(h.third_send, 0) AS income, e.cost_ratio, IFNULL(b.shop_name, c.reptile_type) AS name, IF(ISNULL(b.shop_name),'美团', '饿了么') AS platform, f.new_person, g.a2
     FROM foxx_new_shop_track a
     LEFT JOIN ele_info_manage b ON a.wmpoiid = b.shop_id 
     LEFT JOIN foxx_shop_reptile c USING(wmpoiid)
@@ -1205,6 +1237,7 @@ const fresh_sql = `SELECT a.*, e.cost_ratio, IFNULL(b.shop_name, c.reptile_type)
     LEFT JOIN foxx_operating_data e ON a.wmpoiid = e.shop_id AND a.date = e.date
     LEFT JOIN foxx_real_shop_info f ON a.wmpoiid = f.shop_id 
     LEFT JOIN new_shop_track_copy1 g ON a.wmpoiid = g.wmpoiid AND g.updated_at = CURDATE()
+    LEFT JOIN wmb_expend h ON a.wmpoiid = h.shop_id AND a.date = DATE_FORMAT(DATE_SUB(h.insert_date,INTERVAL 1 DAY), '%Y%m%d')
     WHERE (b.shop_name IS NOT NULL OR c.reptile_type IS NOT NULL)
     AND f.new_person IS NOT NULL
     ORDER BY a.wmpoiid, a.date DESC`
@@ -4301,7 +4334,7 @@ async function fresh() {
       evaluate_over_order: '评论/单量',
       bizScore: '评分',
       moment: '推广',
-      turnover: '营业额',
+      income: '营业额',
       unitPrice: '客单价',
       overview: '曝光量',
       Entryrate: '进店率',
