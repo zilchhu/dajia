@@ -10,12 +10,14 @@ import path from 'path'
 import axios from 'axios'
 import md5 from 'md5'
 import uuid from 'uuid'
+import { parseAsync } from 'json2csv'
+
 
 import Poi from './fallback/poi.js'
 import PoiD from './fallback/poi_dajihua.js'
 // import { getAllElmShops } from './tools/all.js'
 import knex from 'knex'
-import { readXls } from './fallback/fallback_app.js'
+import { readXls, readJson } from './fallback/fallback_app.js'
 import { getAllElmShops } from './tools/all.js'
 
 import dayjs from 'dayjs'
@@ -265,6 +267,43 @@ router.get('/export/op3', async ctx => {
     ctx.body = e
   }
 })
+
+router.get('/export/fresh.csv', async ctx => {
+  try {
+    const [res, _] = await knx.raw(export_fresh_sql_csv)
+    
+    ctx.set('Content-Type', 'application/excel')
+    ctx.body =  await parseAsync(res)
+   
+  } catch (e) {
+    console.log(e)
+    ctx.body = e
+  }
+})
+
+router.get('/export/fresh', async ctx => {
+  try {
+    const [res, _] = await knx.raw(export_fresh_sql)
+     ctx.body = res.map(v => ({
+      ...v,
+      evaluate: parseFloat_null(v.evaluate),
+      order: parseFloat_null(v.order),
+      bizScore: parseFloat_null(v.bizScore),
+      moment: parseFloat_null(v.moment),
+      turnover: parseFloat_null(v.turnover),
+      unitPrice: parseFloat_null(v.unitPrice),
+      overview: parseFloat_null(v.overview),
+      Entryrate: parseFloat_null(v.Entryrate),
+      Orderrate: parseFloat_null(v.Orderrate),
+      kangaroo_name: v.kangaroo_name || '',
+      a2: v.a2 || ''
+    }))
+  } catch (e) {
+    console.log(e)
+    ctx.body = e
+  }
+})
+
 // all days
 router.get('/shop/:shopid', async ctx => {
   try {
@@ -1240,6 +1279,36 @@ const fresh_sql = `SELECT a.*, a.turnover - IFNULL(h.third_send, 0) AS income, e
     LEFT JOIN wmb_expend h ON a.wmpoiid = h.shop_id AND a.date = DATE_FORMAT(DATE_SUB(h.insert_date,INTERVAL 1 DAY), '%Y%m%d')
     WHERE (b.shop_name IS NOT NULL OR c.reptile_type IS NOT NULL)
     AND f.new_person IS NOT NULL
+    ORDER BY a.wmpoiid, a.date DESC`
+
+const export_fresh_sql_csv = `SELECT IFNULL(b.shop_name, c.reptile_type) AS 门店, IF(ISNULL(b.shop_name),'美团', '饿了么') AS 平台, f.new_person 负责人,
+    a.evaluate 评论数, a.bad_order 差评数, a.order 单量, a.evaluate/a.order 评价率, a.bizScore 评分,
+    a.moment 推广, a.turnover - IFNULL(h.third_send, 0) AS 营业额, a.unitPrice 客单价, a.overview 曝光量,
+    a.Entryrate 进店率, a.Orderrate 下单率, e.cost_ratio 成本比例, a.off_shelf 下架产品量, a.over_due_date 特权有效期,
+    a.kangaroo_name 袋鼠店长, a.red_packet_recharge 高佣返现, a.ranknum 商圈排名, a.extend 延迟发单, g.a2 优化
+    FROM foxx_new_shop_track a
+    LEFT JOIN ele_info_manage b ON a.wmpoiid = b.shop_id 
+    LEFT JOIN foxx_shop_reptile c USING(wmpoiid)
+    LEFT JOIN foxx_new_shop d ON a.wmpoiid = d.shop_id
+    LEFT JOIN foxx_operating_data e ON a.wmpoiid = e.shop_id AND a.date = e.date
+    LEFT JOIN foxx_real_shop_info f ON a.wmpoiid = f.shop_id 
+    LEFT JOIN new_shop_track_copy1 g ON a.wmpoiid = g.wmpoiid AND DATE_FORMAT(DATE_SUB(g.updated_at,INTERVAL 1 DAY), '%Y%m%d') = a.date
+    LEFT JOIN wmb_expend h ON a.wmpoiid = h.shop_id AND a.date = DATE_FORMAT(DATE_SUB(h.insert_date,INTERVAL 1 DAY), '%Y%m%d')
+    WHERE (b.shop_name IS NOT NULL OR c.reptile_type IS NOT NULL)
+    AND f.new_person IS NOT NULL 
+    ORDER BY a.wmpoiid, a.date DESC`
+
+const export_fresh_sql = `SELECT a.*, a.turnover - IFNULL(h.third_send, 0) AS income, e.cost_ratio, IFNULL(b.shop_name, c.reptile_type) AS name, IF(ISNULL(b.shop_name),'美团', '饿了么') AS platform, f.new_person, g.a2
+    FROM foxx_new_shop_track a
+    LEFT JOIN ele_info_manage b ON a.wmpoiid = b.shop_id 
+    LEFT JOIN foxx_shop_reptile c USING(wmpoiid)
+    LEFT JOIN foxx_new_shop d ON a.wmpoiid = d.shop_id
+    LEFT JOIN foxx_operating_data e ON a.wmpoiid = e.shop_id AND a.date = e.date
+    LEFT JOIN foxx_real_shop_info f ON a.wmpoiid = f.shop_id 
+    LEFT JOIN new_shop_track_copy1 g ON a.wmpoiid = g.wmpoiid AND DATE_FORMAT(DATE_SUB(g.updated_at,INTERVAL 1 DAY), '%Y%m%d') = a.date
+    LEFT JOIN wmb_expend h ON a.wmpoiid = h.shop_id AND a.date = DATE_FORMAT(DATE_SUB(h.insert_date,INTERVAL 1 DAY), '%Y%m%d')
+    WHERE (b.shop_name IS NOT NULL OR c.reptile_type IS NOT NULL)
+    AND f.new_person IS NOT NULL 
     ORDER BY a.wmpoiid, a.date DESC`
 
 const perf_sql = d => `WITH a AS (
@@ -5459,4 +5528,8 @@ function fixed2(num) {
 
 function parseFloat_0(num) {
   return parseFloat(num) ? parseFloat(num) : 0
+}
+
+function parseFloat_null(num) {
+  return parseFloat(num) ? parseFloat(num) : null
 }

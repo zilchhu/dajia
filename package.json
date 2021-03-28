@@ -21,6 +21,7 @@
     "express": "^4.17.1",
     "flatten": "^1.0.3",
     "htmlparser2": "^6.0.0",
+    "json2csv": "^5.0.6",
     "knex": "^0.21.12",
     "koa": "^2.13.0",
     "koa-bodyparser": "^4.3.0",
