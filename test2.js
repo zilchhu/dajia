@@ -174,7 +174,7 @@ async function batchUpdateFoodSkus(id, name, skus) {
           weight: sku.weight || food.wmProductSkus[i].weight,
           price: sku.price || food.wmProductSkus[i].price,
           stock: sku.stock || food.wmProductSkus[i].stock,
-          wmProductLadderBoxPrice: sku.wmProductLadderBoxPrice || food.wmProductSkus[i].wmProductLadderBoxPrice
+          wmProductLadderBoxPrice: sku.wmProductLadderBoxPrice || food.wmProductSkus[i].wmProductLadderBoxPrice || { ladder_num: 1, ladder_price: food.wmProductSkus[i].boxPrice, status: 1 }
         }
       })
     else
@@ -184,10 +184,10 @@ async function batchUpdateFoodSkus(id, name, skus) {
           weight: sku.weight || food.wmProductSkus[0].weight,
           price: sku.price || food.wmProductSkus[0].price,
           stock: sku.stock || food.wmProductSkus[0].stock,
-          wmProductLadderBoxPrice: sku.wmProductLadderBoxPrice || food.wmProductSkus[0].wmProductLadderBoxPrice
+          wmProductLadderBoxPrice: sku.wmProductLadderBoxPrice || food.wmProductSkus[0].wmProductLadderBoxPrice || { ladder_num: 1, ladder_price: food.wmProductSkus[0].boxPrice, status: 1 }
         }
       })
-    console.log(food.wmProductSkus.map(v => v.id))
+    console.log(skus)
     const batchUpdateSkusRes = await fallbackApp.food.batchUpdateSkus(
       [food.id],
       food.wmProductSkus.map(v => v.id),
@@ -1147,17 +1147,17 @@ async function updateNotDeliverAlone(id, name) {
 
 async function test_plan() {
   try {
-    let data = await readXls('plan/杨浦美团菜单.xls', 'Sheet1')
+    let data = await readXls('plan/武广美团贡茶.xlsx', 'hh美团产品名带折扣')
     data = data
       .filter(v => v.调整后餐盒费 != '' || v.调整后折扣价格 != '')
       .map((v, i) => [
-        9457484,
-        v.分类名,
-        v.品名,
+        9535472,
+        v.tagName,
+        v.food_name,
         null,
         null,
-        v.调整后餐盒费 == '' ? null : v.调整后餐盒费,
-        v.调整后折扣价格 == '' ? null : v.调整后折扣价格,
+        null,
+        v.修改后特价 == '' ? null : v.修改后特价,
         null,
         i
       ])

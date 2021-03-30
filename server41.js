@@ -12,7 +12,6 @@ import md5 from 'md5'
 import uuid from 'uuid'
 import { parseAsync } from 'json2csv'
 
-
 import Poi from './fallback/poi.js'
 import PoiD from './fallback/poi_dajihua.js'
 // import { getAllElmShops } from './tools/all.js'
@@ -61,16 +60,16 @@ const knx = knex({
 
 async function t() {
   try {
-    const r = await knx('foxx_operating_data')
-      .select()
-      .where({ date: 20210306 })
+    // const r = await knx('foxx_operating_data')
+    //   .select()
+    //   .where({ date: 20210306 })
 
-    const d = Array.from(new Set(r.map(v => v.shop_name))).map(v => r.find(k => k.shop_name == v))
-    await knx('foxx_operating_data')
-      .where({ date: 20210306 })
-      .del()
-    // console.log(d)
-    console.log(await knx('foxx_operating_data').insert(d))
+    // const d = Array.from(new Set(r.map(v => v.shop_name))).map(v => r.find(k => k.shop_name == v))
+    // await knx('foxx_operating_data')
+    //   .where({ date: 20210306 })
+    //   .del()
+    // // console.log(d)
+    // console.log(await knx('foxx_operating_data').insert(d))
 
     // const r = await knx('foxx_operating_data').select()
     // let cnt = r.length
@@ -85,6 +84,15 @@ async function t() {
     //   }
     //   cnt -= 1
     // }
+    let data = await knx('foxx_real_shop_info').select()
+    let i = 0
+    for (let row of data) {
+      let res = await knx('test_analyse_t_')
+        .where({ shop_id: row.shop_id, platform: row.platform == 1 ? '美团' : '饿了么' })
+        .update({ real_shop: row.real_shop_name })
+      console.log(res, i)
+      i += 1
+    }
   } catch (e) {
     console.error(e)
   }
@@ -167,7 +175,6 @@ price_update_server.on('connection', function(conn) {
   })
   conn.on('close', function() {})
 })
-
 
 router.get('/date/:date', async ctx => {})
 
@@ -271,10 +278,9 @@ router.get('/export/op3', async ctx => {
 router.get('/export/fresh.csv', async ctx => {
   try {
     const [res, _] = await knx.raw(export_fresh_sql_csv)
-    
+
     ctx.set('Content-Type', 'application/excel')
-    ctx.body =  await parseAsync(res)
-   
+    ctx.body = await parseAsync(res)
   } catch (e) {
     console.log(e)
     ctx.body = e
@@ -284,7 +290,7 @@ router.get('/export/fresh.csv', async ctx => {
 router.get('/export/fresh', async ctx => {
   try {
     const [res, _] = await knx.raw(export_fresh_sql)
-     ctx.body = res.map(v => ({
+    ctx.body = res.map(v => ({
       ...v,
       evaluate: parseFloat_null(v.evaluate),
       order: parseFloat_null(v.order),
@@ -680,7 +686,9 @@ router.get('/offsell/mt/:shopId/:day', async ctx => {
       ctx.body = { e: 'invalid params' }
       return
     }
-    let [data, _] = await knx.raw(`SELECT *, tagName AS category_name, boxPrice AS package_fee FROM foxx_food_manage WHERE date = ${day} AND wmpoiid = ${shopId} AND sellStatus = 1`)
+    let [data, _] = await knx.raw(
+      `SELECT *, tagName AS category_name, boxPrice AS package_fee FROM foxx_food_manage WHERE date = ${day} AND wmpoiid = ${shopId} AND sellStatus = 1`
+    )
     ctx.set('Cache-Control', 'max-age=28800')
     ctx.body = { res: data }
   } catch (e) {
@@ -696,7 +704,9 @@ router.get('/offsell/elm/:shopId/:day', async ctx => {
       ctx.body = { e: 'invalid params' }
       return
     }
-    let [data, _] = await knx.raw(`SELECT * FROM ele_food_manage WHERE  DATE(insert_date) = ${day} AND shop_id = ${shopId} AND on_shelf = '下架'`)
+    let [data, _] = await knx.raw(
+      `SELECT * FROM ele_food_manage WHERE  DATE(insert_date) = ${day} AND shop_id = ${shopId} AND on_shelf = '下架'`
+    )
     ctx.set('Cache-Control', 'max-age=28800')
     ctx.body = { res: data }
   } catch (e) {
@@ -1054,7 +1064,13 @@ router.get('/probs/ad', async ctx => {
 router.get('/probs/ae', async ctx => {
   try {
     let [data, _] = await knx.raw(满减活动检查)
-    ctx.body = { res: data.map((v, i) => ({ ...v, key: i, 活动规则: v.活动规则 ? v.活动规则.split(/(?=满)/).join('\n') : v.活动规则 })) }
+    ctx.body = {
+      res: data.map((v, i) => ({
+        ...v,
+        key: i,
+        活动规则: v.活动规则 ? v.活动规则.split(/(?=满)/).join('\n') : v.活动规则
+      }))
+    }
   } catch (e) {
     console.log(e)
     ctx.body = { e }
