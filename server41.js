@@ -1054,7 +1054,7 @@ router.get('/probs/ad', async ctx => {
 router.get('/probs/ae', async ctx => {
   try {
     let [data, _] = await knx.raw(满减活动检查)
-    ctx.body = { res: data.map((v, i) => ({ ...v, key: i })) }
+    ctx.body = { res: data.map((v, i) => ({ ...v, key: i, 活动规则: v.活动规则 ? v.活动规则.split(/(?=满)/).join('\n') : v.活动规则 })) }
   } catch (e) {
     console.log(e)
     ctx.body = { e }
@@ -3502,66 +3502,64 @@ const 假减配检查 = `WITH
     FROM d JOIN e ON d.shop_id = e.shop_id
     JOIN f ON d.shop_id = f.shop_id`
 
-const 满减活动检查 = `WITH 
-    a AS (-- 	查询满减活动
-      SELECT
-        shop_id,
-        title,
-        rule,
-        date,
-        descs
-      FROM
-        ele_activity_full_reduction 
-      WHERE
-        insert_date > CURDATE() AND
-        title IN ( "店铺满减", "智能满减", "百亿补贴" ) AND
-        ISNULL( conflict_message ) AND 
-        ( descs = '进行中' OR descs LIKE '%天后结束%' OR descs LIKE '%天结束%' ) 
+const 满减活动检查 = `-- 满减：
+    WITH 
+    a AS (--  查询满减活动
+    SELECT
+      shop_id,
+      title,
+      rule,
+      STR_TO_DATE( MID( date, LOCATE( "至", date ) + 2, 10 ), "%Y-%m-%d" ) end_time -- 获取结束日期
+    FROM
+      ele_activity_full_reduction 
+    WHERE
+      DATE_FORMAT( insert_date, '%Y-%m-%d' ) = CURRENT_DATE AND
+      title IN ( "店铺满减", "智能满减", "百亿补贴" ) AND
+      ISNULL( conflict_message ) AND 
+      ( descs = '进行中' OR descs LIKE '%天后结束%' OR descs LIKE '%天结束%' )
     ),
     b AS (
-      SELECT
-        wmpoiid,
-        '店铺满减' title,
-        detail,
-        start_time,
-        status
-      FROM  foxx_market_activit_my_reduce 
-      WHERE
-        date = CURDATE() AND
-        my_activit_id = "满减" AND
-        ( status = '进行中' OR status LIKE '%天后结束%' OR status LIKE '%天结束%' ) 
+    SELECT
+      wmpoiid,
+      '店铺满减' title,
+      detail,
+      STR_TO_DATE( MID( start_time, LOCATE( "-", start_time ) + 1 ), "%Y%m%d" ) end_time -- 获取结束日期
+    FROM  foxx_market_activit_my_reduce
+    WHERE
+      DATE_FORMAT( date, '%Y-%m-%d' ) = CURRENT_DATE AND
+      my_activit_id = "满减" AND
+      ( status = '进行中' OR status LIKE '%天后结束%' OR status LIKE '%天结束%' ) 
     ),
     c AS (
-      SELECT * FROM a
-      UNION ALL
-      SELECT * FROM b
+    SELECT * FROM a
+    UNION ALL
+    SELECT * FROM b
     ),
     d AS (
-      -- 门店信息
-      SELECT
-        shop_id,
-        F_GET_SHOP_NAME(shop_id) shop_name,
-        CASE platform
-          WHEN 1 THEN '美团'
-          ELSE '饿了么'
-        END platform,
-        person,
-        real_shop_name
-      FROM foxx_real_shop_info
-      WHERE 
-        is_delete = 0
+    -- 门店信息
+    SELECT
+      shop_id,
+      F_GET_SHOP_NAME(shop_id) shop_name,
+      CASE platform
+      WHEN 1 THEN '美团'
+      ELSE '饿了么'
+      END platform,
+      person,
+      real_shop_name
+    FROM foxx_real_shop_info
+    WHERE 
+      is_delete = 0
     )
     SELECT
-      d.shop_id,
-      d.shop_name,
-      d.platform,
-      d.person,
-      c.title,
-      c.rule,
-      c.date,
-      c.descs 
+    d.shop_id '店铺编号',
+    d.shop_name '店铺名称',
+    d.platform '平台',
+    d.person '责任人',
+    c.title '活动类型',
+    c.rule '活动规则',
+    DATE_FORMAT(end_time, '%Y%m%d') '结束时间'
     FROM c RIGHT JOIN d ON c.shop_id = d.shop_id 
-    ORDER BY platform, rule`
+    ORDER BY end_time`
 
 async function date(d) {}
 

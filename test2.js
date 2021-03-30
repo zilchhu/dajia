@@ -468,8 +468,14 @@ async function updateUnitC(id, name) {
 
 async function test_updateImg() {
   try {
-    let [data, _] = await knx.raw(`SELECT * FROM foxx_food_manage f WHERE date = CURDATE() AND  name  LIKE '%法式焦糖烤布蕾%'`)
-    data = data.map(v=>[v.wmpoiid, v.productId, 'http://p0.meituan.net/wmproduct/71bba988cab3ffe2a7148732cced60d2814663.png'])
+    let [data, _] = await knx.raw(
+      `SELECT * FROM foxx_food_manage f WHERE date = CURDATE() AND  name  LIKE '%法式焦糖烤布蕾%'`
+    )
+    data = data.map(v => [
+      v.wmpoiid,
+      v.productId,
+      'http://p0.meituan.net/wmproduct/71bba988cab3ffe2a7148732cced60d2814663.png'
+    ])
     await loop(updateImg, data, false)
   } catch (err) {
     console.log(err)
@@ -1141,16 +1147,17 @@ async function updateNotDeliverAlone(id, name) {
 
 async function test_plan() {
   try {
-    let data = await readXls('plan/武广价格.xlsx', 'hh美团产品名带折扣')
+    let data = await readXls('plan/杨浦美团菜单.xls', 'Sheet1')
     data = data
+      .filter(v => v.调整后餐盒费 != '' || v.调整后折扣价格 != '')
       .map((v, i) => [
-        9535472,
-        v.tagName,
-        v.food_name,
+        9457484,
+        v.分类名,
+        v.品名,
         null,
-        v.原价修改 == '' ? null : v.原价修改,
         null,
-        v.折扣价修改 == '' ? null : v.折扣价修改,
+        v.调整后餐盒费 == '' ? null : v.调整后餐盒费,
+        v.调整后折扣价格 == '' ? null : v.调整后折扣价格,
         null,
         i
       ])
