@@ -3374,7 +3374,7 @@ const 减配活动检查 = `-- 减配活动检查
       WHERE
       title LIKE "%减配送费%" AND
       insert_date > CURRENT_DATE AND
-      descs = '进行中' AND
+      descs IN ("进行中","今天结束","3天后结束","2天后结束") AND
       ISNULL( conflict_message ) 
     ),
     b AS (
@@ -3467,7 +3467,7 @@ const 减配活动检查 = `-- 减配活动检查
       g.sub_detail '力度偏差',
       g.price_items '起送价',
       g.date '到期时间'
-    FROM g JOIN h ON g.shop_id = h.shop_id
+    FROM g RIGHT JOIN h ON g.shop_id = h.shop_id
     ORDER BY platform, sub_detail`
 
 const 假减配检查 = `WITH
