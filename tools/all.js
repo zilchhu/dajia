@@ -903,11 +903,17 @@ async function a(wmPoiId) {
     // let res = await execRequest(instanceElm, y.requests.elm['推广福利/get'], [2000506173], xshard(2000506173))
     // console.log(res)
 
-    let buff = fs.readFileSync(`image/小酥肉根套餐(天天神券可用).gif`)
-    let base64data = buff.toString('base64')
-
-    const upR = await execRequest(undefined, y.requests.mt['上传图片'], [base64data], y.headers['店铺设置'])
-    console.log(upR)
+    let files = fs.readdirSync('image')
+    let urls = []
+    // files = [files[0]]
+    for (let f of files) {
+      let buff = fs.readFileSync(`image/${f}`)
+      let base64data = buff.toString('base64')
+      const upR = await execRequest(undefined, y.requests.mt['上传图片'], [base64data], y.headers['店铺设置'])
+      urls.push({ name: f, url: upR.picUrl })
+      console.log(upR)
+    }
+    fs.writeFileSync('image/ims.json', JSON.stringify(urls))
   } catch (error) {
     console.error(error)
     fs.writeFileSync('log/log.json', JSON.stringify(error))
@@ -1136,7 +1142,7 @@ async function freshMt(userTasks, userRule) {
   try {
     const { wmPoiId, wmPoiType, sourcePoiId, reducSourcePoiId } = userRule
 
-    if (!wmPoiId || !wmPoiType ) return Promise.reject('invalid params')
+    if (!wmPoiId || !wmPoiType) return Promise.reject('invalid params')
 
     const allTasks = [
       {
@@ -1163,7 +1169,7 @@ async function freshMt(userTasks, userRule) {
         name: '满减活动',
         fn: async function() {
           try {
-            if(!reducSourcePoiId) return Promise.reject('no reducid')
+            if (!reducSourcePoiId) return Promise.reject('no reducid')
             const fallbackApp = new FallbackApp(reducSourcePoiId)
             let spolicy = await fallbackApp.act.reduction.find()
             spolicy = JSON.parse(spolicy.policy)

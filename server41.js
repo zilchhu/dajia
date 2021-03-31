@@ -47,6 +47,7 @@ function omit(obj, ks) {
   return newObj
 }
 
+// import knex from 'knex'
 const knx = knex({
   client: 'mysql',
   connection: {
@@ -157,6 +158,7 @@ price_update_server.on('connection', function(conn) {
   conn.on('data', async function(message) {
     console.log(message)
     let data = await readXls(`uploads/${message}`, 'Sheet1')
+    conn.write(message)
     data = data
       .filter(v => v.店铺id != '')
       .filter(v => !v.店铺id.includes('必填'))
@@ -2476,7 +2478,7 @@ const 两份起购餐品价格错误 = `-- 两份起购餐品价格错误
       WHERE 
       -- 	筛选出拆分卖的商品
         insert_date > CURRENT_DATE AND
-        min_purchase_quantity > 2 AND
+        min_purchase_quantity > 1 AND
         ( package_fee + price ) * min_purchase_quantity NOT BETWEEN 13.8 AND 15 AND
         price < 10
     ),

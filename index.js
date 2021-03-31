@@ -1,7 +1,7 @@
 import Food from './food/food.js'
 import FoodCat from './food/foodCat.js'
 import FoodDna from './food/foodDna.js'
-import Image from './image/image.js'
+// import Image from './image/image.js'
 import Order from './order/order.js'
 import Poi from './poi/poi.js'
 import Act from './act/act.js'
@@ -18,7 +18,7 @@ export default class App {
     this.food = new Food(appPoiCode)
     this.foodCat = new FoodCat(appPoiCode)
     this.foodDna = new FoodDna(appPoiCode)
-    this.image = new Image(appPoiCode)
+    // this.image = new Image(appPoiCode)
     this.order = new Order(appPoiCode)
     this.poi = new Poi(appPoiCode)
     this.act = new Act(appPoiCode)

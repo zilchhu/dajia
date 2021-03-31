@@ -174,7 +174,12 @@ async function batchUpdateFoodSkus(id, name, skus) {
           weight: sku.weight || food.wmProductSkus[i].weight,
           price: sku.price || food.wmProductSkus[i].price,
           stock: sku.stock || food.wmProductSkus[i].stock,
-          wmProductLadderBoxPrice: sku.wmProductLadderBoxPrice || food.wmProductSkus[i].wmProductLadderBoxPrice || { ladder_num: 1, ladder_price: food.wmProductSkus[i].boxPrice, status: 1 }
+          wmProductLadderBoxPrice: sku.wmProductLadderBoxPrice ||
+            food.wmProductSkus[i].wmProductLadderBoxPrice || {
+              ladder_num: 1,
+              ladder_price: food.wmProductSkus[i].boxPrice,
+              status: 1
+            }
         }
       })
     else
@@ -184,7 +189,12 @@ async function batchUpdateFoodSkus(id, name, skus) {
           weight: sku.weight || food.wmProductSkus[0].weight,
           price: sku.price || food.wmProductSkus[0].price,
           stock: sku.stock || food.wmProductSkus[0].stock,
-          wmProductLadderBoxPrice: sku.wmProductLadderBoxPrice || food.wmProductSkus[0].wmProductLadderBoxPrice || { ladder_num: 1, ladder_price: food.wmProductSkus[0].boxPrice, status: 1 }
+          wmProductLadderBoxPrice: sku.wmProductLadderBoxPrice ||
+            food.wmProductSkus[0].wmProductLadderBoxPrice || {
+              ladder_num: 1,
+              ladder_price: food.wmProductSkus[0].boxPrice,
+              status: 1
+            }
         }
       })
     console.log(skus)
@@ -468,14 +478,24 @@ async function updateUnitC(id, name) {
 
 async function test_updateImg() {
   try {
-    let [data, _] = await knx.raw(
-      `SELECT * FROM foxx_food_manage f WHERE date = CURDATE() AND  name  LIKE '%法式焦糖烤布蕾%'`
-    )
-    data = data.map(v => [
-      v.wmpoiid,
-      v.productId,
-      'http://p0.meituan.net/wmproduct/71bba988cab3ffe2a7148732cced60d2814663.png'
-    ])
+    // let ims = await readJson('image/ims.json')
+    // ims = ims.filter(v=>v.name == '红豆沙' || v.name == '绿豆沙')
+    // for (let im of ims) {
+    //   console.log(im)
+    //   let [data, _] = await knx.raw(
+    //     `SELECT * FROM foxx_food_manage f 
+    //      LEFT JOIN foxx_shop_reptile r ON f.wmpoiid = r.wmpoiid 
+    //      WHERE reptile_type LIKE '%喜三德%' AND date = CURDATE() AND  name  LIKE '${im.name.replace('.jpg', '')}?'`
+    //   )
+    //   data = data.map(v => [
+    //     v.wmpoiid,
+    //     v.productId,
+    //     im.url
+    //   ])
+    //   await loop(updateImg, data, false)
+    // }
+    let [data, _] = await knx.raw(`SELECT * FROM foxx_food_manage f WHERE date = CURDATE() AND  name  LIKE '%麻薯奶茶%'`)
+    data = data.map(v=>[v.wmpoiid, v.productId, 'http://p0.meituan.net/wmproduct/ac2147f622d6d99b75174a394bd92165712205.png'])
     await loop(updateImg, data, false)
   } catch (err) {
     console.log(err)
@@ -536,8 +556,8 @@ async function updateAttrs2(id, name, desc) {
 async function test_updateAttrs2() {
   try {
     // let attrs = [{ name: '温度', values: ['冷', '温热'] }]
-    let data = await readXls('plan/美团（大计划民治店）商品描述.xlsx', '修改版')
-    data = data.map(v => [9835112, v.商品名称.trim(), v.描述.trim()])
+    let data = await readXls('plan/烧烤店-美团描述(1).xlsx', '修改版')
+    data = data.map(v => [10984447, v.商品名称.trim(), v.描述.trim()])
     await loop(updateAttrs2, data, true)
   } catch (e) {
     console.error(e)
