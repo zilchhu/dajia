@@ -1079,6 +1079,21 @@ router.get('/probs/ae', async ctx => {
   }
 })
 
+router.get('/probs/af', async ctx => {
+  try {
+    let [data, _] = await knx.raw(库存过少检查)
+    ctx.body = {
+      res: data.map((v, i) => ({
+        ...v,
+        key: i
+      }))
+    }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
+
 router.get('/shopActsDiff', async ctx => {
   try {
     let data = await knx('test_change_t_').select()
@@ -1957,7 +1972,7 @@ const mt_foods_diff = `SELECT t.wmpoiid shop_id, m.reptile_type shop_name, IF(r.
     LEFT JOIN foxx_shop_reptile m USING(wmpoiid)
     LEFT JOIN foxx_real_shop_info r ON t.wmpoiid = r.shop_id
     GROUP BY t.wmpoiid, productId, price, boxPrice
-    HAVING COUNT(*) = 1 AND shop_name NOT LIKE '%大计划%'
+    HAVING COUNT(*) = 1 
     ORDER BY t.wmpoiid, productId, insert_date`
 
 const mt_discounts_diff = `SELECT t.wmpoiid shop_id, m.reptile_type shop_name, IF(r.platform IS NULL, NULL, IF(r.platform = 1, '美团', '饿了么')) platform, IFNULL(r.new_person, r.person) person, 
@@ -1976,7 +1991,7 @@ const mt_discounts_diff = `SELECT t.wmpoiid shop_id, m.reptile_type shop_name, I
     LEFT JOIN foxx_shop_reptile m USING(wmpoiid)
     LEFT JOIN foxx_real_shop_info r ON t.wmpoiid = r.shop_id
     GROUP BY t.wmpoiid, itemName, actPrice, orderLimit
-    HAVING COUNT(*) = 1 AND shop_name NOT LIKE '%大计划%'
+    HAVING COUNT(*) = 1 
     ORDER BY t.wmpoiid, itemName, insert_date`
 
 const mt_shop_cate_diff = `SELECT t.wmpoiid shop_id, wmpoiname shop_name, IF(r.platform IS NULL, NULL, IF(r.platform = 1, '美团', '饿了么')) platform, IFNULL(r.new_person, r.person) person, 
@@ -1993,7 +2008,7 @@ const mt_shop_cate_diff = `SELECT t.wmpoiid shop_id, wmpoiname shop_name, IF(r.p
     )  t
     LEFT JOIN foxx_real_shop_info r ON t.wmpoiid = r.shop_id
     GROUP BY t.wmpoiid, mainCategory, supplementCategory
-    HAVING COUNT(*) = 1 AND shop_name NOT LIKE '%大计划%'
+    HAVING COUNT(*) = 1 
     ORDER BY t.wmpoiid, mainCategory, supplementCategory, insert_date`
 
 const 原价扣点城市折扣与原价差距大于2 = ` -- 原价扣点城市折扣与原价差距大于2
@@ -3578,6 +3593,63 @@ const 满减活动检查 = `-- 满减：
     DATE_FORMAT(end_time, '%Y%m%d') '结束时间'
     FROM c RIGHT JOIN d ON c.shop_id = d.shop_id 
     ORDER BY end_time`
+
+const 库存过少检查 = `WITH
+    a AS
+    (
+      SELECT
+        wmpoiid,
+        tagName,
+        name,
+        stock,
+        maxStock
+      FROM foxx_food_manage 
+      WHERE 
+      -- 	wmpoiid = 10056855 AND 
+        date = CURRENT_DATE AND stock BETWEEN 0 AND 98
+    ),
+    b AS (
+      SELECT
+        shop_id,
+        category_name,
+        name,
+        stock,
+        max_stock
+      FROM ele_food_manage
+      WHERE
+        insert_date > CURRENT_DATE AND stock BETWEEN 0 AND 98
+    ),
+    c AS (
+        -- 门店信息
+      SELECT
+        shop_id,
+        F_GET_SHOP_NAME(shop_id) shop_name,
+        CASE platform
+          WHEN 1 THEN '美团'
+          ELSE '饿了么'
+        END platform,
+        person,
+        real_shop_name
+      FROM foxx_real_shop_info
+      WHERE 
+        is_delete = 0
+    ),
+    d AS (
+      SELECT * FROM a
+      UNION
+      SELECT * FROM b
+    )
+    SELECT 
+      c.shop_id 店铺id,
+      c.shop_name 店名,
+      c.platform 平台,
+      c.person 责任人,
+      c.real_shop_name 物理店,
+      d.tagName 分类,
+      d.name 商品,
+      d.stock 库存,
+      d.maxStock 最大库存
+    FROM d JOIN c ON c.shop_id = d.wmpoiid`
 
 async function date(d) {}
 
