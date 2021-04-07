@@ -10,6 +10,8 @@ import path from 'path'
 import axios from 'axios'
 import md5 from 'md5'
 import uuid from 'uuid'
+import qs from 'qs'
+import CryptoJS from 'crypto-js'
 import { parseAsync } from 'json2csv'
 
 import Poi from './fallback/poi.js'
@@ -221,12 +223,14 @@ router.get('/fresh', async ctx => {
 router.get('/perf/:date', async ctx => {
   try {
     let { date } = ctx.params
+    let { djh } = ctx.query
 
     if (!date) {
       ctx.body = { e: 'invalid params' }
       return
     }
-    const res = await perf(date)
+
+    const res = await perf(date, djh)
     ctx.body = { res }
   } catch (e) {
     console.log(e)
@@ -246,7 +250,7 @@ router.get('/export/perf', async ctx => {
 
 router.get('/export/op', async ctx => {
   try {
-    const [res, _] = await knx.raw(op_sql(31))
+    const [res, _] = await knx.raw(op_sql(60))
     ctx.body = res.map(v => ({ ...v, shop_id: `${v.shop_id}`, date: `${v.date}` }))
   } catch (e) {
     console.log(e)
@@ -266,7 +270,7 @@ router.get('/export/op2', async ctx => {
 
 router.get('/export/op3', async ctx => {
   try {
-    const [res, _] = await knx.raw(sum_sql(31))
+    const [res, _] = await knx.raw(sum_sql(60))
     ctx.body = res.map(v => ({
       ...v,
       date: `${v.date}`
@@ -456,6 +460,16 @@ router.get('/dada', async ctx => {
   }
 })
 
+router.get('/shunfeng', async ctx => {
+  try {
+    const res = await knx('sf_express_user_info').select()
+    ctx.body = { res }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
+
 router.get('/myt', async ctx => {
   try {
     const res = await knx('myt_login_info').select()
@@ -541,6 +555,21 @@ router.post('/addDada', async ctx => {
   }
 })
 
+router.post('/addShunfeng', async ctx => {
+  try {
+    let { shopId, shopName, username, password } = ctx.request.body
+    if (!shopId || !username || !password) {
+      ctx.body = { e: 'invalid params' }
+      return
+    }
+    const res = await addShunfeng(shopId, shopName, username, password)
+    ctx.body = { res }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
+
 router.post('/addMyt', async ctx => {
   try {
     let { shopId, loginName, password } = ctx.request.body
@@ -579,6 +608,21 @@ router.post('/delDada', async ctx => {
       return
     }
     const res = await delDada(shopId, username)
+    ctx.body = { res }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
+
+router.post('/delShunfeng', async ctx => {
+  try {
+    let { shopId, username } = ctx.request.body
+    if (!shopId || !username) {
+      ctx.body = { e: 'invalid params' }
+      return
+    }
+    const res = await delShunfeng(shopId, username)
     ctx.body = { res }
   } catch (e) {
     console.log(e)
@@ -707,7 +751,12 @@ router.get('/offsell/elm/:shopId/:day', async ctx => {
       return
     }
     let [data, _] = await knx.raw(
-      `SELECT * FROM ele_food_manage WHERE  DATE(insert_date) = ${day} AND shop_id = ${shopId} AND on_shelf = '下架'`
+      `SELECT * FROM ele_food_manage m 
+      RIGHT JOIN (
+        SELECT id FROM ele_food_manage WHERE insert_date BETWEEN ${day} AND ${dayjs(day, 'YYYYMMDD')
+        .add(1, 'day')
+        .format('YYYYMMDD')} AND shop_id = ${shopId} AND on_shelf = '下架' 
+      ) t ON m.id = t.id`
     )
     ctx.set('Cache-Control', 'max-age=28800')
     ctx.body = { res: data }
@@ -1096,7 +1145,14 @@ router.get('/probs/af', async ctx => {
 
 router.get('/shopActsDiff', async ctx => {
   try {
-    let data = await knx('test_change_t_').select()
+    let data = await knx('test_change_t_')
+      .select()
+      .whereBetween('change_date', [
+        dayjs()
+          .subtract(15, 'day')
+          .format('YYYYMMDD'),
+        dayjs().format('YYYYMMDD')
+      ])
     data = data.map(v => ({ ...v, after_rule: JSON.parse(v.after_rule), before_rule: JSON.parse(v.before_rule) }))
     if (!data.find(v => dayjs(v.change_date, 'YYYYMMDD').isSame(dayjs(), 'day'))) {
       data = await shopActsDiff()
@@ -1344,9 +1400,9 @@ const export_fresh_sql = `SELECT a.*, a.turnover - IFNULL(h.third_send, 0) AS in
     AND f.new_person IS NOT NULL 
     ORDER BY a.wmpoiid, a.date DESC`
 
-const perf_sql = d => `WITH a AS (
+const perf_sql = (d, djh = 1) => `WITH a AS (
     SELECT city, person, real_shop, income_sum, income_avg, income_score, cost_sum, cost_avg, cost_sum_ratio, cost_score, consume_sum, consume_avg, consume_sum_ratio, consume_score, score, date
-    FROM test_analyse_t_ 
+    FROM test_analyse_t_ ${djh == 0 ? "WHERE shop_name NOT LIKE '%大计划%'" : ''}
     GROUP BY real_shop, date ORDER BY date DESC
   ),
   b AS (
@@ -3830,6 +3886,76 @@ async function loginDada(username, password) {
   }
 }
 
+async function addShunfeng(shopId, shopName, username, password) {
+  try {
+    let l = await loginShunfeng(username, password)
+    if (l.data.errno != 0) return Promise.reject('顺丰登录失败')
+
+    const res = await knx(`sf_express_user_info`)
+      .insert({
+        shop_id: shopId,
+        shop_name: shopName,
+        user_name: username,
+        user_pass: password,
+        is_status: 0,
+        is_delete: 0
+      })
+      .onConflict('shop_id')
+      .merge()
+    return Promise.resolve(res)
+  } catch (e) {
+    return Promise.reject(e)
+  }
+}
+
+async function loginShunfeng(username, password) {
+  let key = 'BJFCMLCCBJFCMLCC'
+  try {
+    var data = qs.stringify({
+      platform: 'crm',
+      cuid: '6437BC95DFB8B8DCAE54C83D049165CE|0',
+      appid: '87634392',
+      channel: 'android',
+      ENV_LANG: 'zh',
+      app_version: '4.0.1',
+      uname: `${username}`,
+      upass: `${encrypt(password)}`
+    })
+    var config = {
+      method: 'post',
+      url: 'https://passtc.sf-express.com/api/loginv2',
+      headers: {
+        COOKIE: '',
+        ENV_LANG: 'zh',
+        'User-Agent': 'Dalvik/2.1.0 (Linux; U; Android 7.1.2; MI 9 Build/N2G48C)',
+        Host: 'passtc.sf-express.com',
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      data: data
+    }
+
+    const res = await axios(config)
+    return Promise.resolve(res)
+  } catch (e) {
+    return Promise.reject(e)
+  }
+
+  function encrypt(password) {
+    return CryptoJS.AES.encrypt(
+      Buffer.from(password)
+        .toString('base64')
+        .split('')
+        .reverse()
+        .join(''),
+      CryptoJS.enc.Utf8.parse(key),
+      {
+        mode: CryptoJS.mode.ECB,
+        padding: CryptoJS.pad.Pkcs7
+      }
+    ).toString()
+  }
+}
+
 async function addMyt(shopId, loginName, password) {
   try {
     const { message, data } = await loginMyt(loginName, password)
@@ -3901,6 +4027,17 @@ async function delDada(shopId, username) {
   }
 }
 
+async function delShunfeng(shopId, username) {
+  try {
+    const res = await knx(`sf_express_user_info`)
+      .where({ shop_id: shopId, user_name: username })
+      .del()
+    return Promise.resolve(res)
+  } catch (e) {
+    return Promise.reject(e)
+  }
+}
+
 async function delMyt(shopId, loginName) {
   try {
     const res = await knx(`myt_login_info`)
@@ -3957,8 +4094,9 @@ async function shopActsDiff() {
         rule: `主营：${v.mainCategory}\n辅营：${v.supplementCategory}`
       }))
     ].sort((a, b) => a.shop_id - b.shop_id)
-
+    // console.log(data)
     let res = new M(data).bind(split)
+
     let saveRes = await knx('test_change_t_')
       .insert(
         res.val.map(v => ({
@@ -3969,7 +4107,7 @@ async function shopActsDiff() {
       )
       .onConflict('key')
       .merge()
-    console.log(saveRes)
+    console.log('shopActsDiff', saveRes)
     return Promise.resolve(res.val)
   } catch (e) {
     return Promise.reject(e)
@@ -4651,9 +4789,9 @@ async function indices(platform, shopId, day) {
 
 /////////////////////////////
 ///////////////////////////////////
-async function perf(date) {
+async function perf(date, djh) {
   try {
-    let [data, _] = await knx.raw(perf_sql(date))
+    let [data, _] = await knx.raw(perf_sql(date, djh))
 
     if (!data) return Promise.reject('no data')
 

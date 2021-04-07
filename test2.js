@@ -483,8 +483,8 @@ async function test_updateImg() {
     // for (let im of ims) {
     //   console.log(im)
     //   let [data, _] = await knx.raw(
-    //     `SELECT * FROM foxx_food_manage f 
-    //      LEFT JOIN foxx_shop_reptile r ON f.wmpoiid = r.wmpoiid 
+    //     `SELECT * FROM foxx_food_manage f
+    //      LEFT JOIN foxx_shop_reptile r ON f.wmpoiid = r.wmpoiid
     //      WHERE reptile_type LIKE '%喜三德%' AND date = CURDATE() AND  name  LIKE '${im.name.replace('.jpg', '')}?'`
     //   )
     //   data = data.map(v => [
@@ -494,8 +494,14 @@ async function test_updateImg() {
     //   ])
     //   await loop(updateImg, data, false)
     // }
-    let [data, _] = await knx.raw(`SELECT * FROM foxx_food_manage f WHERE date = CURDATE() AND  name  LIKE '%麻薯奶茶%'`)
-    data = data.map(v=>[v.wmpoiid, v.productId, 'http://p0.meituan.net/wmproduct/ac2147f622d6d99b75174a394bd92165712205.png'])
+    let [data, _] = await knx.raw(
+      `SELECT * FROM foxx_food_manage f WHERE date = CURDATE() AND  name  LIKE '%麻薯奶茶%'`
+    )
+    data = data.map(v => [
+      v.wmpoiid,
+      v.productId,
+      'http://p0.meituan.net/wmproduct/ac2147f622d6d99b75174a394bd92165712205.png'
+    ])
     await loop(updateImg, data, false)
   } catch (err) {
     console.log(err)
@@ -1700,14 +1706,34 @@ async function test_autotask() {
   }
 }
 
-async function test_stock(id) {
-  try {
-    let [data, _] = await knx.raw(`SELECT f.wmpoiid, reptile_type, name, stock FROM foxx_food_manage f 
-    LEFT JOIN foxx_shop_reptile s ON f.wmpoiid = s.wmpoiid
-    WHERE f.date = CURDATE()`)
-    data = data.filter(v => v.wmpoiid != 10085676 && v.stock != -1).map(v => [v.wmpoiid, v.name, -1])
+async function updateStock2(id) {
+  const fallbackApp = await new FallbackApp(id)
 
-    await loop(updateFoodStock, data, false)
+  try {
+    const foods = await fallbackApp.food.list2_({
+      opType: 1,
+      queryCount: 1,
+      pageNum: 1,
+      pageSize: 500,
+      wmPoiId: id,
+      needAllCount: true,
+      needTagList: true
+    })
+    let skuIds = flatten(foods.productList.map(v => v.wmProductSkus.map(sku => sku.id)))
+
+    const foodUpdateStockRes = await fallbackApp.food.batchUpdateStock(skuIds, -1)
+    return Promise.resolve({ foodUpdateStockRes, skuIds })
+  } catch (err) {
+    return Promise.reject(err)
+  }
+}
+
+async function test_stock() {
+  try {
+    let data = await readJson('log/log.json')
+    data = data.map(v => v.meta)
+
+    await loop(updateStock2, data, false)
   } catch (e) {
     console.log(e)
   }
@@ -1796,3 +1822,4 @@ async function test_lq() {
 // test_updateImg()
 // test_updateUnitC()
 // test_lq()
+// test_stock()
