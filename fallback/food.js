@@ -65,13 +65,25 @@ export default class Food {
     }
   }
 
-  async find(name) {
+  async find(name, catName) {
     try {
       const searchRes = await this.search_(name)
       if (!searchRes || !searchRes.productList) return Promise.reject({ err: 'find failed' })
-      const product = searchRes.productList.find(v => v.name == name)
+      const product = searchRes.productList.find(v => v.name == name && v.tagName == catName)
       if (!product) return Promise.reject({ err: 'not find' })
       return Promise.resolve(product)
+    } catch (err) {
+      return Promise.reject(err)
+    }
+  }
+
+  async mfind(name) {
+    try {
+      const searchRes = await this.search_(name)
+      if (!searchRes || !searchRes.productList) return Promise.reject({ err: 'find failed' })
+      const products = searchRes.productList.filter(v => v.name == name)
+      if (!products) return Promise.reject({ err: 'not find' })
+      return Promise.resolve(products)
     } catch (err) {
       return Promise.reject(err)
     }
@@ -639,9 +651,9 @@ export default class Food {
     }
   }
 
-  async getMinOrderCount2(name) {
+  async getMinOrderCount2(name, catName) {
     try {
-      const food = await this.find(name)
+      const food = await this.find(name, catName)
       let { wmProductSpu } = await this.getEditView2(food.id)
       return Promise.resolve(wmProductSpu.min_order_count)
     } catch (e) {
@@ -826,10 +838,10 @@ export default class Food {
     }
   }
 
-  async save2(name, attrs, minOrder, desc, notDeliverAlone) {
+  async save2(name, catName, attrs, minOrder, desc, notDeliverAlone) {
     let that = this
     try {
-      const food = await this.find(name)
+      const food = await this.find(name, catName)
       let { wmProductSpu } = await this.getEditView2(food.id)
 
       const temp = await this.getTemplate(food.id, 1)

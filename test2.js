@@ -142,14 +142,14 @@ async function updateFoodPrice(id, name, price) {
   }
 }
 
-async function updateFoodBoxPrice(id, name, boxPrice) {
+async function updateFoodBoxPrice(id, name, catName, boxPrice) {
   // const app = new App(id)
   const fallbackApp = new FallbackApp(id)
 
   try {
     const { ok } = await fallbackApp.food.setHighBoxPrice(0, true)
     if (ok) {
-      const food = await fallbackApp.food.find(name)
+      const food = await fallbackApp.food.find(name, catName)
       const updateBoxPriceRes = await fallbackApp.food.batchUpdateBoxPrice(
         food.wmProductSkus.map(v => v.id),
         boxPrice
@@ -161,11 +161,11 @@ async function updateFoodBoxPrice(id, name, boxPrice) {
   }
 }
 
-async function batchUpdateFoodSkus(id, name, skus) {
+async function batchUpdateFoodSkus(id, name, catName, skus) {
   const fallbackApp = new FallbackApp(id)
 
   try {
-    const food = await fallbackApp.food.find(name)
+    const food = await fallbackApp.food.find(name, catName)
 
     if (food.wmProductSkus.length >= skus.length)
       skus = skus.map((sku, i) => {
@@ -279,11 +279,11 @@ async function delAct(id, name) {
   }
 }
 
-async function createAct(id, name, actPrice, orderLimit = -1) {
+async function createAct(id, name, catName, actPrice, orderLimit = -1) {
   const fallbackApp = new FallbackApp(id)
 
   try {
-    const foodWillCreateAct = await fallbackApp.food.find(name)
+    const foodWillCreateAct = await fallbackApp.food.find(name, catName)
     const wmSkuId = foodWillCreateAct.wmProductSkus[0].id
     const originPrice = foodWillCreateAct.wmProductSkus[0].price
 
@@ -632,38 +632,52 @@ async function updateFoodName(id, tagName, spuId, foodName, spuName) {
   }
 }
 
+async function updateFoodName2(id, foodName, catName, newName) {
+  const fallbackApp = new FallbackApp(id)
+
+  try {
+    let food = await fallbackApp.food.find(foodName, catName)
+    return fallbackApp.food.updateName(food.id, newName)
+  } catch (err) {
+    return Promise.reject(err)
+  }
+}
+
+async function updateFoodName3(id, foodName) {
+  const fallbackApp = new FallbackApp(id)
+
+  try {
+    let foods = await fallbackApp.food.mfind(foodName)
+    let foodUpdateNameRes = []
+    for (let food of foods) {
+      try {
+        let spuName = await knx('foxx_food_manage')
+          .first()
+          .where({ wmpoiid: id, productId: food.id })
+          .andWhereBetween('date', [20210408, 20210409])
+
+        if (spuName) {
+          console.log(food.name, spuName.name)
+          let res = await fallbackApp.food.updateName(food.id, spuName.name)
+          foodUpdateNameRes.push({ ok: 1, res })
+        }
+      } catch (e) {
+        foodUpdateNameRes.push({ ok: 0, e })
+      }
+    }
+    return Promise.resolve(foodUpdateNameRes)
+  } catch (err) {
+    return Promise.reject(err)
+  }
+}
+
 async function test_rename() {
   try {
-    const poiList = `8981943`.split('\n').map(v => v.trim())
+    let data = await readXls('plan/甜品商品名称统一.xlsx', 'Sheet1')
 
-    let cnt = poiList.length
+    let dat = data.map(v => [shop.wmpoiid, v.newName])
+    await loop(updateFoodName2, dat, false)
 
-    for (let poi of poiList) {
-      const fallbackApp = new FallbackApp(poi)
-
-      console.log(poi, cnt)
-
-      let foods = await knx('foxx_food_manage')
-        .select()
-        .whereRaw('date = curdate()')
-        .andWhere({ wmpoiid: poi })
-
-      foods = foods.filter(f => f.name == '椰汁西米露')
-      for (let food of foods) {
-        try {
-          let spuId = food.productId
-          let spuName = '“牛”气福袋'
-          const foodUpdateNameRes = await fallbackApp.food.updateName(spuId, spuName)
-          console.log({ foodUpdateNameRes, poi, spuName })
-          // await sleep(8000)
-        } catch (err) {
-          console.error(err)
-          log({ shop: { poi }, err })
-        }
-      }
-
-      cnt -= 1
-    }
   } catch (err) {
     console.error(err)
   }
@@ -1079,11 +1093,11 @@ async function updatePlan(id, name, minOrder, price, boxPrice, actPrice, orderLi
   }
 }
 
-export async function updatePlan2(id, cateName, name, minOrder, price, boxPrice, actPrice, orderLimit) {
+export async function updatePlan2(id, catName, name, minOrder, price, boxPrice, actPrice, orderLimit) {
   const fallbackApp = new FallbackApp(id)
   let results = {}
   try {
-    const minOrderCount = await fallbackApp.food.getMinOrderCount(name)
+    const minOrderCount = await fallbackApp.food.getMinOrderCount2(name, catName)
     const { ok } = await fallbackApp.food.setHighBoxPrice2()
     if (ok) {
       if (price) {
@@ -1095,7 +1109,7 @@ export async function updatePlan2(id, cateName, name, minOrder, price, boxPrice,
         ]
 
         const delActRes = await delAct(id, name)
-        const updateSkusRes = await batchUpdateFoodSkus(id, name, skus)
+        const updateSkusRes = await batchUpdateFoodSkus(id, name, catName, skus)
 
         results.priceRes = {
           delActRes,
@@ -1103,19 +1117,19 @@ export async function updatePlan2(id, cateName, name, minOrder, price, boxPrice,
         }
 
         if (minOrderCount != 1) {
-          const saveRes = await fallbackApp.food.save2(name, null, minOrderCount)
+          const saveRes = await fallbackApp.food.save2(name, catName, null, minOrderCount)
           results.priceRes.saveRes = saveRes
         }
 
         if (!delActRes.noAct) {
           await sleep(2000)
-          const createActRes = await createAct(id, name, delActRes.actPrice, delActRes.orderLimit)
+          const createActRes = await createAct(id, name, catName, delActRes.actPrice, delActRes.orderLimit)
           results.createActRes = createActRes
         }
       }
 
       if (boxPrice) {
-        const boxPriceRes = await updateFoodBoxPrice(id, name, boxPrice)
+        const boxPriceRes = await updateFoodBoxPrice(id, name, catName, boxPrice)
         results.boxPriceRes = boxPriceRes
       }
 
@@ -1124,18 +1138,18 @@ export async function updatePlan2(id, cateName, name, minOrder, price, boxPrice,
         let ol = -1
         if (delActRes.noAct && actPrice < 8) ol = 1
         if (!delActRes.noAct) ol = delActRes.orderLimit
-        const actPriceRes = await createAct(id, name, actPrice, ol)
+        const actPriceRes = await createAct(id, name, catName, actPrice, ol)
         results.actPriceRes = actPriceRes
       }
 
       if (orderLimit) {
         const delActRes = await delAct(id, name)
-        const orderLimitRes = await createAct(id, name, delActRes.actPrice, orderLimit)
+        const orderLimitRes = await createAct(id, name, catName, delActRes.actPrice, orderLimit)
         results.orderLimitRes = orderLimitRes
       }
 
       if (minOrder) {
-        const minOrderRes = await fallbackApp.food.save2(name, null, minOrder)
+        const minOrderRes = await fallbackApp.food.save2(name, catName, null, minOrder)
         results.minOrderCount = minOrderRes
       }
 
@@ -1814,7 +1828,7 @@ async function test_lq() {
 // test_plan()
 // test_delTag()
 // test_delNewCustomer()
-// test_rename()
+test_rename()
 // test_updateAct()1
 // test_delFoods()
 // test_testFood()

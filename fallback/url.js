@@ -55,7 +55,7 @@ const urls = {
     listLqs: 'reuse/product/food/quality/r/spuList'
   },
   poi: {
-    list: '/v2/shop/businessStatus/r/poiListSearch'
+    list: 'https://waimaie.meituan.com/v2/shop/businessStatus/r/poiListSearch'
   },
   download: {
     food: {

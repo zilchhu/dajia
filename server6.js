@@ -37,7 +37,7 @@ export var price_update_server = echo2
 
 async function wrap(f, meta, conn) {
   try {
-    conn.write(...meta)
+    conn.write(JSON.stringify(meta))
     const res = await f(...meta)
     conn.write(JSON.stringify(res))
   } catch (err) {

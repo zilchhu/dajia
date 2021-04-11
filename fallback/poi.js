@@ -9,7 +9,7 @@ export default class Poi {
     const params = {
       isOpen: 0,
       pageNum: 1,
-      pageSize: 300,
+      pageSize: 500,
       ignoreSetRouterProxy: true
     }
     return instance.get(urls.poi.list, { params })

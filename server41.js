@@ -25,6 +25,7 @@ import dayjs from 'dayjs'
 import { updatePlan2, delFoods } from './test2.js'
 
 import { loop2, price_update_server } from './server6.js'
+import {mt_shops} from '../21/mt_poi.js'
 // import localeData from 'dayjs/plugin/localeData'
 // import weekday from 'dayjs/plugin/weekday'
 // import updateLocale from 'dayjs/plugin/updateLocale'
@@ -172,7 +173,7 @@ price_update_server.on('connection', function(conn) {
         v.价格,
         v.餐盒价格 == '' ? null : v.餐盒价格,
         v.折扣价格 == '' ? null : v.折扣价格,
-        null,
+        v.折扣限购 == '' ? null : v.折扣限购,
         i
       ])
     await loop2(updatePlan2, data, conn, { test: delFoods })
@@ -240,7 +241,7 @@ router.get('/perf/:date', async ctx => {
 
 router.get('/export/perf', async ctx => {
   try {
-    const [res, _] = await knx.raw(perf_sql(31))
+    const [res, _] = await knx.raw(perf_sql(61))
     ctx.body = res.map(v => ({ ...v, date: `${v.date}` })).reverse()
   } catch (e) {
     console.log(e)
@@ -411,9 +412,9 @@ router.post('/comments', async ctx => {
 
 router.get('/shops/mt', async ctx => {
   try {
-    const res = await new Poi().list()
-    const res2 = await new PoiD().list()
-    ctx.body = { res: [...res, ...res2] }
+    const res = await mt_shops()
+    // const res2 = await new PoiD().list()
+    ctx.body = { res }
   } catch (e) {
     console.log(e)
     ctx.body = { e }
@@ -1367,7 +1368,7 @@ const fresh_sql = `SELECT a.*, a.turnover - IFNULL(h.third_send, 0) AS income, e
     LEFT JOIN new_shop_track_copy1 g ON a.wmpoiid = g.wmpoiid AND g.updated_at = CURDATE()
     LEFT JOIN wmb_expend h ON a.wmpoiid = h.shop_id AND a.date = DATE_FORMAT(DATE_SUB(h.insert_date,INTERVAL 1 DAY), '%Y%m%d')
     WHERE (b.shop_name IS NOT NULL OR c.reptile_type IS NOT NULL)
-    AND f.new_person IS NOT NULL
+    AND f.new_person IS NOT NULL AND f.new_person <> ''
     ORDER BY a.wmpoiid, a.date DESC`
 
 const export_fresh_sql_csv = `SELECT IFNULL(b.shop_name, c.reptile_type) AS 门店, IF(ISNULL(b.shop_name),'美团', '饿了么') AS 平台, f.new_person 负责人,
