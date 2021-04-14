@@ -1213,6 +1213,25 @@ router.get('/probs/af', async ctx => {
   }
 })
 
+router.get('/probs/ag', async ctx => {
+  try {
+    let [data, _] = await knx.raw(查询商品多规格)
+    let handles = await knx('test_prob_t_')
+      .select()
+      .where({ type: 'ag' })
+    ctx.body = {
+      res: data.map((v, i) => ({
+        ...v,
+        key: `${v.店铺id}:${v.分类名}:${v.商品名}`,
+        handle: handles.find(h => h.key == `${v.店铺id}:${v.分类名}:${v.商品名}`)?.handle
+      }))
+    }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
+
 router.get('/shopActsDiff', async ctx => {
   try {
     let data = await knx('test_change_t_')
@@ -3781,6 +3800,44 @@ const 库存过少检查 = `WITH
       d.stock 库存,
       d.maxStock 最大库存
     FROM d JOIN c ON c.shop_id = d.wmpoiid`
+
+const 查询商品多规格 = `-- 查询商品多规格问题
+    WITH
+    a AS (
+    SELECT
+      wmpoiid,
+      tagName,
+      name
+    FROM
+      foxx_food_manage
+    WHERE
+      date = CURRENT_DATE
+      AND normNum > 1
+      AND name NOT LIKE "%餐具%"
+      AND name NOT LIKE "%DIY%"
+    ),
+    b AS (
+      -- 门店信息
+    SELECT
+      shop_id,
+      F_GET_SHOP_NAME(shop_id) shop_name,
+      CASE platform
+      WHEN 1 THEN '美团'
+      ELSE '饿了么'
+      END platform,
+      person
+    FROM foxx_real_shop_info
+    WHERE 
+      is_delete = 0
+    )
+    SELECT
+    shop_id AS "店铺id",
+    shop_name AS "店铺名称",
+    platform AS "平台",
+    person AS "责任人",
+    tagName AS "分类名",
+    name AS "商品名"
+    FROM a JOIN b ON a.wmpoiid = b.shop_id`
 
 async function date(d) {}
 
