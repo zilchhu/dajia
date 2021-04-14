@@ -25,7 +25,7 @@ import dayjs from 'dayjs'
 import { updatePlan2, delFoods } from './test2.js'
 
 import { loop2, price_update_server } from './server6.js'
-import {mt_shops} from '../21/mt_poi.js'
+import { mt_shops } from '../21/mt_poi.js'
 // import localeData from 'dayjs/plugin/localeData'
 // import weekday from 'dayjs/plugin/weekday'
 // import updateLocale from 'dayjs/plugin/updateLocale'
@@ -813,10 +813,16 @@ router.get('/order/elm/:shopId', async ctx => {
 router.get('/probs/a', async ctx => {
   try {
     let [data, _] = await knx.raw(原价扣点城市折扣与原价差距大于2)
-    let data2 = await knx('test_prob_t_')
+    let handles = await knx('test_prob_t_')
       .select()
-      .where({ type: 'a', updated_at: dayjs().format('YYYY-MM-DD') })
-    ctx.body = { res: data.map((v, i) => ({ ...v, key: i, handle: data2?.find(v => v.key == i)?.handle })) }
+      .where({ type: 'a' })
+    ctx.body = {
+      res: data.map((v, i) => ({
+        ...v,
+        key: `${v.门店id}:${v.品名}`,
+        handle: handles.find(h => h.key == `${v.门店id}:${v.品名}`)?.handle
+      }))
+    }
   } catch (e) {
     console.log(e)
     ctx.body = { e }
@@ -826,7 +832,17 @@ router.get('/probs/a', async ctx => {
 router.get('/probs/b', async ctx => {
   try {
     let [data, _] = await knx.raw(商品无餐盒费)
-    ctx.body = { res: data.map((v, i) => ({ ...v, key: i, 原价: fixed2(v.原价) })) }
+    let handles = await knx('test_prob_t_')
+      .select()
+      .where({ type: 'b' })
+    ctx.body = {
+      res: data.map((v, i) => ({
+        ...v,
+        key: `${v.shop_id}:${v.分类}:${v.品名}`,
+        原价: fixed2(v.原价),
+        handle: handles.find(h => h.key == `${v.shop_id}:${v.分类}:${v.品名}`)?.handle
+      }))
+    }
   } catch (e) {
     console.log(e)
     ctx.body = { e }
@@ -906,7 +922,16 @@ router.get('/probs/i', async ctx => {
 router.get('/probs/j', async ctx => {
   try {
     let [data, _] = await knx.raw(零元商品有餐盒费)
-    ctx.body = { res: data.map((v, i) => ({ ...v, key: i })) }
+    let handles = await knx('test_prob_t_')
+      .select()
+      .where({ type: 'j' })
+    ctx.body = {
+      res: data.map((v, i) => ({
+        ...v,
+        key: `${v.shop_id}:${v.分类}:${v.品名}`,
+        handle: handles.find(h => h.key == `${v.shop_id}:${v.分类}:${v.品名}`)?.handle
+      }))
+    }
   } catch (e) {
     console.log(e)
     ctx.body = { e }
@@ -916,7 +941,18 @@ router.get('/probs/j', async ctx => {
 router.get('/probs/k', async ctx => {
   try {
     let [data, _] = await knx.raw(两份起购餐品价格错误)
-    ctx.body = { res: data.map((v, i) => ({ ...v, key: i, originalPrice: fixed2(v.originalPrice) })) }
+    let handles = await knx('test_prob_t_')
+      .select()
+      .where({ type: 'k' })
+    ctx.body = {
+      res: data[2].map((v, i) => ({
+        ...v,
+        key: `${v.shop_id}:${v.category_name}:${v.name}`,
+        商品原价: fixed2(v.商品原价),
+        '凑满减/起送价格': fixed2(v['凑满减/起送价格']),
+        handle: handles.find(h => h.key == `${v.shop_id}:${v.category_name}:${v.name}`)?.handle
+      }))
+    }
   } catch (e) {
     console.log(e)
     ctx.body = { e }
@@ -1036,7 +1072,17 @@ router.get('/probs/v', async ctx => {
 router.get('/probs/w', async ctx => {
   try {
     let [data, _] = await knx.raw(单折扣起送)
-    ctx.body = { res: data.map((v, i) => ({ ...v, key: i, originalPrice: fixed2(v.originalPrice) })) }
+    let handles = await knx('test_prob_t_')
+      .select()
+      .where({ type: 'w' })
+    ctx.body = {
+      res: data.map((v, i) => ({
+        ...v,
+        key: `${v.shop_id}:${v.category_name}:${v.name}`,
+        originalPrice: fixed2(v.originalPrice),
+        handle: handles.find(h => h.key == `${v.shop_id}:${v.category_name}:${v.name}`)?.handle
+      }))
+    }
   } catch (e) {
     console.log(e)
     ctx.body = { e }
@@ -1076,7 +1122,17 @@ router.get('/probs/z', async ctx => {
 router.get('/probs/aa', async ctx => {
   try {
     let [data, _] = await knx.raw(检查折扣遗漏的商品)
-    ctx.body = { res: data.map((v, i) => ({ ...v, key: i, price: fixed2(v.price) })) }
+    let handles = await knx('test_prob_t_')
+      .select()
+      .where({ type: 'aa' })
+    ctx.body = {
+      res: data.map((v, i) => ({
+        ...v,
+        key: `${v.shop_id}:${v.category_name}:${v.name}`,
+        price: fixed2(v.price),
+        handle: handles.find(h => h.key == `${v.shop_id}:${v.category_name}:${v.name}`)?.handle
+      }))
+    }
   } catch (e) {
     console.log(e)
     ctx.body = { e }
@@ -1086,7 +1142,16 @@ router.get('/probs/aa', async ctx => {
 router.get('/probs/ab', async ctx => {
   try {
     let [data, _] = await knx.raw(折扣到期商品检查)
-    ctx.body = { res: data.map((v, i) => ({ ...v, key: i })) }
+    let handles = await knx('test_prob_t_')
+      .select()
+      .where({ type: 'ab' })
+    ctx.body = {
+      res: data.map((v, i) => ({
+        ...v,
+        key: `${v.shop_id}:${v.food_name}`,
+        handle: handles.find(h => h.key == `${v.shop_id}:${v.food_name}`)?.handle
+      }))
+    }
   } catch (e) {
     console.log(e)
     ctx.body = { e }
@@ -1132,10 +1197,14 @@ router.get('/probs/ae', async ctx => {
 router.get('/probs/af', async ctx => {
   try {
     let [data, _] = await knx.raw(库存过少检查)
+    let handles = await knx('test_prob_t_')
+      .select()
+      .where({ type: 'af' })
     ctx.body = {
       res: data.map((v, i) => ({
         ...v,
-        key: i
+        key: `${v.店铺id}:${v.分类}:${v.商品}`,
+        handle: handles.find(h => h.key == `${v.店铺id}:${v.分类}:${v.商品}`)?.handle
       }))
     }
   } catch (e) {
@@ -2519,75 +2588,80 @@ const 零元商品有餐盒费 = `-- 零元商品有餐盒费
   WHERE
     package_fee > 0`
 
-const 两份起购餐品价格错误 = `-- 两份起购餐品价格错误
+const 两份起购餐品价格错误 = `
+    SET collation_connection = utf8mb4_general_ci;-- 设置参数
+
+    SET @date = DATE_FORMAT( CURRENT_DATE, "%Y%m%d" );-- 输入日期
+
+    -- 两份起购餐品价格错误
     WITH
     a AS (
       -- 门店信息
-      SELECT
-        shop_id,
-        F_GET_SHOP_NAME(shop_id) shop_name,
-        CASE platform
-          WHEN 1 THEN '美团'
-          ELSE '饿了么'
-        END platform,
-        person,
-        real_shop_name
-      FROM foxx_real_shop_info
-      WHERE 
-        is_delete = 0
+    SELECT
+      shop_id,
+      F_GET_SHOP_NAME(shop_id) shop_name,
+      CASE platform
+      WHEN 1 THEN '美团'
+      ELSE '饿了么'
+      END platform,
+      person,
+      real_shop_name
+    FROM foxx_real_shop_info
+    WHERE 
+      is_delete = 0
     ),
     b AS (
     --  饿了么多份起购商品
-      SELECT
-        shop_id,
-        name,
-        category_name,
-        price,
-        package_fee,
-        min_purchase_quantity,
-        ( package_fee + price ) * min_purchase_quantity originalPrice
-      FROM ele_food_manage 
-      WHERE 
-      -- 	筛选出拆分卖的商品
-        insert_date > CURRENT_DATE AND
-        min_purchase_quantity > 1 AND
-        ( package_fee + price ) * min_purchase_quantity NOT BETWEEN 13.8 AND 15 AND
-        price < 10
-    ),
-    c AS (
-    -- 美团多份起购商品价格问题
-      SELECT
-        wmpoiid,
-        name,
-        tagName,
-        price / 100 price,
-        boxPrice,
-        minOrderCount,
-        ( boxPrice + price ) * minOrderCount originalPrice
-      FROM foxx_food_manage
-      WHERE
-    -- 	筛选出拆分卖的商品
-        date = CURRENT_DATE AND
-        minOrderCount > 1 AND
-        ( boxPrice + price / 100 ) * minOrderCount NOT BETWEEN 13.8 AND 15 AND
-        price < 1000
-    ),
-    d AS (
-      SELECT * FROM b
-      UNION ALL
-      SELECT * FROM c
-    )
     SELECT
-      a.shop_id,
-      shop_name,
-      platform,
-      person,
+      shop_id,
       name,
       category_name,
       price,
       package_fee,
       min_purchase_quantity,
-      originalPrice
+      ( package_fee + price ) * min_purchase_quantity AS originalPrice
+    FROM ele_food_manage
+    WHERE 
+    --  筛选出拆分卖的商品
+      bach_date = @date AND
+      min_purchase_quantity > 1 AND
+      ( package_fee + price ) * min_purchase_quantity NOT BETWEEN 13.8 AND 15 AND
+      price < 10
+    ),
+    c AS (
+    -- 美团多份起购商品价格问题
+    SELECT
+      wmpoiid,
+      name,
+      tagName,
+      price / 100 price,
+      boxPrice,
+      minOrderCount,
+      ( boxPrice + price / 100 ) * minOrderCount originalPrice
+    FROM foxx_food_manage
+    WHERE
+    --  筛选出拆分卖的商品
+      date = @date AND
+      minOrderCount > 1 AND
+      ( boxPrice + price / 100 ) * minOrderCount NOT BETWEEN 13.8 AND 15 AND
+      price < 1000
+    ),
+    d AS (
+    SELECT * FROM b
+    UNION ALL
+    SELECT * FROM c
+    )
+    SELECT
+    a.shop_id,
+    shop_name,
+    platform,
+    person,
+    name,
+    category_name,
+    price AS "商品原价",
+    package_fee AS "餐盒费",
+    min_purchase_quantity AS "起购量",
+    originalPrice AS "凑满减/起送价格"
     FROM a JOIN d ON a.shop_id = d.shop_id`
 
 const 津贴联盟 = `WITH
@@ -4057,8 +4131,8 @@ async function shopActsDiff() {
       knx.raw(mt_shop_acts_diff),
       knx.raw(mt_spareas_diff),
       knx.raw(elm_spareas_diff),
-      knx.raw(elm_foods_diff),
-      knx.raw(mt_foods_diff),
+      // knx.raw(elm_foods_diff),
+      // knx.raw(mt_foods_diff),
       knx.raw(mt_discounts_diff),
       knx.raw(mt_shop_cate_diff)
     ])
@@ -4074,23 +4148,23 @@ async function shopActsDiff() {
         ...v,
         rule: `${v.shop_product_desc}\n起送价：${v.price_items}\n配送费：${v.delivery_fee_items}`
       })),
+      // ...data[4].map(v => ({
+      //   ...v,
+      //   rule: `${v.category_name}  ${v.on_shelf == '下架' ? '下架' : ''}\n${v.name}\n价格：${v.price} / ${
+      //     v.activity_price
+      //   }\n餐盒费：${v.package_fee}\n最小起购：${v.min_purchase_quantity}`
+      // })),
+      // ...data[5].map(v => ({
+      //   ...v,
+      //   rule: `${v.tagName}  ${v.sellStatus == 1 ? '下架' : ''}\n${v.name}\n价格：${v.price / 100}\n餐盒费：${
+      //     v.boxPrice
+      //   }`
+      // })),
       ...data[4].map(v => ({
-        ...v,
-        rule: `${v.category_name}  ${v.on_shelf == '下架' ? '下架' : ''}\n${v.name}\n价格：${v.price} / ${
-          v.activity_price
-        }\n餐盒费：${v.package_fee}\n最小起购：${v.min_purchase_quantity}`
-      })),
-      ...data[5].map(v => ({
-        ...v,
-        rule: `${v.tagName}  ${v.sellStatus == 1 ? '下架' : ''}\n${v.name}\n价格：${v.price / 100}\n餐盒费：${
-          v.boxPrice
-        }`
-      })),
-      ...data[6].map(v => ({
         ...v,
         rule: `${v.itemName}\n价格：${v.actInfo} / ${v.actPrice}\n限购：${v.orderLimit}`
       })),
-      ...data[7].map(v => ({
+      ...data[5].map(v => ({
         ...v,
         rule: `主营：${v.mainCategory}\n辅营：${v.supplementCategory}`
       }))
@@ -4638,10 +4712,10 @@ async function fresh() {
       cost_ratio: '成本比例',
       off_shelf: '下架产品量',
       over_due_date: '特权有效期',
-      kangaroo_name: '袋鼠店长',
-      red_packet_recharge: '高佣返现',
-      ranknum: '商圈排名',
-      extend: '延迟发单',
+      kangaroo_name: '袋鼠店长M',
+      red_packet_recharge: '高佣返现M',
+      ranknum: '商圈排名M',
+      extend: '延迟发单E',
       a2: '优化'
     }
     let dates = distinct(xs, 'date').sort((a, b) => b - a)

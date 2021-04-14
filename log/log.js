@@ -10,6 +10,10 @@ export default function log(err) {
   }
 }
 
-let data = fs.readFileSync('log/log.json')
-data = data.map(v => v.meta)
+// let data = JSON.parse(fs.readFileSync('elm/log/log.json'))
+// data = data.map(v => {
+//   let k = v.meta
+//   return { shopid: k[0], name: k[1], category: k[2], newname: k[3] }
+// })
+// fs.writeFileSync('elm/log/log2.json', JSON.stringify(data))
 

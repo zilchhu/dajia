@@ -1828,7 +1828,7 @@ async function test_lq() {
 // test_plan()
 // test_delTag()
 // test_delNewCustomer()
-test_rename()
+// test_rename()
 // test_updateAct()1
 // test_delFoods()
 // test_testFood()
