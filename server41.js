@@ -169,8 +169,8 @@ price_update_server.on('connection', function(conn) {
         v.店铺id,
         v.分类名称,
         v.商品名称,
-        v.最小购买量,
-        v.价格,
+        v.最小购买量 == '' ? null : v.最小购买量,
+        v.价格 == '' ? null : v.价格,
         v.餐盒价格 == '' ? null : v.餐盒价格,
         v.折扣价格 == '' ? null : v.折扣价格,
         v.折扣限购 == '' ? null : v.折扣限购,
@@ -804,6 +804,198 @@ router.get('/order/elm/:shopId', async ctx => {
       订单信息: v.订单信息.replace(/(\*\d+)\|/gm, '$1\n')
     }))
     ctx.body = { res: data }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
+
+router.get('/whitelist/mt/ad/smarts', async ctx => {
+  try {
+    let data = await knx('foxx_platform_sys')
+      .first()
+      .where({ p_key: 'mt_smart_ad_whitelist' })
+    let shops = await mt_shops()
+    data = Array.from(new Set(data.p_values.split(','))).map(v => ({
+      shopId: v,
+      shopName: shops.find(s => s.id == v)?.poiName
+    }))
+    ctx.body = { res: data }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
+
+router.post('/whitelist/mt/ad/smarts', async ctx => {
+  try {
+    let { shopId } = ctx.request.body
+    let data = await knx('foxx_platform_sys')
+      .first()
+      .where({ p_key: 'mt_smart_ad_whitelist' })
+    data = Array.from(new Set(data.p_values.split(',')))
+    if (data.includes(shopId)) {
+      ctx.body = { e: 'has been added' }
+      return
+    }
+    let res = await knx('foxx_platform_sys')
+      .where({ p_key: 'mt_smart_ad_whitelist' })
+      .update({ p_values: [...data, shopId].join(',') })
+    ctx.body = { res }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
+
+router.delete('/whitelist/mt/ad/smarts', async ctx => {
+  try {
+    let { shopId } = ctx.request.query
+
+    let data = await knx('foxx_platform_sys')
+      .first()
+      .where({ p_key: 'mt_smart_ad_whitelist' })
+    data = Array.from(new Set(data.p_values.split(',')))
+    if (!data.includes(shopId)) {
+      ctx.body = { e: 'not found' }
+      return
+    }
+    data.splice(
+      data.findIndex(v => v == shopId),
+      1
+    )
+    let res = await knx('foxx_platform_sys')
+      .where({ p_key: 'mt_smart_ad_whitelist' })
+      .update({ p_values: data.join(',') })
+    ctx.body = { res }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
+
+router.get('/whitelist/mt/ad/cpcs', async ctx => {
+  try {
+    let data = await knx('foxx_platform_sys')
+      .first()
+      .where({ p_key: 'mt_ad_cpc_whitelist' })
+    let shops = await mt_shops()
+    data = Array.from(new Set(data.p_values.split(','))).map(v => ({
+      shopId: v,
+      shopName: shops.find(s => s.id == v)?.poiName
+    }))
+    ctx.body = { res: data }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
+
+router.post('/whitelist/mt/ad/cpcs', async ctx => {
+  try {
+    let { shopId } = ctx.request.body
+    let data = await knx('foxx_platform_sys')
+      .first()
+      .where({ p_key: 'mt_ad_cpc_whitelist' })
+    data = Array.from(new Set(data.p_values.split(',')))
+    if (data.includes(shopId)) {
+      ctx.body = { e: 'has been added' }
+      return
+    }
+    let res = await knx('foxx_platform_sys')
+      .where({ p_key: 'mt_ad_cpc_whitelist' })
+      .update({ p_values: [...data, shopId].join(',') })
+    ctx.body = { res }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
+
+router.delete('/whitelist/mt/ad/cpcs', async ctx => {
+  try {
+    let { shopId } = ctx.request.query
+
+    let data = await knx('foxx_platform_sys')
+      .first()
+      .where({ p_key: 'mt_ad_cpc_whitelist' })
+    data = Array.from(new Set(data.p_values.split(',')))
+    if (!data.includes(shopId)) {
+      ctx.body = { e: 'not found' }
+      return
+    }
+    data.splice(
+      data.findIndex(v => v == shopId),
+      1
+    )
+    let res = await knx('foxx_platform_sys')
+      .where({ p_key: 'mt_ad_cpc_whitelist' })
+      .update({ p_values: data.join(',') })
+    ctx.body = { res }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
+
+router.get('/whitelist/elm/ad/smarts', async ctx => {
+  try {
+    let data = await knx('foxx_platform_sys')
+      .first()
+      .where({ p_key: 'ele_smart_ad_whitelist' })
+    let shops = await getAllElmShops()
+    data = Array.from(new Set(data.p_values.split(','))).map(v => ({
+      shopId: v,
+      shopName: shops.find(s => s.id == v)?.name
+    }))
+    ctx.body = { res: data }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
+
+router.post('/whitelist/elm/ad/smarts', async ctx => {
+  try {
+    let { shopId } = ctx.request.body
+    let data = await knx('foxx_platform_sys')
+      .first()
+      .where({ p_key: 'ele_smart_ad_whitelist' })
+    data = Array.from(new Set(data.p_values.split(',')))
+    if (data.includes(shopId)) {
+      ctx.body = { e: 'has been added' }
+      return
+    }
+    let res = await knx('foxx_platform_sys')
+      .where({ p_key: 'ele_smart_ad_whitelist' })
+      .update({ p_values: [...data, shopId].join(',') })
+    ctx.body = { res }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
+
+router.delete('/whitelist/elm/ad/smarts', async ctx => {
+  try {
+    let { shopId } = ctx.request.query
+
+    let data = await knx('foxx_platform_sys')
+      .first()
+      .where({ p_key: 'ele_smart_ad_whitelist' })
+    data = Array.from(new Set(data.p_values.split(',')))
+    if (!data.includes(shopId)) {
+      ctx.body = { e: 'not found' }
+      return
+    }
+    data.splice(
+      data.findIndex(v => v == shopId),
+      1
+    )
+    let res = await knx('foxx_platform_sys')
+      .where({ p_key: 'ele_smart_ad_whitelist' })
+      .update({ p_values: data.join(',') })
+    ctx.body = { res }
   } catch (e) {
     console.log(e)
     ctx.body = { e }
@@ -1993,13 +2185,13 @@ const 线下指标饿了么商品数下架数 = (id, d = 7) => `SELECT
     count( on_shelf = '下架' OR NULL ) off_shelf_cnt,
     --  第二天早上统计的门店所有产品数量
     count(*) food_cnt,
-    DATE_FORMAT(DATE_SUB( insert_date, INTERVAL 1 DAY ), '%Y-%m-%d') date
+    DATE_SUB( bach_date, INTERVAL 1 DAY ) date
     FROM ele_food_manage 
     WHERE 
-    insert_date > DATE_SUB( CURRENT_DATE, INTERVAL ${d - 1} DAY ) AND
+    bach_date >= DATE_SUB( CURRENT_DATE, INTERVAL ${d - 1} DAY ) AND
     shop_id = ${id}
-    GROUP BY DATE_FORMAT( insert_date, '%Y-%m-%d')
-    ORDER BY insert_date DESC`
+    GROUP BY bach_date
+    ORDER BY bach_date DESC`
 
 const 线下指标美团关店次数 = (id, d = 7) => `SELECT
     count( msgTitle = '已被置休' OR NULL ) off_count,
@@ -4954,9 +5146,9 @@ async function perf(date, djh) {
       consume_sum_sum_ratio: percent(v.consume_sum_sum_ratio),
       consume_score: fixed2(v.consume_score),
       score: fixed2(v.score),
-      score_1: percent(v.score_1),
+      score_1: fixed2(v.score_1),
       score_avg: fixed2(v.score_avg),
-      score_avg_1: percent(v.score_avg_1)
+      score_avg_1: fixed2(v.score_avg_1)
     }))
     return new M(ys)
   }
@@ -5880,6 +6072,7 @@ function percent(num) {
 }
 
 function fixed2(num) {
+  if (num == null) return num
   if (typeof num === 'string') num = parseFloat(num)
   return num.toFixed(2)
 }

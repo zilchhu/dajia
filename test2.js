@@ -147,7 +147,8 @@ async function updateFoodBoxPrice(id, name, catName, boxPrice) {
   const fallbackApp = new FallbackApp(id)
 
   try {
-    const { ok } = await fallbackApp.food.setHighBoxPrice(0, true)
+    //
+    const { ok } = { ok: true }
     if (ok) {
       const food = await fallbackApp.food.find(name, catName)
       const updateBoxPriceRes = await fallbackApp.food.batchUpdateBoxPrice(
@@ -464,6 +465,26 @@ async function updateImg(id, foodId, newUrl) {
   }
 }
 
+async function updateImg2(name, newUrl) {
+  try {
+    let [data, _] = await knx.raw(
+      `SELECT * FROM foxx_food_manage f
+       LEFT JOIN foxx_shop_reptile r ON f.wmpoiid = r.wmpoiid
+       WHERE  date = CURDATE() AND  name  LIKE '${name.replace('.jpg', '')}%'`
+    )
+    data = data.map(v => ({
+      id: v.wmpoiid,
+      foodId: v.productId,
+      newUrl
+    }))
+    return Promise.all(data.map(v => new FallbackApp(v.id).food.updateImg(v.foodId, v.newUrl)))
+    // const foodUpdateImgRes = await fallbackApp.food.updateImg(foodId, newUrl)
+    // return Promise.resolve(foodUpdateImgRes)
+  } catch (err) {
+    return Promise.reject(err)
+  }
+}
+
 async function updateUnitC(id, name) {
   const fallbackApp = new FallbackApp(id)
   try {
@@ -478,29 +499,35 @@ async function updateUnitC(id, name) {
 
 async function test_updateImg() {
   try {
-    // let ims = await readJson('image/ims.json')
+    // let ims = await readJson('log/log.json')
     // ims = ims.filter(v=>v.name == '红豆沙' || v.name == '绿豆沙')
     // for (let im of ims) {
-    //   console.log(im)
+    //   console.log(im.meta)
     //   let [data, _] = await knx.raw(
     //     `SELECT * FROM foxx_food_manage f
     //      LEFT JOIN foxx_shop_reptile r ON f.wmpoiid = r.wmpoiid
-    //      WHERE reptile_type LIKE '%喜三德%' AND date = CURDATE() AND  name  LIKE '${im.name.replace('.jpg', '')}?'`
+    //      WHERE  date = CURDATE() AND  name  LIKE '${im.meta[0].replace('.jpg', '')}%'`
     //   )
     //   data = data.map(v => [
     //     v.wmpoiid,
     //     v.productId,
-    //     im.url
+    //     im.meta[1]
     //   ])
     //   await loop(updateImg, data, false)
     // }
+    // await loop(
+    //   updateImg2,
+    //   ims.map(v => v.meta)
+    // )
     let [data, _] = await knx.raw(
-      `SELECT * FROM foxx_food_manage f WHERE date = CURDATE() AND  name  LIKE '%麻薯奶茶%'`
+      `SELECT * FROM foxx_food_manage f
+      LEFT JOIN foxx_shop_reptile r ON f.wmpoiid = r.wmpoiid
+      WHERE r.reptile_type LIKE '%甜品%' AND f.date = CURDATE() AND  f.name LIKE '%杨枝甘露%'`
     )
     data = data.map(v => [
       v.wmpoiid,
       v.productId,
-      'http://p0.meituan.net/wmproduct/ac2147f622d6d99b75174a394bd92165712205.png'
+      v.picture
     ])
     await loop(updateImg, data, false)
   } catch (err) {
@@ -671,13 +698,25 @@ async function updateFoodName3(id, foodName) {
   }
 }
 
+async function updateFoodName4(id, foodId, newName) {
+  const fallbackApp = new FallbackApp(id)
+
+  try {
+    return fallbackApp.food.updateName(foodId, newName)
+  } catch (err) {
+    return Promise.reject(err)
+  }
+}
+
 async function test_rename() {
   try {
-    let data = await readXls('plan/甜品商品名称统一.xlsx', 'Sheet1')
+    let data = await knx('foxx_food_manage')
+          .select()
+          .where('name', 'like', '%（%）%')
+          .andWhereBetween('date', [20210415, 20210416])
 
-    let dat = data.map(v => [shop.wmpoiid, v.newName])
-    await loop(updateFoodName2, dat, false)
-
+    let dat = data.map(v => [v.wmpoiid, v.productId, v.name.replace('（', '(').replace('）', ')')])
+    await loop(updateFoodName4, dat, false)
   } catch (err) {
     console.error(err)
   }
@@ -1095,10 +1134,12 @@ async function updatePlan(id, name, minOrder, price, boxPrice, actPrice, orderLi
 
 export async function updatePlan2(id, catName, name, minOrder, price, boxPrice, actPrice, orderLimit) {
   const fallbackApp = new FallbackApp(id)
+
   let results = {}
   try {
     const minOrderCount = await fallbackApp.food.getMinOrderCount2(name, catName)
     const { ok } = await fallbackApp.food.setHighBoxPrice2()
+    // const { ok } = { ok: true }
     if (ok) {
       if (price) {
         let skus = [
@@ -1153,9 +1194,11 @@ export async function updatePlan2(id, catName, name, minOrder, price, boxPrice, 
         results.minOrderCount = minOrderRes
       }
 
+      console.log('run ')
       return Promise.resolve(results)
     } else return Promise.reject({ err: 'sync failed' })
   } catch (err) {
+    console.log(err)
     return Promise.reject(err)
   }
 }
@@ -1834,6 +1877,7 @@ async function test_lq() {
 // test_testFood()
 // test_updateAttrs2()
 // test_updateImg()
+// test_rename()
 // test_updateUnitC()
 // test_lq()
 // test_stock()

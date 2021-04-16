@@ -898,23 +898,23 @@ async function a(wmPoiId) {
     // await loop(updateCoupon, data, true)
     // data = data.map(v => [v])
     // await loop(closeBj, data, false)
-    let data = await readXls('plan/饿了么贡茶产品分类修改(1).xlsx', '饿了么产品分类查询')
-    data = data.map(v => [v.shop_id, v.category_name, v.修改后分类名])
-    await loop(updateFoodCat, data, false)
+    // let data = await readXls('plan/饿了么贡茶产品分类修改(1).xlsx', '饿了么产品分类查询')
+    // data = data.map(v => [v.shop_id, v.category_name, v.修改后分类名])
+    // await loop(updateFoodCat, data, false)
     // let res = await execRequest(instanceElm, y.requests.elm['推广福利/get'], [2000506173], xshard(2000506173))
     // console.log(res)
 
-    // let files = fs.readdirSync('image')
-    // let urls = []
-    // // files = [files[0]]
-    // for (let f of files) {
-    //   let buff = fs.readFileSync(`image/${f}`)
-    //   let base64data = buff.toString('base64')
-    //   const upR = await execRequest(undefined, y.requests.mt['上传图片'], [base64data], y.headers['店铺设置'])
-    //   urls.push({ name: f, url: upR.picUrl })
-    //   console.log(upR)
-    // }
-    // fs.writeFileSync('image/ims.json', JSON.stringify(urls))
+    let files = fs.readdirSync('image')
+    let urls = []
+    // files = [files[0]]
+    for (let f of files) {
+      let buff = fs.readFileSync(`image/${f}`)
+      let base64data = buff.toString('base64')
+      const upR = await execRequest(undefined, y.requests.mt['上传图片'], [base64data], y.headers['店铺设置'])
+      urls.push({ name: f, url: upR.picUrl })
+      console.log(upR)
+    }
+    fs.writeFileSync('image/ims.json', JSON.stringify(urls))
   } catch (error) {
     console.error(error)
     fs.writeFileSync('log/log.json', JSON.stringify(error))
