@@ -1424,6 +1424,26 @@ router.get('/probs/ag', async ctx => {
   }
 })
 
+router.get('/probs/ah/:day', async ctx => {
+  try {
+    let { day } = ctx.request.params
+    let handles = await knx('test_prob_t_')
+      .select()
+      .where({ type: 'ah' })
+    let [data, _] = await knx.raw(推广费余额(day))
+    ctx.body = {
+      res: data.map((v, i) => ({
+        ...v,
+        key: `${v.shop_id}:${dayjs().format('YYYYMMDD')}`,
+        handle: handles.find(h => h.key == `${v.shop_id}:${dayjs().format('YYYYMMDD')}`)?.handle
+      }))
+    }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
+
 router.get('/shopActsDiff', async ctx => {
   try {
     let data = await knx('test_change_t_')
@@ -1714,6 +1734,9 @@ const perf_sql = (d, djh = 1) => `WITH a AS (
   ),
   c AS (
     SELECT *,
+      income_score - LEAD(income_score, 1) OVER w2 AS income_score_1,
+      cost_score - LEAD(cost_score, 1) OVER w2 AS cost_score_1,
+      consume_score - LEAD(consume_score, 1) OVER w2 AS consume_score_1,
       score - LEAD(score, 1) OVER w2 AS score_1,
       score_avg - LEAD(score_avg, 1) OVER w2 AS score_avg_1
     FROM b2
@@ -1721,6 +1744,9 @@ const perf_sql = (d, djh = 1) => `WITH a AS (
   ),
   c2 AS (
     SELECT *,
+      AVG(income_score_1) OVER w AS income_score_1_avg,
+			AVG(cost_score_1) OVER w AS cost_score_1_avg,
+			AVG(consume_score_1) OVER w AS consume_score_1_avg,
       AVG(score_1) OVER w AS score_1_avg,
       AVG(score_avg_1) OVER w AS score_avg_1_avg
     FROM c
@@ -4031,6 +4057,31 @@ const 查询商品多规格 = `-- 查询商品多规格问题
     name AS "商品名"
     FROM a JOIN b ON a.wmpoiid = b.shop_id`
 
+const 推广费余额 = d => `-- 饿了么推广费
+    SELECT shop_id, shop_name, a.platform, person, balances FROM 
+    (SELECT
+      shop_id,
+      F_GET_SHOP_NAME(shop_id) shop_name,
+      '饿了么' platform,
+      GROUP_CONCAT(balance - cs_market_balance - sa_market_balance - ad_market_balance SEPARATOR '->') balances
+    FROM
+      ele_activi_list
+    WHERE 
+      insert_date > DATE_SUB(CURDATE(),INTERVAL ${d} DAY)
+    GROUP BY shop_id
+    UNION ALL 
+    -- 美团推广费
+    SELECT
+      wmpoiid,
+      F_GET_SHOP_NAME(wmpoiid) shop_name,
+      '美团' platform,
+      GROUP_CONCAT(balance / 100 SEPARATOR '->') balances
+    FROM foxx_collection_moment 
+    WHERE 
+      date > DATE_SUB(CURDATE(),INTERVAL ${d} DAY)
+    GROUP BY wmpoiid) a
+    LEFT JOIN foxx_real_shop_info r USING(shop_id)`
+
 async function date(d) {}
 
 async function addNewShop(
@@ -5146,7 +5197,13 @@ async function perf(date, djh) {
       consume_sum_sum_ratio: percent(v.consume_sum_sum_ratio),
       consume_score: fixed2(v.consume_score),
       score: fixed2(v.score),
+      income_score_1: fixed2(v.income_score_1),
+      cost_score_1: fixed2(v.cost_score_1),
+      consume_score_1: fixed2(v.consume_score_1),
       score_1: fixed2(v.score_1),
+      income_score_avg: fixed2(v.income_score_avg),
+      cost_score_avg: fixed2(v.cost_score_avg),
+      consume_score_avg: fixed2(v.consume_score_avg),
       score_avg: fixed2(v.score_avg),
       score_avg_1: fixed2(v.score_avg_1)
     }))
@@ -5179,7 +5236,13 @@ async function perf(date, djh) {
             consume_sum_ratio: v.consume_sum_ratio_avg,
             consume_sum_sum_ratio: v.consume_sum_sum_ratio_avg,
             consume_score: v.consume_score_avg,
+            income_score: v.income_score_avg,
+            cost_score: v.cost_score_avg,
+            consume_score: v.consume_score_avg,
             score: v.score_avg,
+            income_score_1: v.income_score_1_avg,
+            cost_score_1: v.cost_score_1_avg,
+            consume_score_1: v.consume_score_1_avg,
             score_1: v.score_1_avg,
             score_avg: v.score_avg,
             score_avg_1: v.score_avg_1_avg,
@@ -5203,7 +5266,13 @@ async function perf(date, djh) {
           consume_sum_ratio: data.reduce((s, v) => s + parseFloat_0(v.consume_sum_ratio), 0) / data.length,
           consume_sum_sum_ratio: data.reduce((s, v) => s + parseFloat_0(v.consume_sum_sum_ratio), 0) / data.length,
           consume_score: data.reduce((s, v) => s + parseFloat_0(v.consume_score), 0) / data.length,
+          income_score: data.reduce((s, v) => s + parseFloat_0(v.income_score), 0) / data.length,
+          cost_score: data.reduce((s, v) => s + parseFloat_0(v.cost_score), 0) / data.length,
+          consume_score: data.reduce((s, v) => s + parseFloat_0(v.consume_score), 0) / data.length,
           score: data.reduce((s, v) => s + parseFloat_0(v.score), 0) / data.length,
+          income_score_1: data.reduce((s, v) => s + parseFloat_0(v.income_score_1_avg), 0) / data.length,
+          cost_score_1: data.reduce((s, v) => s + parseFloat_0(v.cost_score_1_avg), 0) / data.length,
+          consume_score_1: data.reduce((s, v) => s + parseFloat_0(v.consume_score_1_avg), 0) / data.length,
           score_1: data.reduce((s, v) => s + parseFloat_0(v.score_1_avg), 0) / data.length,
           score_avg: data.reduce((s, v) => s + parseFloat_0(v.score_avg), 0) / data.length,
           score_avg_1: data.reduce((s, v) => s + parseFloat_0(v.score_avg_1), 0) / data.length,

@@ -470,7 +470,7 @@ async function updateImg2(name, newUrl) {
     let [data, _] = await knx.raw(
       `SELECT * FROM foxx_food_manage f
        LEFT JOIN foxx_shop_reptile r ON f.wmpoiid = r.wmpoiid
-       WHERE  date = CURDATE() AND  name  LIKE '${name.replace('.jpg', '')}%'`
+       WHERE reptile_type LIKE '%贡茶%' AND date = CURDATE() AND  name  LIKE '%${name}%'`
     )
     data = data.map(v => ({
       id: v.wmpoiid,
@@ -499,14 +499,14 @@ async function updateUnitC(id, name) {
 
 async function test_updateImg() {
   try {
-    // let ims = await readJson('log/log.json')
+    let ims = await readJson('log/log.json')
     // ims = ims.filter(v=>v.name == '红豆沙' || v.name == '绿豆沙')
     // for (let im of ims) {
     //   console.log(im.meta)
     //   let [data, _] = await knx.raw(
     //     `SELECT * FROM foxx_food_manage f
     //      LEFT JOIN foxx_shop_reptile r ON f.wmpoiid = r.wmpoiid
-    //      WHERE  date = CURDATE() AND  name  LIKE '${im.meta[0].replace('.jpg', '')}%'`
+    //      WHERE reptile_type LIKE '%贡茶%' AND date = CURDATE() AND  name  LIKE '${im.meta[0].replace('600x450.jpg', '')}%'`
     //   )
     //   data = data.map(v => [
     //     v.wmpoiid,
@@ -517,12 +517,12 @@ async function test_updateImg() {
     // }
     // await loop(
     //   updateImg2,
-    //   ims.map(v => v.meta)
+    //   ims.map(v => [v.name.replace('600x450.jpg', ''), v.url])
     // )
     let [data, _] = await knx.raw(
       `SELECT * FROM foxx_food_manage f
       LEFT JOIN foxx_shop_reptile r ON f.wmpoiid = r.wmpoiid
-      WHERE r.reptile_type LIKE '%甜品%' AND f.date = CURDATE() AND  f.name LIKE '%杨枝甘露%'`
+      WHERE f.wmpoiid = 11267829 AND f.date = CURDATE()`
     )
     data = data.map(v => [
       v.wmpoiid,
@@ -1876,7 +1876,7 @@ async function test_lq() {
 // test_delFoods()
 // test_testFood()
 // test_updateAttrs2()
-// test_updateImg()
+test_updateImg()
 // test_rename()
 // test_updateUnitC()
 // test_lq()
