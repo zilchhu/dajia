@@ -1876,7 +1876,7 @@ async function test_lq() {
 // test_delFoods()
 // test_testFood()
 // test_updateAttrs2()
-test_updateImg()
+// test_updateImg()
 // test_rename()
 // test_updateUnitC()
 // test_lq()

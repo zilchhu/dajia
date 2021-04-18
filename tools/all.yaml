@@ -1107,6 +1107,51 @@ requests:
         - source/source_pic_url
         - source/product_spu_ids
 
+    特型海报/create:
+      url: https://waimaieapp.meituan.com/decoration/spe/poster
+      body:
+        picture: "http://p0.meituan.net/business/9fee2e13f52a5f38ee93d06139e8cafc421351.png"
+        products: [3119881618, 3119813447, 3119585255, 3119763899]
+        time: {"displayEndDay":-1,"displayEtime":-1,"displayStartDay":-1,"displayStime":-1,"displayWeeks": '[1,2,3,4,5,6,7]'}
+        wmPoiId: "9976196"
+      requires:
+        - wmPoiId
+        - picture
+        - products
+
+    特型海报/edit:
+      url: https://waimaieapp.meituan.com/decoration/spe/poster
+      body:
+        picture: "http://p0.meituan.net/business/9fee2e13f52a5f38ee93d06139e8cafc421351.png"
+        products: [3119881618, 3119813447, 3119585255, 3119763899]
+        time: {"displayEndDay":-1,"displayEtime":-1,"displayStartDay":-1,"displayStime":-1,"displayWeeks": '[1,2,3,4,5,6,7]'}
+        wmPoiId: "9976196"
+        id: "2443701"
+      requires:
+        - wmPoiId
+        - id
+        - picture
+        - products
+
+    特型海报/get:
+      url: https://waimaieapp.meituan.com/decoration/spe/posters/query
+      params: 
+        acctId: 23262521
+        wmPoiId: 9976196
+        token: 0CVDjIkLuGaU1NhgZHWOKTBFYz8NdGNwWls36FBJEujE*
+      requires:
+        - wmPoiId
+        - token
+
+    特型海报/delete:
+      url: https://waimaieapp.meituan.com/decoration/spe/poster/delete
+      body:
+        posterId: 2443701
+        wmPoiId: 9976196
+      requires:
+        - wmPoiId
+        - posterId
+      
     品牌故事/get:
       url: https://waimaieapp.meituan.com/decoration/brandStory/r/list
       params:

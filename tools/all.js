@@ -904,17 +904,42 @@ async function a(wmPoiId) {
     // let res = await execRequest(instanceElm, y.requests.elm['推广福利/get'], [2000506173], xshard(2000506173))
     // console.log(res)
 
-    let files = fs.readdirSync('image')
-    let urls = []
-    // files = [files[0]]
-    for (let f of files) {
-      let buff = fs.readFileSync(`image/${f}`)
-      let base64data = buff.toString('base64')
-      const upR = await execRequest(undefined, y.requests.mt['上传图片'], [base64data], y.headers['店铺设置'])
-      urls.push({ name: f, url: upR.picUrl })
-      console.log(upR)
-    }
-    fs.writeFileSync('image/ims.json', JSON.stringify(urls))
+    // let files = fs.readdirSync('image')
+    // let urls = []
+    // // files = [files[0]]
+    // for (let f of files) {
+    //   let buff = fs.readFileSync(`image/${f}`)
+    //   let base64data = buff.toString('base64')
+    //   const upR = await execRequest(undefined, y.requests.mt['上传图片'], [base64data], y.headers['店铺设置'])
+    //   urls.push({ name: f, url: upR.picUrl })
+    //   console.log(upR)
+    // }
+    // fs.writeFileSync('image/ims.json', JSON.stringify(urls))
+
+    // let res = await execRequest(
+    //   undefined,
+    //   y.requests.mt['特型海报/create'],
+    //   [9976196, 'http://p0.meituan.net/business/9fee2e13f52a5f38ee93d06139e8cafc421351.png', [3119764002, 3400087942]],
+    //   { 'Content-Type': 'application/json' }
+    // )
+
+    // let res = await execRequest(
+    //   undefined,
+    //   y.requests.mt['特型海报/edit'],
+    //   [9976196, 2443701, 'http://p0.meituan.net/business/9fee2e13f52a5f38ee93d06139e8cafc421351.png', [3119764002, 3400087942]],
+    //   { 'Content-Type': 'application/json' }
+    // )
+
+    // let { cookie } = await knx('foxx_shop_reptile')
+    //   .first()
+    //   .where({ wmpoiid: 9976196 })
+    // let res = await execRequest(undefined, y.requests.mt['特型海报/delete'], [9976196, 2443895], { cookie })
+
+    // let { token, cookie } = await knx('foxx_shop_reptile')
+    //   .first()
+    //   .where({ wmpoiid: 9976196 })
+    // let res = await execRequest(undefined, y.requests.mt['特型海报/get'], [9976196, token], { cookie })
+    console.log(res)
   } catch (error) {
     console.error(error)
     fs.writeFileSync('log/log.json', JSON.stringify(error))
@@ -964,7 +989,7 @@ async function updateShopInfo(wmPoiId, bulletin) {
 
 async function updateFoodCat(shopId, catName, newName) {
   try {
-    if(catName == newName) return 
+    if (catName == newName) return
     const res = await execRequest(instanceElm, y.requests.elm['分类列表/get'], [shopId], xshard(shopId))
     const cat = res.find(v => v.name == catName)
     if (!cat) return Promise.reject({ err: 'cat not found' })
@@ -990,7 +1015,8 @@ async function updateFoodCat(shopId, catName, newName) {
               : null
             : null,
         // dayPartingStick: null,
-        isUseDayPartingStick: (cat.isUseDayPartingStick && dayjs().isBefore(dayjs(cat.dayPartingStick.endDate), 'day')) ? true : false,
+        isUseDayPartingStick:
+          cat.isUseDayPartingStick && dayjs().isBefore(dayjs(cat.dayPartingStick.endDate), 'day') ? true : false,
         name: newName
       },
       { arrayMerge: (_, source) => source }

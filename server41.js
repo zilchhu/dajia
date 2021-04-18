@@ -4058,7 +4058,7 @@ const 查询商品多规格 = `-- 查询商品多规格问题
     FROM a JOIN b ON a.wmpoiid = b.shop_id`
 
 const 推广费余额 = d => `-- 饿了么推广费
-    SELECT shop_id, shop_name, a.platform, person, balances FROM 
+    SELECT shop_id, shop_name, a.platform, IFNULL(new_person, person) person, balances FROM 
     (SELECT
       shop_id,
       F_GET_SHOP_NAME(shop_id) shop_name,
