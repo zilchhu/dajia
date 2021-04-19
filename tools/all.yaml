@@ -1110,7 +1110,7 @@ requests:
     特型海报/create:
       url: https://waimaieapp.meituan.com/decoration/spe/poster
       body:
-        picture: "http://p0.meituan.net/business/9fee2e13f52a5f38ee93d06139e8cafc421351.png"
+        picture: "http://p0.meituan.net/business/94f6a8d3e482527c90216781e4af7067246578.png"
         products: [3119881618, 3119813447, 3119585255, 3119763899]
         time: {"displayEndDay":-1,"displayEtime":-1,"displayStartDay":-1,"displayStime":-1,"displayWeeks": '[1,2,3,4,5,6,7]'}
         wmPoiId: "9976196"
@@ -1122,7 +1122,7 @@ requests:
     特型海报/edit:
       url: https://waimaieapp.meituan.com/decoration/spe/poster
       body:
-        picture: "http://p0.meituan.net/business/9fee2e13f52a5f38ee93d06139e8cafc421351.png"
+        picture: "http://p0.meituan.net/business/94f6a8d3e482527c90216781e4af7067246578.png"
         products: [3119881618, 3119813447, 3119585255, 3119763899]
         time: {"displayEndDay":-1,"displayEtime":-1,"displayStartDay":-1,"displayStime":-1,"displayWeeks": '[1,2,3,4,5,6,7]'}
         wmPoiId: "9976196"
@@ -1152,6 +1152,30 @@ requests:
         - wmPoiId
         - posterId
       
+    特型招牌/create:
+      url: https://waimaieapp.meituan.com/decoration/spe/signage/add
+      body:
+        acctId: "23262521"
+        source: {"materialType":0,"pictureUrl":"http://p0.meituan.net/business/df3ca101e6f43c69b461717fe314855f173228.png","videoUrl":""}
+        token: "0CVDjIkLuGaU1NhgZHWOKTBFYz8NdGNwWls36FBJEujE*"
+        wmPoiId: "9976196"
+      requires:
+        - wmPoiId
+        - source/pictureUrl
+        - token
+        
+    特型招牌/delete:
+      url: https://waimaieapp.meituan.com/decoration/spe/signage/delete
+      body:
+        signageId: 1770145
+        acctId: 23262521
+        wmPoiId: 9976196
+        token: 0CVDjIkLuGaU1NhgZHWOKTBFYz8NdGNwWls36FBJEujE*
+      requires:
+        - wmPoiId
+        - signageId
+        - token
+
     品牌故事/get:
       url: https://waimaieapp.meituan.com/decoration/brandStory/r/list
       params:

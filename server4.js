@@ -144,14 +144,21 @@ async function insertTableFromMysql(day_from_today = 1) {
     FROM foxx_real_shop_info
   ),
   d1 AS (
-		SELECT wmpoiid AS shop_id, bizScore AS rating_mt FROM foxx_cus_manag_analy_score WHERE date = CURDATE()
+		SELECT wmpoiid AS shop_id, bizScore AS rating_mt FROM foxx_cus_manag_analy_score WHERE date = @last_day
 	),
   d2 AS (
-		SELECT shop_id, rating AS rating_elm FROM ele_rating_log WHERE DATE_FORMAT(insert_date, '%Y%m%d') = CURDATE()
+		SELECT shop_id, rating AS rating_elm FROM ele_rating_log WHERE DATE(insert_date) = @last_day
+	),
+  d3 AS (
+		SELECT wmpoiid AS shop_id, bizScore AS rating_mt_last FROM foxx_cus_manag_analy_score WHERE date = DATE_SUB(@last_day,INTERVAL 1 DAY)
+  ),
+  d4 AS (
+		SELECT shop_id, rating AS rating_elm_last FROM ele_rating_log WHERE DATE(insert_date) = DATE_SUB(@last_day,INTERVAL 1 DAY)
 	)
   SELECT id, city, person,
     a1.real_shop, a1.shop_id, a1.shop_name, platform, 
-    IF(platform = '美团', rating_mt, rating_elm) AS rating, third_send, unit_price, orders,
+    IF(platform = '美团', rating_mt, rating_elm) AS rating, IF(platform = '美团', rating_mt_last, rating_elm_last) AS rating_last,
+    third_send, unit_price, orders,
     income, income_avg, income_sum,
     a1.cost, cost_avg, cost_sum, cost_ratio, cost_sum_ratio,
     consume, consume_avg, consume_sum, consume_ratio, consume_sum_ratio,
@@ -166,6 +173,8 @@ async function insertTableFromMysql(day_from_today = 1) {
   LEFT JOIN c1 USING (shop_id)
   LEFT JOIN d1 USING (shop_id)
 	LEFT JOIN d2 USING (shop_id)
+  LEFT JOIN d3 USING (shop_id)
+	LEFT JOIN d4 USING (shop_id)
   
   ORDER BY a1.real_shop `
 
@@ -178,10 +187,11 @@ async function insertTableFromMysql(day_from_today = 1) {
       .insert(data)
       .onConflict('id')
       .merge()
+
     // for (let d of data) {
     //   await knx('test_analyse_t_')
     //     .where({ shop_id: d.shop_id, platform: d.platform, date: d.date })
-    //     .update({ real_shop: d.real_shop })
+    //     .update({ rating: d.rating, rating_last: d.rating_last })
     // }
     
     // const res = 1
@@ -248,7 +258,7 @@ async function getTableByShop(shop_id) {
 }
 
 async function insertTableAll() {
-  for (let day = 1; day <= 194; day++) {
+  for (let day = 1; day <= 213; day++) {
     try {
       console.log(day)
       const res = await insertTable(day)

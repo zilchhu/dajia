@@ -919,7 +919,7 @@ async function a(wmPoiId) {
     // let res = await execRequest(
     //   undefined,
     //   y.requests.mt['特型海报/create'],
-    //   [9976196, 'http://p0.meituan.net/business/9fee2e13f52a5f38ee93d06139e8cafc421351.png', [3119764002, 3400087942]],
+    //   [9576153, 'http://p0.meituan.net/business/9fee2e13f52a5f38ee93d06139e8cafc421351.png', [2843189220, 2842953125]],
     //   { 'Content-Type': 'application/json' }
     // )
 
@@ -935,14 +935,60 @@ async function a(wmPoiId) {
     //   .where({ wmpoiid: 9976196 })
     // let res = await execRequest(undefined, y.requests.mt['特型海报/delete'], [9976196, 2443895], { cookie })
 
-    // let { token, cookie } = await knx('foxx_shop_reptile')
-    //   .first()
-    //   .where({ wmpoiid: 9976196 })
-    // let res = await execRequest(undefined, y.requests.mt['特型海报/get'], [9976196, token], { cookie })
-    console.log(res)
+    let shops = await axios.get('http://localhost:3000/mt/shops')
+
+    let data = shops.data.filter(s => s.poiName.includes('贡茶')).map(v => [v.id])
+    await loop(addSpecSignage, data, true)
+
+    // console.log(res)
   } catch (error) {
     console.error(error)
     fs.writeFileSync('log/log.json', JSON.stringify(error))
+  }
+}
+
+async function addSpecSignage(wmpoiid) {
+  try {
+    let { token, cookie } = await knx('foxx_shop_reptile')
+      .first()
+      .where({ wmpoiid })
+    let res = await execRequest(undefined, y.requests.mt['特型海报/get'], [wmpoiid, token], { cookie })
+    if (res.code == 0 && res.data == null) return Promise.reject('no poster')
+
+    let res2 = await execRequest(
+      undefined,
+      y.requests.mt['特型招牌/create'],
+      [wmpoiid, 'http://p1.meituan.net/business/96e94bce8615afa1df94fd51e17071a5190206.png', token],
+      { 'Content-Type': 'application/json', cookie }
+    )
+    return Promise.resolve(res2)
+  } catch (e) {
+    return Promise.reject(e)
+  }
+}
+
+async function editSpecPoster(wmpoiid) {
+  try {
+    let { token, cookie } = await knx('foxx_shop_reptile')
+      .first()
+      .where({ wmpoiid })
+    let res = await execRequest(undefined, y.requests.mt['特型海报/get'], [wmpoiid, token], { cookie })
+    if (res.code == 0 && res.data == null) return Promise.reject('no poster')
+    let res2 = await execRequest(
+      undefined,
+      y.requests.mt['特型海报/edit'],
+      [
+        wmpoiid,
+        res[0].posterId,
+        'http://p0.meituan.net/business/94f6a8d3e482527c90216781e4af7067246578.png',
+        res[0].products.map(v => v.productId)
+      ],
+      { 'Content-Type': 'application/json' }
+    )
+    console.log(res)
+    return Promise.resolve(res2)
+  } catch (e) {
+    return Promise.reject(e)
   }
 }
 

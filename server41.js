@@ -88,15 +88,16 @@ async function t() {
     //   }
     //   cnt -= 1
     // }
-    let data = await knx('foxx_real_shop_info').select()
-    let i = 0
-    for (let row of data) {
-      let res = await knx('test_analyse_t_')
-        .where({ shop_id: row.shop_id, platform: row.platform == 1 ? '美团' : '饿了么' })
-        .update({ real_shop: row.real_shop_name })
-      console.log(res, i)
-      i += 1
-    }
+
+    // let data = await knx('foxx_real_shop_info').select()
+    // let i = 0
+    // for (let row of data) {
+    //   let res = await knx('test_analyse_t_')
+    //     .where({ shop_id: row.shop_id, platform: row.platform == 1 ? '美团' : '饿了么' })
+    //     .update({ real_shop: row.real_shop_name })
+    //   console.log(res, i)
+    //   i += 1
+    // }
   } catch (e) {
     console.error(e)
   }
@@ -2011,12 +2012,12 @@ const 线下指标美团评分 = (id, d = 7) => `SELECT
     -- 评分
     bizscore,
     --  时间统一到数据当天
-    DATE_SUB( date, INTERVAL 1 day) date 
+    DATE_FORMAT(date, '%Y-%m-%d') date
     FROM
     foxx_cus_manag_analy_score 
     WHERE 
     -- 查看七天评分
-    date >= DATE_SUB( CURRENT_DATE, INTERVAL ${d - 1} DAY) AND
+    date BETWEEN DATE_SUB(CURDATE(),INTERVAL ${d} DAY) AND DATE_SUB(CURDATE(),INTERVAL 1 DAY) AND
     wmpoiid = ${id}
     ORDER BY date DESC`
 
@@ -2024,12 +2025,12 @@ const 线下指标饿了么评分 = (id, d = 7) => `SELECT
     -- 评分
     rating,
     --  时间统一到数据当天
-    DATE_FORMAT( DATE_SUB( insert_date, INTERVAL 1 day), "%Y-%m-%d") date
+    DATE_FORMAT(insert_date, "%Y-%m-%d") date
     FROM
     ele_rating_log 
     WHERE 
     -- 查看七天评分
-    insert_date > DATE_SUB( CURRENT_DATE, INTERVAL ${d - 1} DAY) AND
+    insert_date BETWEEN DATE_SUB(CURDATE(),INTERVAL ${d} DAY) AND CURDATE() AND
     shop_id = ${id}
     ORDER BY insert_date DESC`
 
@@ -2208,16 +2209,16 @@ const 线下指标美团商品数下架数 = (id, d = 7) => `SELECT
 
 const 线下指标饿了么商品数下架数 = (id, d = 7) => `SELECT
     -- 第二天早上统计的下架的产品数量
-    count( on_shelf = '下架' OR NULL ) off_shelf_cnt,
+    count( e1.on_shelf = '下架' OR NULL ) off_shelf_cnt,
     --  第二天早上统计的门店所有产品数量
-    count(*) food_cnt,
+    count(e1.id) food_cnt,
     DATE_SUB( bach_date, INTERVAL 1 DAY ) date
-    FROM ele_food_manage 
+    FROM ele_food_manage e1 -- RIGHT JOIN (SELECT id FROM ele_food_manage) e2 ON e1.id = e2.id
     WHERE 
-    bach_date >= DATE_SUB( CURRENT_DATE, INTERVAL ${d - 1} DAY ) AND
-    shop_id = ${id}
-    GROUP BY bach_date
-    ORDER BY bach_date DESC`
+    e1.bach_date >= DATE_SUB( CURRENT_DATE, INTERVAL ${d-1} DAY ) AND
+    e1.shop_id = 2083424735
+    GROUP BY e1.bach_date
+    ORDER BY e1.bach_date DESC`
 
 const 线下指标美团关店次数 = (id, d = 7) => `SELECT
     count( msgTitle = '已被置休' OR NULL ) off_count,
