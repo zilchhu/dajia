@@ -904,17 +904,25 @@ async function a(wmPoiId) {
     // let res = await execRequest(instanceElm, y.requests.elm['推广福利/get'], [2000506173], xshard(2000506173))
     // console.log(res)
 
-    // let files = fs.readdirSync('image')
-    // let urls = []
-    // // files = [files[0]]
-    // for (let f of files) {
-    //   let buff = fs.readFileSync(`image/${f}`)
-    //   let base64data = buff.toString('base64')
-    //   const upR = await execRequest(undefined, y.requests.mt['上传图片'], [base64data], y.headers['店铺设置'])
-    //   urls.push({ name: f, url: upR.picUrl })
-    //   console.log(upR)
-    // }
-    // fs.writeFileSync('image/ims.json', JSON.stringify(urls))
+    let files = fs.readdirSync('image')
+    let urls = []
+    // files = [files[0]]
+    for (let f of files) {
+      console.log(f)
+      try {
+        let buff = fs.readFileSync(`image/${f}`)
+        let base64data = buff.toString('base64')
+        // const upR = await execRequest(undefined, y.requests.mt['上传图片'], [base64data], y.headers['店铺设置'])
+        const upR = await execRequest(instanceElm, y.requests.elm['上传图片'], [base64data], xshard(93089700))
+        urls.push({ name: f, url: upR.imageUrl })
+
+        console.log(upR)
+      } catch (e) {
+        console.log(e)
+      }
+    }
+    fs.writeFileSync('image/ims.json', JSON.stringify(urls))
+    // console.log(files)
 
     // let res = await execRequest(
     //   undefined,
@@ -935,10 +943,10 @@ async function a(wmPoiId) {
     //   .where({ wmpoiid: 9976196 })
     // let res = await execRequest(undefined, y.requests.mt['特型海报/delete'], [9976196, 2443895], { cookie })
 
-    let shops = await axios.get('http://localhost:3000/mt/shops')
+    // let shops = await axios.get('http://localhost:3000/mt/shops')
 
-    let data = shops.data.filter(s => s.poiName.includes('贡茶')).map(v => [v.id])
-    await loop(addSpecSignage, data, true)
+    // let data = shops.data.filter(s => s.poiName.includes('贡茶')).map(v => [v.id])
+    // await loop(addSpecSignage, data, true)
 
     // console.log(res)
   } catch (error) {

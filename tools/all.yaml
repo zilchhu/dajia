@@ -1503,6 +1503,14 @@ requests:
         - shopId
         
     # 商品
+    上传图片:
+      url: https://app-api.shop.ele.me/nevermore.goods/invoke/?method=CommonService.uploadImageByShopId
+      body:
+        imageBase64: "/9j/4TB8RXhpZgAATU0AKgAAAAgADAEAAAMAAAABAlgAAAEBAA"
+        shopId: 93089700
+      requires:
+        - imageBase64
+
     分类列表/get:
       url: https://app-api.shop.ele.me/nevermore.goods/invoke/?method=FoodService.queryCategoryWithFoodFilter
       body:

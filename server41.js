@@ -755,9 +755,7 @@ router.get('/offsell/elm/:shopId/:day', async ctx => {
     let [data, _] = await knx.raw(
       `SELECT * FROM ele_food_manage m 
       RIGHT JOIN (
-        SELECT id FROM ele_food_manage WHERE insert_date BETWEEN ${day} AND ${dayjs(day, 'YYYYMMDD')
-        .add(1, 'day')
-        .format('YYYYMMDD')} AND shop_id = ${shopId} AND on_shelf = '下架' 
+        SELECT id FROM ele_food_manage WHERE bach_date = DATE_FORMAT(DATE_ADD(${day}, INTERVAL 1 DAY), '%Y%m%d') AND shop_id = ${shopId} AND on_shelf = '下架' 
       ) t ON m.id = t.id`
     )
     ctx.set('Cache-Control', 'max-age=28800')
@@ -2215,8 +2213,8 @@ const 线下指标饿了么商品数下架数 = (id, d = 7) => `SELECT
     DATE_SUB( bach_date, INTERVAL 1 DAY ) date
     FROM ele_food_manage e1 -- RIGHT JOIN (SELECT id FROM ele_food_manage) e2 ON e1.id = e2.id
     WHERE 
-    e1.bach_date >= DATE_SUB( CURRENT_DATE, INTERVAL ${d-1} DAY ) AND
-    e1.shop_id = 2083424735
+    e1.bach_date >= DATE_FORMAT(DATE_SUB( CURRENT_DATE, INTERVAL ${d-1} DAY ), '%Y%m%d') AND
+    e1.shop_id = ${id}
     GROUP BY e1.bach_date
     ORDER BY e1.bach_date DESC`
 
