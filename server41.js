@@ -67,14 +67,12 @@ async function t() {
     // const r = await knx('foxx_operating_data')
     //   .select()
     //   .where({ date: 20210306 })
-
     // const d = Array.from(new Set(r.map(v => v.shop_name))).map(v => r.find(k => k.shop_name == v))
     // await knx('foxx_operating_data')
     //   .where({ date: 20210306 })
     //   .del()
     // // console.log(d)
     // console.log(await knx('foxx_operating_data').insert(d))
-
     // const r = await knx('foxx_operating_data').select()
     // let cnt = r.length
     // for (let r0 of r) {
@@ -88,7 +86,6 @@ async function t() {
     //   }
     //   cnt -= 1
     // }
-
     // let data = await knx('foxx_real_shop_info').select()
     // let i = 0
     // for (let row of data) {
@@ -1153,7 +1150,17 @@ router.get('/probs/k', async ctx => {
 router.get('/probs/l', async ctx => {
   try {
     let [data, _] = await knx.raw(津贴联盟)
-    ctx.body = { res: data.map((v, i) => ({ ...v, key: i, 实收: fixed2(v.实收) })) }
+    let handles = await knx('test_prob_t_')
+      .select()
+      .where({ type: 'l' })
+    ctx.body = {
+      res: data.map((v, i) => ({
+        ...v,
+        key: `${v.shop_id}:${dayjs().format('YYYYMMDD')}`,
+        实收: fixed2(v.实收),
+        handle: handles.find(h => h.key == `${v.shop_id}:${dayjs().format('YYYYMMDD')}`)?.handle
+      }))
+    }
   } catch (e) {
     console.log(e)
     ctx.body = { e }
@@ -1293,7 +1300,16 @@ router.get('/probs/x', async ctx => {
 router.get('/probs/y', async ctx => {
   try {
     let [data, _] = await knx.raw(查询点金0曝光的时间)
-    ctx.body = { res: data.map((v, i) => ({ ...v, key: i })) }
+    let handles = await knx('test_prob_t_')
+      .select()
+      .where({ type: 'y' })
+    ctx.body = {
+      res: data.map((v, i) => ({
+        ...v,
+        key: `${v.shop_id}:${dayjs().format('YYYYMMDD')}`,
+        handle: handles.find(h => h.key == `${v.shop_id}:${dayjs().format('YYYYMMDD')}`)?.handle
+      }))
+    }
   } catch (e) {
     console.log(e)
     ctx.body = { e }
@@ -1352,7 +1368,16 @@ router.get('/probs/ab', async ctx => {
 router.get('/probs/ac', async ctx => {
   try {
     let [data, _] = await knx.raw(减配活动检查)
-    ctx.body = { res: data.map((v, i) => ({ ...v, key: i })) }
+    let handles = await knx('test_prob_t_')
+      .select()
+      .where({ type: 'ac' })
+    ctx.body = {
+      res: data.map((v, i) => ({
+        ...v,
+        key: `${v.shop_id}:${v.合作方案}:${v.活动规则}`,
+        handle: handles.find(h => h.key == `${v.shop_id}:${v.合作方案}:${v.活动规则}`)?.handle
+      }))
+    }
   } catch (e) {
     console.log(e)
     ctx.body = { e }
@@ -1372,11 +1397,15 @@ router.get('/probs/ad', async ctx => {
 router.get('/probs/ae', async ctx => {
   try {
     let [data, _] = await knx.raw(满减活动检查)
+    let handles = await knx('test_prob_t_')
+      .select()
+      .where({ type: 'ae' })
     ctx.body = {
       res: data.map((v, i) => ({
         ...v,
-        key: i,
-        活动规则: v.活动规则 ? v.活动规则.split(/(?=满)/).join('\n') : v.活动规则
+        key: `${v.店铺编号}:${v.活动类型}:${v.活动规则}`,
+        活动规则: v.活动规则 ? v.活动规则.split(/(?=满)/).join('\n') : v.活动规则,
+        handle: handles.find(h => h.key == `${v.店铺编号}:${v.活动类型}:${v.活动规则}`)?.handle
       }))
     }
   } catch (e) {
@@ -2213,7 +2242,7 @@ const 线下指标饿了么商品数下架数 = (id, d = 7) => `SELECT
     DATE_SUB( bach_date, INTERVAL 1 DAY ) date
     FROM ele_food_manage e1 -- RIGHT JOIN (SELECT id FROM ele_food_manage) e2 ON e1.id = e2.id
     WHERE 
-    e1.bach_date >= DATE_FORMAT(DATE_SUB( CURRENT_DATE, INTERVAL ${d-1} DAY ), '%Y%m%d') AND
+    e1.bach_date >= DATE_FORMAT(DATE_SUB( CURRENT_DATE, INTERVAL ${d - 1} DAY ), '%Y%m%d') AND
     e1.shop_id = ${id}
     GROUP BY e1.bach_date
     ORDER BY e1.bach_date DESC`

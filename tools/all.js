@@ -912,9 +912,9 @@ async function a(wmPoiId) {
       try {
         let buff = fs.readFileSync(`image/${f}`)
         let base64data = buff.toString('base64')
-        // const upR = await execRequest(undefined, y.requests.mt['上传图片'], [base64data], y.headers['店铺设置'])
-        const upR = await execRequest(instanceElm, y.requests.elm['上传图片'], [base64data], xshard(93089700))
-        urls.push({ name: f, url: upR.imageUrl })
+        const upR = await execRequest(undefined, y.requests.mt['上传图片'], [base64data], y.headers['店铺设置'])
+        // const upR = await execRequest(instanceElm, y.requests.elm['上传图片'], [base64data], xshard(93089700))
+        urls.push({ name: f, url: upR.picUrl })
 
         console.log(upR)
       } catch (e) {
