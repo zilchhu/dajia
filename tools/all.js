@@ -898,30 +898,30 @@ async function a(wmPoiId) {
     // await loop(updateCoupon, data, true)
     // data = data.map(v => [v])
     // await loop(closeBj, data, false)
-    // let data = await readXls('plan/饿了么贡茶产品分类修改(1).xlsx', '饿了么产品分类查询')
-    // data = data.map(v => [v.shop_id, v.category_name, v.修改后分类名])
-    // await loop(updateFoodCat, data, false)
+    let shops = await knx('ele_info_manage').select().where({status: 0})
+    let data = shops.map(v => [v.shop_id, '❤️优惠', '❤️优惠'])
+    await loop(updateFoodCat, data, false)
     // let res = await execRequest(instanceElm, y.requests.elm['推广福利/get'], [2000506173], xshard(2000506173))
     // console.log(res)
 
-    let files = fs.readdirSync('image')
-    let urls = []
-    // files = [files[0]]
-    for (let f of files) {
-      console.log(f)
-      try {
-        let buff = fs.readFileSync(`image/${f}`)
-        let base64data = buff.toString('base64')
-        const upR = await execRequest(undefined, y.requests.mt['上传图片'], [base64data], y.headers['店铺设置'])
-        // const upR = await execRequest(instanceElm, y.requests.elm['上传图片'], [base64data], xshard(93089700))
-        urls.push({ name: f, url: upR.picUrl })
+    // let files = fs.readdirSync('image')
+    // let urls = []
+    // // files = [files[0]]
+    // for (let f of files) {
+    //   console.log(f)
+    //   try {
+    //     let buff = fs.readFileSync(`image/${f}`)
+    //     let base64data = buff.toString('base64')
+    //     // const upR = await execRequest(undefined, y.requests.mt['上传图片'], [base64data], y.headers['店铺设置'])
+    //     const upR = await execRequest(instanceElm, y.requests.elm['上传图片'], [base64data], xshard(93089700))
+    //     urls.push({ name: f, url: upR.imageUrl })
 
-        console.log(upR)
-      } catch (e) {
-        console.log(e)
-      }
-    }
-    fs.writeFileSync('image/ims.json', JSON.stringify(urls))
+    //     console.log(upR)
+    //   } catch (e) {
+    //     console.log(e)
+    //   }
+    // }
+    // fs.writeFileSync('image/ims.json', JSON.stringify(urls))
     // console.log(files)
 
     // let res = await execRequest(
@@ -1043,34 +1043,48 @@ async function updateShopInfo(wmPoiId, bulletin) {
 
 async function updateFoodCat(shopId, catName, newName) {
   try {
-    if (catName == newName) return
+    // if (catName == newName) return
     const res = await execRequest(instanceElm, y.requests.elm['分类列表/get'], [shopId], xshard(shopId))
     const cat = res.find(v => v.name == catName)
     if (!cat) return Promise.reject({ err: 'cat not found' })
     let update = deepmerge(
       cat,
       {
-        dayPartingStick:
-          cat.dayPartingStick != null
-            ? dayjs().isBefore(dayjs(cat.dayPartingStick.endDate), 'day')
-              ? {
-                  beginDate: date()
-                  // endDate: '2021-02-28',
-                  // dateRange: [
-                  //   dayjs()
-                  //     .startOf('day')
-                  //     .toISOString(),
-                  //   dayjs('2021-02-28').toISOString()
-                  // ],
-                  // isAllDay: true,
-                  // times: [],
-                  // weeks: ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY']
-                }
-              : null
-            : null,
-        // dayPartingStick: null,
-        isUseDayPartingStick:
-          cat.isUseDayPartingStick && dayjs().isBefore(dayjs(cat.dayPartingStick.endDate), 'day') ? true : false,
+        // dayPartingStick:
+        //   cat.dayPartingStick != null
+        //     ? dayjs().isBefore(dayjs(cat.dayPartingStick.endDate), 'day')
+        //       ? {
+        //           beginDate: date()
+        //           // endDate: '2021-02-28',
+        //           // dateRange: [
+        //           //   dayjs()
+        //           //     .startOf('day')
+        //           //     .toISOString(),
+        //           //   dayjs('2021-02-28').toISOString()
+        //           // ],
+        //           // isAllDay: true,
+        //           // times: [],
+        //           // weeks: ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY']
+        //         }
+        //       : null
+        //     : null,
+        // // dayPartingStick: null,
+        // isUseDayPartingStick:
+        //   cat.isUseDayPartingStick && dayjs().isBefore(dayjs(cat.dayPartingStick.endDate), 'day') ? true : false,
+        dayPartingStick: {
+          beginDate: date(),
+          endDate: '2021-07-31',
+          dateRange: [
+            dayjs()
+              .startOf('day')
+              .toISOString(),
+            dayjs('2021-07-31').toISOString()
+          ],
+          isAllDay: true,
+          times: [],
+          weeks: ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY']
+        },
+        isUseDayPartingStick: true,
         name: newName
       },
       { arrayMerge: (_, source) => source }

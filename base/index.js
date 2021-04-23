@@ -8,8 +8,8 @@ import urls_ from './url.js'
 
 const testBaseUrl = 'https://test.com/'
 const baseURL = 'https://waimaiopen.meituan.com/api/v1/'
-const appId = 5339
-const secret = '8fb39ea54dbcb28b9795004bd3fb3eb5'
+const appId = 6342 // 5339
+const secret = '7cfc5db7b79a364bb94a96f5f35838b8'
 
 const instance = axios.create({
   baseURL,

@@ -8,7 +8,7 @@ export default class Order {
 
   async confirm(orderId) {
     let params = {
-      app_poi_code: this.appPoiCode,
+      // app_poi_code: this.appPoiCode,
       order_id: orderId
     }
     return instance.get(urls.order.confirm, { params })
@@ -96,3 +96,20 @@ class Refund {
     return instance.get(urls.order.refund.reject, { params })
   }
 }
+
+
+async function test() {
+  try {
+    let order = new Order('t_QAqeUFmhSF')
+    // console.log(await order.getOrderDaySeq())
+    // console.log(await order.getOrderIdByDaySeq(20210422, 3))
+    // console.log(await order.batchPullPhoneNumber(0, 20))
+    console.log(await order.cancel(27004711208734383n, '菜卖光了', 1001))
+    // console.log(await order.refund.reject(27004713737426282n, '顾客原因'))
+
+  } catch (error) {
+    console.error(error)
+  }
+}
+
+// test()

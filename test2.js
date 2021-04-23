@@ -228,27 +228,29 @@ async function saveReduction(id, startTime, endTime, policyDetail) {
       }
       const saveReductionRes = await fallbackApp.act.reduction.save(reduction.id, startTime, endTime, poiPolicy)
       return saveReductionRes
-    } else {
-      // const delReductionRes = await fallbackApp.act.reduction.delete()
-      startTime = dayjs()
-        .startOf('day')
-        .unix()
-      endTime = dayjs()
-        .startOf('day')
-        .add(365, 'day')
-        .unix()
-      poiPolicy = {
-        online_pay: 1,
-        policy_detail: policyDetail
-      }
-      const saveReductionRes = await fallbackApp.act.reduction.save(null, startTime, endTime, poiPolicy)
-      return Promise.resolve(saveReductionRes)
-    }
+    } 
+    // else {
+    //   // const delReductionRes = await fallbackApp.act.reduction.delete()
+    //   startTime = dayjs()
+    //     .startOf('day')
+    //     .unix()
+    //   endTime = dayjs()
+    //     .startOf('day')
+    //     .add(365, 'day')
+    //     .unix()
+    //   poiPolicy = {
+    //     online_pay: 1,
+    //     policy_detail: policyDetail
+    //   }
+    //   const saveReductionRes = await fallbackApp.act.reduction.save(null, startTime, endTime, poiPolicy)
+    //   return Promise.resolve(saveReductionRes)
+    // }
     // console.log(poiPolicy)
   } catch (err) {
     return Promise.reject(err)
   }
 }
+
 
 async function delTradein(id, name) {
   const fallbackApp = new FallbackApp(id)
@@ -470,7 +472,7 @@ async function updateImg2(name, newUrl) {
     let [data, _] = await knx.raw(
       `SELECT * FROM foxx_food_manage f
        LEFT JOIN foxx_shop_reptile r ON f.wmpoiid = r.wmpoiid
-       WHERE reptile_type LIKE '%贡茶%' AND date = CURDATE() AND  name  LIKE '%${name}%'`
+       WHERE reptile_type LIKE '%贡茶%' AND date = CURDATE() AND  name  LIKE '${name}%'`
     )
     data = data.map(v => ({
       id: v.wmpoiid,
@@ -711,9 +713,9 @@ async function updateFoodName4(id, foodId, newName) {
 async function test_rename() {
   try {
     let data = await knx('foxx_food_manage')
-          .select()
-          .where('name', 'like', '%（%）%')
-          .andWhereBetween('date', [20210415, 20210416])
+      .select()
+      .where('name', 'like', '%（%）%')
+      .andWhereBetween('date', [20210415, 20210416])
 
     let dat = data.map(v => [v.wmpoiid, v.productId, v.name.replace('（', '(').replace('）', ')')])
     await loop(updateFoodName4, dat, false)
@@ -1381,78 +1383,24 @@ async function createDieliverAct(id, fee) {
 
 async function test_reduction2() {
   try {
-    let data = await readXls('plan/择优改满减(1)(1).xlsx', 'Sheet3')
+    let data = await readXls('plan/满减活动.xlsx', 'Sheet1')
     data = data.map(v => ({
       ...v,
-      reduc: [
-        {
-          discounts: [
-            {
-              code: 1,
-              discount: v.满减档位1.split('-')[1],
-              poi_charge: v.满减档位1.split('-')[1],
-              agent_charge: 0,
-              type: 'default',
-              mt_charge: 0
-            }
-          ],
-          price: v.满减档位1.split('-')[0]
-        },
-        {
-          discounts: [
-            {
-              code: 1,
-              discount: v.满减档位2.split('-')[1],
-              poi_charge: v.满减档位2.split('-')[1],
-              agent_charge: 0,
-              type: 'default',
-              mt_charge: 0
-            }
-          ],
-          price: v.满减档位2.split('-')[0]
-        },
-        {
-          discounts: [
-            {
-              code: 1,
-              discount: v.满减档位3.split('-')[1],
-              poi_charge: v.满减档位3.split('-')[1],
-              agent_charge: 0,
-              type: 'default',
-              mt_charge: 0
-            }
-          ],
-          price: v.满减档位3.split('-')[0]
-        },
-        {
-          discounts: [
-            {
-              code: 1,
-              discount: v.满减档位4.split('-')[1],
-              poi_charge: v.满减档位4.split('-')[1],
-              agent_charge: 0,
-              type: 'default',
-              mt_charge: 0
-            }
-          ],
-          price: v.满减档位4.split('-')[0]
-        },
-        {
-          discounts: [
-            {
-              code: 1,
-              discount: v.满减档位5.split('-')[1],
-              poi_charge: v.满减档位5.split('-')[1],
-              agent_charge: 0,
-              type: 'default',
-              mt_charge: 0
-            }
-          ],
-          price: v.满减档位5.split('-')[0]
-        }
-      ]
+      reduc: v.修改后的满减.split(',').map(k=>({
+        discounts: [
+          {
+            code: 1,
+            discount: k.split('-')[1],
+            poi_charge: k.split('-')[1],
+            agent_charge: 0,
+            type: 'default',
+            mt_charge: 0
+          }
+        ],
+        price: k.split('-')[0]
+      }))
     }))
-    data = data.map(v => [v['店铺id'], null, null, v['reduc']])
+    data = data.map(v => [v['门店ID'], null, null, v['reduc']])
     await loop(saveReduction, data, false)
   } catch (error) {
     console.error(error)

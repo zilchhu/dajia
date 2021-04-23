@@ -1359,35 +1359,31 @@ requests:
         - creation/activityDateTime/dates
 
     超值换购/create/activity:
-      url: https://app-api.shop.ele.me/marketing/invoke/?method=SkuActivityNcpService.createPriceActivity
+      url: https://app-api.shop.ele.me/marketing/invoke/?method=SkuActivityManageService.createSingleExchangeSkuActivity
       body:
         activity:
-          activityTime: {
-            dates: [{beginDate: "2021-01-25", endDate: "2021-04-25"}],
-            times: [{beginTime: "00:00:00", endTime: "23:59:59"}],
+          activityEffectiveChannel: "ALL"
+          activityTime: 
+            dates: [{beginDate: "2021-04-22", endDate: "2022-04-21"}]
+            times: [{beginTime: "00:00:00", endTime: "23:59:59"}]
             weekdays: [1, 2, 3, 4, 5, 6, 7]
-          }
-          baiduPlatform: true
-          benefit: "7.9"
-          condition: 1
-          effectTimes: 1
-          effectiveCondition: {forPeople: "ALL_CUSTOM"}
-          elePlatform: true
-          icon: {backgroud: "#FAA43C", text: "换"}
-          shopId: 501103172
-          source: "SELF_MARKETING"
-          stockDTO: {stock: 10000, stockType: "DAILY"}
+          activityType: "SKU_LOCK_PRICE"
+          autoDelaySwitch: true
+          forPeople: "ALL_CUSTOM"
+          name: ""
+          shopId: 501106699
           tied: true
       requires:
         - activity/shopId
         - activity/activityTime/dates
 
     超值换购/create/foods:
-      url: https://app-api.shop.ele.me/marketing/invoke/?method=SkuActivityNcpService.participateSkuActivity
+      url: https://app-api.shop.ele.me/marketing/invoke/?method=SkuActivityManageService.bindSingleSkuActivity
       body:
-        activityId: 2067115035
-        shopId: 501103172
-        skus: [{foodId: 2000000090101083, stock: 10000, benefit: "7.9"}]
+        request:
+          activityId: 2067115035
+          shopId: 501103172
+          skus: [{benefit: "8.8", condition: -1, conditionType: "EACH", effectTimes: "1", foodId: "2000000227518139", stock: "10000"}]
       requires:
         - shopId
         - activityId
