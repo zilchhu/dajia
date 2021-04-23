@@ -2,3 +2,4 @@ node_modules
 plan
 dist
 uploads/*.xlsx
+log/log.txt

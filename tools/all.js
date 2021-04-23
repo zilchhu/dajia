@@ -68,7 +68,7 @@ const instance2 = axios.create({
 /////////////
 /////////////
 
-const id = '11AD18200CC54589902CE63F034E795B|1617362736320'
+
 let { ks_id } = await knx('ele_info_manage').first('ks_id')
 // let ks_id = 'ZDQ1ZDMTA1MjcyMDc0NjUxMDAxTmFpblJ0MDNQ'
 const metas = {
@@ -98,8 +98,7 @@ const instanceElm = axios.create({
     'sec-fetch-mode': 'cors',
     'sec-fetch-site': 'same-site',
     'user-agent':
-      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36',
-    'x-eleme-requestid': `${id}`
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36'
   }
 })
 const instanceElm2 = axios.create({
@@ -119,8 +118,7 @@ const instanceElm2 = axios.create({
     'sec-fetch-mode': 'cors',
     'sec-fetch-site': 'same-site',
     'user-agent':
-      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36',
-    'x-eleme-requestid': `${id}`
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36'
   }
 })
 
@@ -163,10 +161,13 @@ instanceElm.interceptors.request.use(
   config => {
     if (config.method == 'post') {
       const [service, method] = new URL(config.url).searchParams.get('method').split('.')
+      let id = `${random()}|${+dayjs()}`
 
       config[namespace] = config[namespace] || {}
       config[namespace].data = config.data
       config[namespace].retryCount = config[namespace].retryCount || 0
+
+      config.headers['x-eleme-requestid'] = id
 
       config.data = {
         id,
@@ -180,6 +181,7 @@ instanceElm.interceptors.request.use(
       }
     }
     // console.log(config)
+    // console.log('%o', config.data.params)
     return config
   },
   err => Promise.reject(err)
@@ -189,6 +191,7 @@ instanceElm.interceptors.response.use(
     if (res.data.error != null || res.data.error != undefined) {
       return Promise.reject(res.data.error)
     }
+    // console.log(res.data)
     return res.data.result == null ? Promise.resolve(res.data) : Promise.resolve(res.data.result)
   },
   error => {
@@ -218,6 +221,8 @@ instanceElm2.interceptors.request.use(
       config[namespace] = config[namespace] || {}
       config[namespace].data = config.data
       config[namespace].retryCount = config[namespace].retryCount || 0
+
+      config.headers['x-eleme-requestid'] = `${random()}|${+dayjs()}`
 
       config.data = {
         ksid,
@@ -338,6 +343,18 @@ function cookie(wmPoiId) {
 
 function xshard(shopId) {
   return { 'x-shard': `shopid=${shopId}` }
+}
+
+function random (length = 32) {
+  // Declare all characters
+  let chars = 'ABCDEF0123456789'
+
+  // Pick characers randomly
+  let str = ''
+  for (let i = 0; i < length; i++) {
+      str += chars.charAt(Math.floor(Math.random() * chars.length))
+  }
+  return str
 }
 
 function move(ls, oldPos, newPos) {
@@ -898,9 +915,11 @@ async function a(wmPoiId) {
     // await loop(updateCoupon, data, true)
     // data = data.map(v => [v])
     // await loop(closeBj, data, false)
-    let shops = await knx('ele_info_manage').select().where({status: 0})
-    let data = shops.map(v => [v.shop_id, '❤️优惠', '❤️优惠'])
-    await loop(updateFoodCat, data, false)
+
+    // let shops = await knx('ele_info_manage').select().where({status: 0})
+    // let data = shops.map(v => [v.shop_id, '❤️优惠', '❤️优惠'])
+    // await loop(updateFoodCat, data, false)
+
     // let res = await execRequest(instanceElm, y.requests.elm['推广福利/get'], [2000506173], xshard(2000506173))
     // console.log(res)
 
@@ -947,8 +966,20 @@ async function a(wmPoiId) {
 
     // let data = shops.data.filter(s => s.poiName.includes('贡茶')).map(v => [v.id])
     // await loop(addSpecSignage, data, true)
-
-    // console.log(res)
+    metasVar.shopId = 2044330740
+    metasVar.appVersion = '1.0.0'
+    let res = await execRequest(
+      instanceElm,
+      y.requests.elm['超值换购/create/activity'],
+      [2044330740, [{ beginDate: '2021-04-23', endDate: '2022-04-21' }]],
+      {
+        'x-shard': `shopid=2044330740`,
+        // origin: 'https://napos-activity-pc.faas.ele.me',
+        // referer: 'https://napos-activity-pc.faas.ele.me/',
+        // 'Content-Type': 'application/json'
+      }
+    )
+    console.log(res)
   } catch (error) {
     console.error(error)
     fs.writeFileSync('log/log.json', JSON.stringify(error))
@@ -1912,7 +1943,7 @@ async function freshElm(userTasks, userRule) {
               xshard(shopId)
             )
             const promises = y.rules['超值换购'].map(v =>
-              execRequest(instanceElm, y.requests.elm['商品列表/search'], [shopId, v])
+              execRequest(instanceElm, y.requests.elm['商品列表/search'], [shopId, v], xshard(shopId))
             )
             const goods = await Promise.allSettled(promises)
             const actItems = goods
@@ -1920,7 +1951,14 @@ async function freshElm(userTasks, userRule) {
               .filter(v => v.value.itemOfName.length > 0)
               .slice(0, 3)
               .map(v => v.value.itemOfName[0])
-              .map(v => ({ benefit: '7.9', foodId: v.id, stock: 10000 }))
+              .map(v => ({
+                benefit: '7.9',
+                condition: -1,
+                conditionType: 'EACH',
+                effectTimes: '1',
+                foodId: v.specs[0].id,
+                stock: '10000'
+              }))
             return execRequest(
               instanceElm,
               y.requests.elm['超值换购/create/foods'],

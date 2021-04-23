@@ -1385,9 +1385,9 @@ requests:
           shopId: 501103172
           skus: [{benefit: "8.8", condition: -1, conditionType: "EACH", effectTimes: "1", foodId: "2000000227518139", stock: "10000"}]
       requires:
-        - shopId
-        - activityId
-        - skus
+        - request/shopId
+        - request/activityId
+        - request/skus
 
     下单返红包/get/form:
       url: https://httpizza.ele.me/play.everything/PlayInstanceService/getSelfPlayForm

@@ -95,6 +95,14 @@ async function t() {
     //   console.log(res, i)
     //   i += 1
     // }
+    let c = await readXls('plan/c.xlsx', 'c')
+    for (let row of c) {
+      console.log(
+        await knx('test_analyse_t_')
+          .where({ shop_id: row.shop_id, date: row.date })
+          .update({ a: row.a })
+      )
+    }
   } catch (e) {
     console.error(e)
   }
