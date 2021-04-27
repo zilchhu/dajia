@@ -108,3 +108,4 @@
 {"time":"2021/04/23 11:19:50","meta":[2086577100,"❤️优惠","❤️优惠"],"err":{"err":"cat not found"}},
 {"time":"2021/04/23 11:19:51","meta":[2086322543,"❤️优惠","❤️优惠"],"err":{"code":"INVALID_PARAMETER","message":"限时置顶时间与分类[❣️❣️❣️福利社]时间段重复"}},
 {"time":"2021/04/23 13:36:55","meta":["10028591",null,null,[{"discounts":[{"code":1,"discount":"12.0,32.0","poi_charge":"12.0,32.0","agent_charge":0,"type":"default","mt_charge":0}],"price":"16.0"}]],"err":{"code":1,"id":0,"msg":"设置活动失败，参数解析出错","data":null,"succ":false}},
+{"time":"2021/04/25 09:17:00","meta":["波霸珍珠奶茶","http://p1.meituan.net/wmproduct/7d493b6852f30639677879ee20b65349426039.png"],"err":{"msg":"请勿重复提交","code":1,"data":""}},

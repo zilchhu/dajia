@@ -472,7 +472,7 @@ async function updateImg2(name, newUrl) {
     let [data, _] = await knx.raw(
       `SELECT * FROM foxx_food_manage f
        LEFT JOIN foxx_shop_reptile r ON f.wmpoiid = r.wmpoiid
-       WHERE reptile_type LIKE '%贡茶%' AND date = CURDATE() AND  name  LIKE '${name}%'`
+       WHERE reptile_type LIKE '%贡茶%' AND date = CURDATE() AND  name  LIKE '%${name}%'`
     )
     data = data.map(v => ({
       id: v.wmpoiid,
@@ -503,24 +503,24 @@ async function test_updateImg() {
   try {
     let ims = await readJson('image/ims.json')
     // ims = ims.filter(v=>v.name == '红豆沙' || v.name == '绿豆沙')
-    // for (let im of ims) {
-    //   console.log(im.meta)
-    //   let [data, _] = await knx.raw(
-    //     `SELECT * FROM foxx_food_manage f
-    //      LEFT JOIN foxx_shop_reptile r ON f.wmpoiid = r.wmpoiid
-    //      WHERE reptile_type LIKE '%贡茶%' AND date = CURDATE() AND  name  LIKE '${im.meta[0].replace('.jpg', '')}%'`
-    //   )
-    //   data = data.map(v => [
-    //     v.wmpoiid,
-    //     v.productId,
-    //     im.meta[1]
-    //   ])
-    //   await loop(updateImg, data, false)
-    // }
-    await loop(
-      updateImg2,
-      ims.map(v => [v.name.replace('.jpg', ''), v.url])
-    )
+    for (let im of ims) {
+      console.log(im.name)
+      let [data, _] = await knx.raw(
+        `SELECT * FROM foxx_food_manage f
+         LEFT JOIN foxx_shop_reptile r ON f.wmpoiid = r.wmpoiid
+         WHERE  date = CURDATE() AND  name  LIKE '${im.name.replace('.png', '')}%'`
+      )
+      data = data.map(v => [
+        v.wmpoiid,
+        v.productId,
+        im.url
+      ])
+      await loop(updateImg, data, false)
+    }
+    // await loop(
+    //   updateImg2,
+    //   ims.map(v => [v.name.replace('.jpg', ''), v.url])
+    // )
     // let [data, _] = await knx.raw(
     //   `SELECT * FROM foxx_food_manage f
     //   LEFT JOIN foxx_shop_reptile r ON f.wmpoiid = r.wmpoiid
