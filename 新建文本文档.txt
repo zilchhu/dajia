@@ -1,0 +1,49 @@
+var axios = require('axios');
+var data = '{"accountType":2,"code":"","loginType":"password","password":"d38ce8d19dea8d3e332da457698e3d16","token":"","username":"18221386275"}';
+
+var config = {
+  method: 'post',
+  url: 'https://supplier-api.imdada.cn/v1/login',
+  headers: { 
+    'Enable-Gps': '1', 
+    'Accuracy': '550.0', 
+    'Model': 'Android-MI_9', 
+    'City-Id': '0', 
+    'User-Token': '1', 
+    'City-Code': '010', 
+    'Client-MacAddress': '02:00:00:00:00:02', 
+    'Rate-Limit-Hash': '2e6e6a654a88fcc8289c162e2c5db0e1', 
+    'Location-Provider': 'lbs', 
+    'Channel-ID': 'CPA006', 
+    'Lng': '116.410344', 
+    'User-Id': '0', 
+    'App-Version': '8.2.0', 
+    'Operator': 'ChinaMobile', 
+    'OS-Version': '7.1.2', 
+    'Lat': '39.916295', 
+    'UUID': 'ffffffff-fd1b-7a8d-e826-db5b00000000', 
+    'Client-Time': '1606389139648', 
+    'Request-Id': '62f8bfc5-b35f-449c-a6a6-c6724f625a7e', 
+    'Platform': 'Android', 
+    'App-Name': 'a-shop', 
+    'Ad-Code': '110101', 
+    'Sdcard-Id': '219bb10e76f64599b3b10ab8f52f3018', 
+    'Client-Imei': '865166027515306', 
+    'Network': 'WIFI', 
+    'Client-Imsi': '460000409278205', 
+    'Location-Time': '1606389042484', 
+    'Verification-Hash': '530bccdc2ee3069a01c7e5fc5e1deb4f', 
+    'Content-Type': 'application/json; charset=UTF-8', 
+    'Host': 'supplier-api.imdada.cn', 
+    'User-Agent': 'okhttp/3.10.0'
+  },
+  data : data
+};
+
+axios(config)
+.then(function (response) {
+  console.log(JSON.stringify(response.data));
+})
+.catch(function (error) {
+  console.log(error);
+});

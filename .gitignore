@@ -1,0 +1,8 @@
+node_modules
+plan
+dist
+uploads/*.xlsx
+uploads/*.zip
+uploads/*.rar
+uploads/*.json
+log
