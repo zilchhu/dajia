@@ -177,11 +177,16 @@ router.post('/upload', async (ctx, next) => {
       e: err.message
     }
   } else {
+    fs.appendFileSync('upload.txt', `${ctx?.request?.ip} ${ctx?.file?.filename} \n`)
     ctx.body = {
       code: 1,
       res: ctx.file
     }
   }
+})
+
+router.get('/ip', ctx => {
+  ctx.body = ctx.request.ip
 })
 
 router.get('/date/:date', async ctx => { })
@@ -1968,8 +1973,8 @@ const date_sql = d =>
   `SELECT * FROM test_analyse_t_ WHERE date = DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL ${d} DAY),'%Y%m%d')`
 
 const sum_sql0 = `
-  DROP TABLE IF EXISTS test_shop_;
-  CREATE TABLE test_shop_ AS (
+  DROP TABLE IF EXISTS test_shop_temp_;
+  CREATE TABLE test_shop_temp_ AS (
     WITH real_shop_info1 AS (
       SELECT
         x.shop_id,
@@ -1989,9 +1994,8 @@ const sum_sql0 = `
         platform_shops x
         JOIN base_physical_shops y ON x.physical_id = y.id
         JOIN sys_dict_data x1 ON x1.dict_type = "shop_name" AND x1.dict_value = x.shop_id
-        LEFT JOIN test_user_group_ g ON g.physical_id = y.id
-        LEFT JOIN sys_user u ON u.user_id = g.b_user_id
-        LEFT JOIN sys_user u2 ON u2.user_id = g.a_user_id
+        LEFT JOIN sys_user u ON u.user_id = y.user_id
+        LEFT JOIN sys_user u2 ON u2.user_id = y.leader_id
     ),
     real_shop_info2 AS (
       SELECT *, GROUP_CONCAT(shop_name) AS full_shop_name
@@ -2005,7 +2009,7 @@ const sum_sql0 = `
   WITH a AS(
     SELECT t.city, t.person, t.leader, t.real_shop, t.income_sum, t.consume_sum, t.consume_sum_ratio, t.cost_sum, t.cost_sum_ratio, t.date, IFNULL(r.rent / DAY(LAST_DAY(date)), 0) AS rent_cost, r.estimate_staff_cnt, r.estimate_employee_wage, r.staff_accom, r.water_electr, r.rent
     FROM test_analyse_t_ t
-    LEFT JOIN test_shop_ r ON t.real_shop = r.real_shop_name
+    LEFT JOIN test_shop_temp_ r ON t.real_shop = r.real_shop_name
     GROUP BY real_shop, date 
   ),
   b AS (
@@ -2405,7 +2409,7 @@ const 饿了么成本问题 = (id, date) => `SET @date = DATE_FORMAT(DATE_ADD(${
         count(*) OVER(PARTITION BY act, goods_cnt) / count(*) OVER()单量占比,
         SUM(cost_sum) OVER(PARTITION BY act, goods_cnt) 成本, 
         SUM(order_income - third_send) OVER(PARTITION BY act, goods_cnt) 收入,
-        third_send 单均配送费,
+        third_send 单均配送,
         SUM(cost_sum) OVER(PARTITION BY act, goods_cnt) / SUM(order_income - third_send) OVER(PARTITION BY act, goods_cnt) 成本比例
       FROM 
       a 
@@ -2553,7 +2557,7 @@ const 饿了么维度订单 = (id, activi, counts, date) => `SET @date = DATE_FO
         a.order_detail 订单信息,
         a.order_income 收入,
         a.cost_sum 成本,
-        c.third_send 单均第三方配送费,
+        c.third_send 单均配送,
         a.cost_sum / (a.order_income - c.third_send) 成本比例
       FROM a
         LEFT JOIN b 
@@ -6279,7 +6283,7 @@ async function user(name, d) {
   try {
     const data = await base(d)
 
-    // console.log(data)
+    // console.log(name, d, data.shops.filter(v => v.shop_id == 10417267))
 
     let res = new M(data).bind(distinct_persons)
 

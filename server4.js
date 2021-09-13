@@ -133,13 +133,12 @@ async function insertTableFromMysql(day_from_today = 1) {
     FROM b1
   ),
   c1 AS (
-    SELECT ps.shop_id, p.shop_address AS city, g.a_user_id, 
+    SELECT ps.shop_id, p.shop_address AS city, p.user_id, 
 			u.nick_name AS person, u2.nick_name AS leader, IF(ps.new_shop = 1, '雷朝宇', null) new_person
 		FROM platform_shops ps
 		LEFT JOIN base_physical_shops p ON p.id = ps.physical_id
-		LEFT JOIN test_user_group_ g ON g.physical_id = p.id
-		LEFT JOIN sys_user u ON u.user_id = g.b_user_id
-		LEFT JOIN sys_user u2 ON u2.user_id = g.a_user_id
+		LEFT JOIN sys_user u ON u.user_id = p.user_id
+		LEFT JOIN sys_user u2 ON u2.user_id = p.leader_id
   ),
   d1 AS (
 		SELECT wmpoiid AS shop_id, bizScore AS rating_mt FROM foxx_cus_manag_analy_score WHERE date = @last_day
@@ -181,7 +180,12 @@ async function insertTableFromMysql(day_from_today = 1) {
     await knx.raw(`SET @last_day = DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL ${day_from_today} DAY),'%Y%m%d');`)
     let [data, _] = await knx.raw(sql)
 
-    if (data.length < 400 || data.length > 700 || data.every(v => v.third_send == 0)) return Promise.reject('no data')
+    if (data.length < 400 || data.length > 700 || data.every(v => v.third_send == 0)) {
+      if (data.every(v => v.platform == '饿了么')) return Promise.reject('无美团数据')
+      if (data.every(v => v.platform == '美团')) return Promise.reject('无饿了么数据')
+      if (data.every(v => v.third_send == 0)) return Promise.reject('无三方配送数据')
+      return Promise.reject('no data')
+    }
     const res = await knx('test_analyse_t_')
       .insert(data)
       .onConflict('id')

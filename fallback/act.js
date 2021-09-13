@@ -1,5 +1,6 @@
 import { MTRequest, urls } from './base3.js'
 import dayjs from 'dayjs'
+import sleep from 'sleep-promise'
 
 function unix(addDay) {
   if (!addDay)
@@ -23,7 +24,7 @@ export default class Act {
     this.instance3 = new MTRequest(cookie).instance
   }
 
-  async list() {
+  async _list() {
     const data = {
       wmPoiId: this.wmPoiId,
       wmActPoiId: 1,
@@ -31,6 +32,16 @@ export default class Act {
       wmActPolicyId: 1001
     }
     return this.instance3.post(urls.act.list, data)
+  }
+
+  async list() {
+    try {
+      let listRes = await this._list()
+      return listRes
+    } catch (err) {
+      if(err?.msg == '活动不存在') return Promise.resolve([])
+      return Promise.reject(err)
+    }
   }
 
   async save_(poiPolicy) {
@@ -235,7 +246,7 @@ export default class Act {
         "actInfo": { "discount": "NaN", "origin_price": act.actInfo.origin_price, "act_price": act.actInfo.act_price },
         "WmActPriceVo": {
           "originPrice": act.charge.originPrice, "actPrice": act.charge.actPrice, "mtCharge": "0",
-          "agentCharge": 0, "poiCharge": act.charge.originPrice - act.charge.actPrice
+          "agentCharge": 0, "poiCharge": Math.round((act.charge.originPrice - act.charge.actPrice) * 100) / 100
         },
         "wmUserType": act.wmUserType, "poiUserType": act.poiUserType,
         "orderLimit": act.orderLimit, "limitTimeSale": "-1", "todaySaleNum": act.todaySaleNum,
@@ -254,7 +265,12 @@ export default class Act {
     if (id != null) {
       act = await this.find2(id)
     }
-    act = { ...act, actInfo: JSON.parse(act.actInfo), charge: JSON.parse(act.charge) }
+
+    act = {
+      ...act,
+      actInfo: typeof act.actInfo == 'string' ? JSON.parse(act.actInfo) : act.actInfo,
+      charge: typeof act.charge == 'string' ? JSON.parse(act.charge) : act.charge
+    }
 
     let poiPolicy = {
       "online_pay": 0,
@@ -265,9 +281,7 @@ export default class Act {
         ...updates
       }]
     }
-
-    console.log(poiPolicy)
-
+    // console.log(poiPolicy)
     return this.save_(poiPolicy)
   }
 

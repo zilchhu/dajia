@@ -27,6 +27,7 @@ async function updateMtFoods(state, ws) {
   let uniqFoods = Array.from(new Set(jsonTable.map(v => `${v.店铺id}#${v.分类名称}#${v.商品名称}`)))
   let foods = uniqFoods.map(f => {
     let rawFoods = jsonTable.filter(v => `${v.店铺id}#${v.分类名称}#${v.商品名称}` == f)
+
     let priceBoxPriceWieightAndUnits = rawFoods.map(v => ({
       spec: v.规格名称 == '' ? null : v.规格名称,
       price: v.价格 == '' ? null : v.价格,
@@ -34,13 +35,25 @@ async function updateMtFoods(state, ws) {
       weight: v.数量 == '' ? null : v.数量,
       unit: v.数量单位 == '' ? null : v.数量单位,
     }))
+
+    let actPriceLimits = rawFoods.map(v => ({
+      spec: v.规格名称 == '' ? null : v.规格名称,
+      actPrice: v.折扣价格 == '' ? null : v.折扣价格,
+      orderLimit: v.折扣限购 == '' ? null : v.折扣限购,
+    }))
+
     return {
       ...rawFoods[0],
       priceBoxPriceWieightAndUnits:
         priceBoxPriceWieightAndUnits
           .some(v => v.price != null || v.boxPrice != null || v.weight != null || v.unit != null) ?
           priceBoxPriceWieightAndUnits :
-          []
+          [],
+      actPriceLimits:
+        actPriceLimits
+          .some(v => v.actPrice != null || v.orderLimit != null) ?
+          actPriceLimits :
+          [],
     }
   })
 
@@ -51,7 +64,7 @@ async function updateMtFoods(state, ws) {
     v.商品名称,
     v.最小购买量 == '' ? null : v.最小购买量,
     v.priceBoxPriceWieightAndUnits,
-    v.折扣价格 == '' ? null : v.折扣价格,
+    (v.折扣价格 == '' || v.折扣价格 == 0) ? null : v.折扣价格,
     v.折扣限购 == '' ? null : v.折扣限购,
     v.删除折扣 == '1' ? true : null,
     v.图片 == '' ? null : v.图片,
@@ -95,7 +108,7 @@ async function updateElmFoods(state, ws) {
     v.最小购买量 == '' ? null : v.最小购买量,
     v.餐盒价格 == '' ? null : v.餐盒价格,
     v.价格 == '' ? null : v.价格,
-    v.折扣价格 == '' ? null : v.折扣价格,
+    (v.折扣价格 == '' || v.折扣价格 == 0) ? null : v.折扣价格,
     v.折扣限购 == '' ? null : v.折扣限购,
     v._i
   ])

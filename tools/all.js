@@ -1843,7 +1843,7 @@ async function freshElm(userTasks, userRule) {
               form.map(item => item.components.map(c => ({ id: c.id, fieldName: c.fieldName, value: c.value })))
             )
             newForm = temp.map(v => ({
-              id: newForm.find(k => k.fieldName == v.fieldName).id,
+              id: v.id,
               value: v.fieldName == '起止日期' ? JSON.stringify({ beginDate: date(), endDate: date(360) }) : v.value
             }))
             return execRequest(instanceElm2, y.requests.elm['下单返红包/create'], [shopId, newForm], xshard(shopId))
