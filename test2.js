@@ -2102,7 +2102,8 @@ query: {
   spu_name/商品名称,
 },
 updates: {
-  skus: [{id/规格ID, spec/规格名称, op/规格操作, price/价格, stock/库存, box_num/餐盒数量, box_price/餐盒价格, unit/单位, act: {price/折扣价格, limit/折扣限购}}],
+  attrs: [{name/属性名, value/属性值, price/加价}],
+  skus: [{id/规格ID, spec/规格名称, stock/库存, box_num/餐盒数量, box_price/餐盒价格, unit/单位, act: {price/折扣价格, limit/折扣限购}}],
   min_order_count/最小购买量,
   sell_status/售卖状态 ?,
   pic/图片,
@@ -2177,16 +2178,12 @@ export async function updatePlan4(cookie, ctx, query, updates) {
     // sku -> newSpuAttrs, stockAndBox
     if (skus.length > 0) {
       // op sku
+      let nskus = [...wmProductSpu.wmProductSkus]
       for (let sku of skus) {
         const { id, spec, op, price, stock, box_num, box_price, unit } = sku
-        let osku = foodEdit.wmProductSpu.wmProductSkus.find(v => v.id == id || v.spec == spec)
-        if (op == '-') {
-
-        }
+        nskus = opSku(op, sku, nskus)
       }
-      // 
     }
-
 
     const saveFRes = await fallbackApp.food.save5({ food, foodEdit, foodTemp }, {
 
@@ -2837,7 +2834,7 @@ async function test_substitute() {
 // test_getTemp()
 // test_stock()
 // test_saveFood()
-// test_updateAct()
+// test_updateAct()        -+
 // test_createAct()
 // test_move()
 // test_delTag()
@@ -2877,4 +2874,4 @@ async function test_substitute() {
 // test_lq()
 // test_stock()
 // test_getHighbox()
-test_substitute()
+// test_substitute()

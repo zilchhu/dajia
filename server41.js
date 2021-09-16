@@ -900,7 +900,7 @@ router.get('/order/:shopId/:date', async ctx => {
   try {
     let { shopId, date } = ctx.params
     let { activi, counts } = ctx.query
-    if (!shopId || !counts) {
+    if (!shopId) {
       ctx.body = { e: 'invalid params' }
       return
     }
@@ -2716,7 +2716,7 @@ const 维度订单详情 = (id, activi, counts, date) => `SET @date = ${date};
     FROM
       a JOIN b 
       ON a.shop_id = b.shop_id
-      AND goods_count = ${counts}
+      AND ${counts == null ? 'goods_count IS NULL' : 'goods_count = ' + counts}
       AND gear = '${activi}'
     ORDER BY cost_ratio DESC`
 
