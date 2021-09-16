@@ -59,7 +59,8 @@ const urls = {
     batchUpdateSaleAttr: '/reuse/product/food/w/batchUpdateSaleAttrSkuWithoutWeightChanged'
   },
   poi: {
-    list: 'https://waimaie.meituan.com/v2/shop/businessStatus/r/poiListSearch'
+    list: 'https://waimaie.meituan.com/v2/shop/businessStatus/r/poiListSearch',
+    list2: '/api/poi/poiList'
   },
   download: {
     food: {

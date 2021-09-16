@@ -400,6 +400,22 @@ router.get('/user_acts/:username/:date', async ctx => {
   }
 })
 
+router.get('/record/indices/:d0/:d1', async ctx => {
+  try {
+    let { d0, d1 } = ctx.params
+    if (d0 == null || d1 == null) {
+      ctx.body = { e: 'invalid params' }
+      return
+    }
+    let [data, _] = await knx.raw(工单优化指标(d0, d1))
+    data = data[2]
+    ctx.body = { res: data.map((v, i) => ({ ...v, key: i })) }
+  } catch (e) {
+    console.error(e)
+    ctx.body = { e }
+  }
+})
+
 router.post('/plans', async ctx => {
   try {
     let { ids, a } = ctx.request.body
@@ -693,46 +709,67 @@ router.post('/delMyt', async ctx => {
   }
 })
 
-router.get('/prob/cost/mt/:shopId/:date', async ctx => {
-  try {
-    let { shopId, date } = ctx.params
-    if (!shopId) {
-      ctx.body = { e: 'invalid params' }
-      return
-    }
-    let [data, _] = await knx.raw(美团成本问题(shopId, date))
-    data = data[2]
-    data = data.map((v, i) => ({
-      key: i,
-      ...v,
-      收入: fixed2(v.收入),
-      单量占比: percent(v.单量占比),
-      成本比例: percent(v.成本比例)
-    }))
-    ctx.body = { res: data }
-  } catch (e) {
-    console.log(e)
-    ctx.body = { e }
-  }
-})
+// router.get('/prob/cost/mt/:shopId/:date', async ctx => {
+//   try {
+//     let { shopId, date } = ctx.params
+//     if (!shopId) {
+//       ctx.body = { e: 'invalid params' }
+//       return
+//     }
+//     let [data, _] = await knx.raw(美团成本问题(shopId, date))
+//     data = data[2]
+//     data = data.map((v, i) => ({
+//       key: i,
+//       ...v,
+//       收入: fixed2(v.收入),
+//       单量占比: percent(v.单量占比),
+//       成本比例: percent(v.成本比例)
+//     }))
+//     ctx.body = { res: data }
+//   } catch (e) {
+//     console.log(e)
+//     ctx.body = { e }
+//   }
+// })
 
-router.get('/prob/cost/elm/:shopId/:date', async ctx => {
+// router.get('/prob/cost/elm/:shopId/:date', async ctx => {
+//   try {
+//     let { shopId, date } = ctx.params
+//     if (!shopId) {
+//       ctx.body = { e: 'invalid params' }
+//       return
+//     }
+//     let [data, _] = await knx.raw(饿了么成本问题(shopId, date))
+//     data = data[2]
+//     console.log(饿了么成本问题(shopId, date))
+//     data = data.map((v, i) => ({
+//       key: i,
+//       ...v,
+//       收入: fixed2(v.收入),
+//       单量占比: percent(v.单量占比),
+//       成本比例: percent(v.成本比例),
+//       单均配送: fixed2(v.单均配送)
+//     }))
+//     ctx.body = { res: data }
+//   } catch (e) {
+//     console.log(e)
+//     ctx.body = { e }
+//   }
+// })
+
+router.get('/cost/:shopId/:date', async ctx => {
   try {
     let { shopId, date } = ctx.params
     if (!shopId) {
       ctx.body = { e: 'invalid params' }
       return
     }
-    let [data, _] = await knx.raw(饿了么成本问题(shopId, date))
+    let [data, _] = await knx.raw(维度订单(shopId, date))
     data = data[2]
-    console.log(饿了么成本问题(shopId, date))
+
     data = data.map((v, i) => ({
       key: i,
       ...v,
-      收入: fixed2(v.收入),
-      单量占比: percent(v.单量占比),
-      成本比例: percent(v.成本比例),
-      单均配送: fixed2(v.单均配送)
     }))
     ctx.body = { res: data }
   } catch (e) {
@@ -814,29 +851,52 @@ router.get('/offsell/elm/:shopId/:day', async ctx => {
   }
 })
 
-router.get('/order/mt/:shopId/:date', async ctx => {
-  try {
-    let { shopId, date } = ctx.params
-    let { activi, counts } = ctx.query
-    if (!shopId || !activi || !counts) {
-      ctx.body = { e: 'invalid params' }
-      return
-    }
-    let [data, _] = await knx.raw(美团单维度订单(shopId, activi, counts, date))
-    data = data[2]
-    data = data.map((v, i) => ({
-      ...v,
-      成本比例: percent(v.成本比例),
-      订单信息: v.订单信息.replace(/(\*\d+),/gm, '$1\n')
-    }))
-    ctx.body = { res: data }
-  } catch (e) {
-    console.log(e)
-    ctx.body = { e }
-  }
-})
+// router.get('/order/mt/:shopId/:date', async ctx => {
+//   try {
+//     let { shopId, date } = ctx.params
+//     let { activi, counts } = ctx.query
+//     if (!shopId || !activi || !counts) {
+//       ctx.body = { e: 'invalid params' }
+//       return
+//     }
+//     let [data, _] = await knx.raw(美团单维度订单(shopId, activi, counts, date))
+//     data = data[2]
+//     data = data.map((v, i) => ({
+//       ...v,
+//       成本比例: percent(v.成本比例),
+//       订单信息: v.订单信息.replace(/(\*\d+),/gm, '$1\n')
+//     }))
+//     ctx.body = { res: data }
+//   } catch (e) {
+//     console.log(e)
+//     ctx.body = { e }
+//   }
+// })
 
-router.get('/order/elm/:shopId/:date', async ctx => {
+// router.get('/order/elm/:shopId/:date', async ctx => {
+//   try {
+//     let { shopId, date } = ctx.params
+//     let { activi, counts } = ctx.query
+//     if (!shopId || !counts) {
+//       ctx.body = { e: 'invalid params' }
+//       return
+//     }
+//     let [data, _] = await knx.raw(饿了么维度订单(shopId, activi, counts, date))
+//     data = data[2]
+//     data = data.map((v, i) => ({
+//       ...v,
+//       成本比例: percent(v.成本比例),
+//       单均配送: fixed2(v.单均配送),
+//       订单信息: v.订单信息.replace(/(\*\d+)\|/gm, '$1\n')
+//     }))
+//     ctx.body = { res: data }
+//   } catch (e) {
+//     console.log(e)
+//     ctx.body = { e }
+//   }
+// })
+
+router.get('/order/:shopId/:date', async ctx => {
   try {
     let { shopId, date } = ctx.params
     let { activi, counts } = ctx.query
@@ -844,13 +904,11 @@ router.get('/order/elm/:shopId/:date', async ctx => {
       ctx.body = { e: 'invalid params' }
       return
     }
-    let [data, _] = await knx.raw(饿了么维度订单(shopId, activi, counts, date))
+    let [data, _] = await knx.raw(维度订单详情(shopId, activi, counts, date))
     data = data[2]
     data = data.map((v, i) => ({
       ...v,
-      成本比例: percent(v.成本比例),
-      单均配送: fixed2(v.单均配送),
-      订单信息: v.订单信息.replace(/(\*\d+)\|/gm, '$1\n')
+      订单信息: v.订单信息?.replace(/(\*\d+)[\|,]/gm, '$1\n')?.replace(/^,/, '')
     }))
     ctx.body = { res: data }
   } catch (e) {
@@ -2568,6 +2626,99 @@ const 饿了么维度订单 = (id, activi, counts, date) => `SET @date = DATE_FO
         ${activi == null ? 'act IS NULL' : `act = '${activi}'`}
         AND goods_cnt = ${counts}
       ORDER BY 成本比例 DESC`
+
+const 维度订单 = (id, date) => `SET @date = ${date};
+    SET @shop_id = ${id};
+
+    WITH a AS ( SELECT * FROM order_dimension_info WHERE date = @date AND shop_id = @shop_id ),
+    b AS (
+      SELECT
+        shop_id,
+        ROUND( third_send / orders, 2 ) third_send 
+      FROM
+        foxx_operating_data 
+      WHERE
+        date = @date
+        AND shop_id = @shop_id 
+    ),
+    c AS (
+      SELECT
+        shipping_fee,
+        settle_amount,
+        third_send,
+        ROUND( goods_count, 1 ) goods_count,
+        cost_sum,
+        rule,
+        gear
+      FROM
+        a
+        JOIN b ON a.shop_id = b.shop_id 
+      ),
+    d AS (
+      SELECT
+        count(*) order_cnt,
+        round( sum( cost_sum ), 2 ) cost_sum,
+        round( sum( settle_amount - third_send ), 2 ) settle_sum,
+        round( third_send, 2 ) third_send,
+        goods_count,
+        round( sum( shipping_fee ), 2 ) shipping_fee,
+        rule,
+        gear 
+      FROM
+        c 
+      GROUP BY
+        goods_count,
+        gear 
+      )
+    SELECT
+      goods_count 商品数量,
+      gear 活动档位,
+      rule 活动内容,
+      cost_sum 理论成本,
+      settle_sum 商家收入,
+      CONCAT( ROUND(( 100 * cost_sum / settle_sum ), 2 ), '%' ) 成本比例,
+      third_send 单均配送,
+      order_cnt 订单数量,
+      CONCAT( ROUND(( 100 * order_cnt / sum( order_cnt ) over () ), 2 ), '%' ) 订单比例 
+    FROM
+      d 
+    ORDER BY
+      goods_count,
+      gear`
+
+const 维度订单详情 = (id, activi, counts, date) => `SET @date = ${date};
+    SET @shop_id = ${id};
+
+    WITH a AS ( SELECT * FROM order_dimension_info WHERE date = @date AND shop_id = @shop_id ),
+    b AS (
+      SELECT
+        shop_id,
+        ROUND( third_send / orders, 2 ) third_send 
+      FROM
+        foxx_operating_data 
+      WHERE
+        date = @date
+        AND shop_id = @shop_id 
+    )
+    SELECT
+      order_id 订单编号,
+      details 订单信息,
+      cost_sum 理论成本,
+      settle_amount - third_send 商家收入,
+      ROUND(( 100 * cost_sum / (settle_amount - third_send) ), 2 ) cost_ratio,
+      CONCAT( ROUND(( 100 * cost_sum / (settle_amount - third_send) ), 2 ), '%' ) 成本比例,
+      GREATEST(shipping_fee, third_send) 订单配送,
+      jp_fee 减配支出,
+      xk_fee 新客立减,
+      hb_fee 红包支出,
+      dj_fee 代金券支出,
+      distance '订单距离/m'
+    FROM
+      a JOIN b 
+      ON a.shop_id = b.shop_id
+      AND goods_count = ${counts}
+      AND gear = '${activi}'
+    ORDER BY cost_ratio DESC`
 
 const 线下指标美团评分 = (id, d = 7) => `SELECT 
     -- 评分
@@ -4889,6 +5040,139 @@ const 单产品满减问题 = `-- 单商品满减查询
       FROM c JOIN d ON c.shop_id = d.shop_id AND (price + package_fee) * min_purchase_quantity > rule
     )
     SELECT e.*, tagName, name, price, boxPrice, minOrderCount, detail FROM e JOIN f ON e.shop_id = f.wmpoiid`
+
+const 工单优化指标 = (d0, d1) => `SET @date0 = ${d0};
+    SET @date1 = ${d1};
+
+    WITH
+    a AS (
+      SELECT
+        person AS person,
+        leader AS leader,
+        shop_id,
+      IF
+        (( cost_ratio >= 0.5 ), 1, NULL ) AS is_gcb,
+      IF
+        (( consume_ratio >= 0.05 ), 1, NULL ) AS is_gtg,
+      IF
+        (( settlea_30 <= 0.7 ), 1, NULL ) AS is_cd,(
+        CASE
+            
+            WHEN ( platform = '美团' ) THEN
+          IF
+            (( income < 1500 ), 1, NULL ) ELSE
+          IF
+            (( income < 1000 ), 1, 0 ) 
+          END 
+          ) AS is_dsr,
+          nullif(
+            trim(
+              json_unquote(
+                json_extract(
+                  cast( a AS json ),
+                  json_unquote(
+                  REPLACE ( json_search( cast( a AS json ), 'one', '高成本' ), 'q', 'a' ))))),
+            '' 
+          ) AS gcb,
+          nullif(
+            trim(
+              json_unquote(
+                json_extract(
+                  cast( a AS json ),
+                  json_unquote(
+                  REPLACE ( json_search( cast( a AS json ), 'one', '高推广' ), 'q', 'a' ))))),
+            '' 
+          ) AS gtg,
+          nullif(
+            trim(
+              json_unquote(
+                json_extract(
+                  cast( a AS json ),
+                  json_unquote(
+                  REPLACE ( json_search( cast( a AS json ), 'one', '严重超跌' ), 'q', 'a' ))))),
+            '' 
+          ) AS cd,
+          nullif(
+            trim(
+              json_unquote(
+                json_extract(
+                  cast( a AS json ),
+                  json_unquote(
+                  REPLACE ( json_search( cast( a AS json ), 'one', '低收入' ), 'q', 'a' ))))),
+            '' 
+          ) AS dsr,
+          IF( LEAD(cost_ratio,8,1) OVER(PARTITION BY shop_id ORDER BY date) >= 0.5 , 1, 0) +
+          IF( LEAD(cost_ratio,9,1) OVER(PARTITION BY shop_id ORDER BY date) >= 0.5 , 1, 0) +
+          IF( LEAD(cost_ratio,10,1) OVER(PARTITION BY shop_id ORDER BY date) >= 0.5 , 1, 0) is_gcb_then,
+          IF( LEAD(consume_ratio,8,1) OVER(PARTITION BY shop_id ORDER BY date) >= 0.05 , 1, 0) +
+          IF( LEAD(consume_ratio,9,1) OVER(PARTITION BY shop_id ORDER BY date) >= 0.05 , 1, 0) +
+          IF( LEAD(consume_ratio,10,1) OVER(PARTITION BY shop_id ORDER BY date) >= 0.05 , 1, 0) is_gtg_then,
+          IF( LEAD(settlea_30,8,0) OVER(PARTITION BY shop_id ORDER BY date) <= 0.7 , 1, 0) +
+          IF( LEAD(settlea_30,9,0) OVER(PARTITION BY shop_id ORDER BY date) <= 0.7 , 1, 0) +
+          IF( LEAD(settlea_30,10,0) OVER(PARTITION BY shop_id ORDER BY date) <= 0.7 , 1, 0) is_cd_then,
+          CASE
+          WHEN ( platform = '美团' ) THEN
+          IF( LEAD(income,8,0) OVER(PARTITION BY shop_id ORDER BY date) < 1500 , 1, 0) +
+          IF( LEAD(income,9,0) OVER(PARTITION BY shop_id ORDER BY date) < 1500 , 1, 0) +
+          IF( LEAD(income,10,0) OVER(PARTITION BY shop_id ORDER BY date) < 1500 , 1, 0)
+          ELSE
+          IF( LEAD(income,8,0) OVER(PARTITION BY shop_id ORDER BY date) < 1000 , 1, 0) +
+          IF( LEAD(income,9,0) OVER(PARTITION BY shop_id ORDER BY date) < 1000 , 1, 0) +
+          IF( LEAD(income,10,0) OVER(PARTITION BY shop_id ORDER BY date) < 1000 , 1, 0)
+          END is_dsr_then,
+          date
+        FROM
+          test_analyse_t_
+        WHERE
+          person IS NOT NULL 
+          AND person NOT IN ( '郑刚', '欧勇杰' )
+      AND date BETWEEN @date0 AND DATE_FORMAT(DATE_ADD(@date1, INTERVAL 10 DAY), "%Y%m%d")
+    ),
+    b AS (
+      SELECT
+          '组员' AS '级别',
+          person '运营',
+          count(is_gcb) '高成本问题数量',
+          count(gcb) '高成本优化数量',
+          count(IF(gcb IS NOT NULL AND is_gcb_then = 0,1,NULL)) '高成本解决数量',
+          count(is_gtg) '高推广问题数量',
+          count(gtg) '高推广优化数量',
+          count(IF(gtg IS NOT NULL AND is_gtg_then = 0,1,NULL)) '高推广解决数量',
+          count(is_cd) '超跌问题数量',
+          count(cd) '超跌优化数量',
+          count(IF(cd IS NOT NULL AND is_cd_then = 0,1,NULL)) '超跌解决数量',
+          0 '低业绩问题数量',
+          0 '低业绩优化数量',
+          0 '低业绩解决数量',
+          date
+      FROM a 
+      WHERE date BETWEEN @date0 AND @date1
+      GROUP BY person
+    ),
+    c AS (
+      SELECT
+          '组长' AS '级别',
+          leader,
+          0 a,
+          0 b,
+          0 c,
+          0 d,
+          0 e,
+          0 f,
+          0 g,
+          0 h,
+          0 i,
+          count(is_dsr),
+          count(dsr),
+          count(IF(dsr IS NOT NULL AND is_dsr_then = 0,1,NULL)),
+          date
+      FROM a 
+      WHERE date BETWEEN @date0 AND @date1
+      GROUP BY leader
+    )
+    SELECT * FROM b
+    UNION ALL
+    SELECT * FROM c`
 
 async function date(d) { }
 

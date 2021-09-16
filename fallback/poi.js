@@ -1,12 +1,12 @@
 import { MTRequest, urls } from './base3.js'
 
 export default class Poi {
-  constructor(appPoiCode, cookie) {
-    this.appPoiCode = appPoiCode
-    this.instance3 = new MTRequest(cookie)
+  constructor(wmPoiId, cookie) {
+    this.wmPoiId = wmPoiId
+    this.instance3 = new MTRequest(cookie).instance
   }
 
-  list_() {
+  _list() {
     const params = {
       isOpen: 0,
       pageNum: 1,
@@ -16,14 +16,25 @@ export default class Poi {
     return this.instance3.get(urls.poi.list, { params })
   }
 
-  async list() {
-    try {
-      const list_Res = await this.list_()
-      if(!list_Res || !list_Res.dataList) return Promise.reject({err: 'poi list failed'})
-      return Promise.resolve(list_Res.dataList)
-    } catch (err) {
-      return Promise.reject(err)
+  list2() {
+    const data = {
+      optimus_uuid: 'aa43a266-07a2-41a3-99b5-f79ab32a453b',
+      optimus_risk_level: 71,
+      optimus_code: 10,
+      optimus_partner: 19
     }
+    return this.instance3.post(urls.poi.list2, data)
   }
 
+  async list() {
+    const { dataList } = await this._list()
+    return dataList
+  }
+
+  async find() {
+    const list = await this.list2()
+    const poi = list.find(v => v.id == this.wmPoiId)
+    if (poi) return poi
+    return Promise.reject({ tag: 'poi.find', message: `poi:${this.wmPoiId} not found` })
+  }
 }

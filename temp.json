@@ -1,0 +1,468 @@
+{
+  "id": 5578161976,
+  "wm_poi_id": 2700545,
+  "tag_id": "271882628",
+  "tag_name": "未知事物",
+  "name": "t4_2",
+  "wmProductPics": [],
+  "specialEffectPic": null,
+  "description": "",
+  "category_id": 115250,
+  "properties_values": {},
+  "newSpuAttrs": [
+    {
+      "name": "a",
+      "name_id": 0,
+      "value": "a1",
+      "value_id": 0,
+      "price": 1,
+      "weight": 0,
+      "mode": 2,
+      "weightUnit": null,
+      "sell_status": 0,
+      "value_sequence": 1,
+      "no": 1,
+      "extFields": null
+    },
+    {
+      "name": "a",
+      "name_id": 0,
+      "value": "a2",
+      "value_id": 0,
+      "price": 0,
+      "weight": 0,
+      "mode": 2,
+      "weightUnit": null,
+      "sell_status": 0,
+      "value_sequence": 2,
+      "no": 1,
+      "extFields": null
+    },
+    {
+      "name": "b",
+      "name_id": 0,
+      "value": "b1",
+      "value_id": 0,
+      "price": 1,
+      "weight": 0,
+      "mode": 2,
+      "weightUnit": null,
+      "sell_status": 0,
+      "value_sequence": 1,
+      "no": 2,
+      "extFields": null
+    },
+    {
+      "name": "b",
+      "name_id": 0,
+      "value": "b2",
+      "value_id": 0,
+      "price": 2,
+      "weight": 0,
+      "mode": 2,
+      "weightUnit": null,
+      "sell_status": 0,
+      "value_sequence": 2,
+      "no": 2,
+      "extFields": null
+    },
+    {
+      "name": "份量",
+      "name_id": 0,
+      "value": "(约1克)",
+      "value_id": 0,
+      "price": 1,
+      "weight": 1,
+      "mode": 2,
+      "weightUnit": "克",
+      "sell_status": 0,
+      "value_sequence": 1,
+      "no": 0,
+      "extFields": null
+    },
+    {
+      "name": "份量",
+      "name_id": 0,
+      "value": "(约2克)",
+      "value_id": 0,
+      "price": 2,
+      "weight": 2,
+      "mode": 2,
+      "weightUnit": "克",
+      "sell_status": 0,
+      "value_sequence": 2,
+      "no": 0,
+      "extFields": null
+    },
+    {
+      "name": "份量",
+      "name_id": 0,
+      "value": "(2人份)",
+      "value_id": 0,
+      "price": 4,
+      "weight": -2,
+      "mode": 2,
+      "weightUnit": "2人份",
+      "sell_status": 0,
+      "value_sequence": 3,
+      "no": 0,
+      "extFields": null
+    },
+    {
+      "name": "份量",
+      "name_id": 0,
+      "price": 498,
+      "value_id": 0,
+      "value": "-",
+      "no": 0,
+      "mode": 2,
+      "weight": -2,
+      "weightUnit": "1人份",
+      "sell_status": 0,
+      "value_sequence": 4
+    }
+  ],
+  "stockAndBoxPriceSkus": [
+    {
+      "attrList": [
+        {
+          "name": "a",
+          "name_id": 0,
+          "value": "a1",
+          "value_id": 0
+        },
+        {
+          "name": "b",
+          "name_id": 0,
+          "value": "b1",
+          "value_id": 0
+        },
+        {
+          "name": "份量",
+          "name_id": 0,
+          "value": "(约1克)",
+          "value_id": 0,
+          "no": 0
+        }
+      ],
+      "box_price": 0.1,
+      "price": 1,
+      "spec": "(约1克)（约1克） a1·b1",
+      "unit": "1克",
+      "weight": 1,
+      "wmProductLadderBoxPrice": {
+        "ladder_num": 1,
+        "ladder_price": 0.1,
+        "status": 1
+      },
+      "wmProductStock": {
+        "id": "0",
+        "stock": -1,
+        "max_stock": "-1",
+        "auto_refresh": 1
+      }
+    },
+    {
+      "attrList": [
+        {
+          "name": "a",
+          "name_id": 0,
+          "value": "a1",
+          "value_id": 0
+        },
+        {
+          "name": "b",
+          "name_id": 0,
+          "value": "b1",
+          "value_id": 0
+        },
+        {
+          "name": "份量",
+          "name_id": 0,
+          "value": "(约2克)",
+          "value_id": 0,
+          "no": 0
+        }
+      ],
+      "box_price": 0.3,
+      "price": 2,
+      "spec": "(约2克)（约2克） a1·b1",
+      "unit": "2克",
+      "weight": 2,
+      "wmProductLadderBoxPrice": {
+        "ladder_num": 1,
+        "ladder_price": 0.3,
+        "status": 1
+      },
+      "wmProductStock": {
+        "id": "0",
+        "stock": -1,
+        "max_stock": "-1",
+        "auto_refresh": 1
+      }
+    },
+    {
+      "attrList": [
+        {
+          "name": "a",
+          "name_id": 0,
+          "value": "a1",
+          "value_id": 0
+        },
+        {
+          "name": "b",
+          "name_id": 0,
+          "value": "b1",
+          "value_id": 0
+        },
+        {
+          "name": "份量",
+          "name_id": 0,
+          "value": "(2人份)",
+          "value_id": 0,
+          "no": 0
+        }
+      ],
+      "box_price": 0.5,
+      "price": 4,
+      "spec": "(2人份)（2人份） a1·b1",
+      "unit": "2人份",
+      "weight": -2,
+      "wmProductLadderBoxPrice": {
+        "ladder_num": 1,
+        "ladder_price": 0.5,
+        "status": 1
+      },
+      "wmProductStock": {
+        "id": "0",
+        "stock": -1,
+        "max_stock": "-1",
+        "auto_refresh": 1
+      }
+    },
+    {
+      "attrList": [
+        {
+          "name": "a",
+          "name_id": 0,
+          "value": "a1",
+          "value_id": 0
+        },
+        {
+          "name": "b",
+          "name_id": 0,
+          "value": "b1",
+          "value_id": 0
+        },
+        {
+          "name": "份量",
+          "name_id": 0,
+          "value": "-",
+          "value_id": 0,
+          "no": 0
+        }
+      ],
+      "box_price": 0,
+      "price": 498,
+      "spec": "-（1人份） a1·b1",
+      "unit": "1人份",
+      "weight": -2,
+      "wmProductLadderBoxPrice": {
+        "ladder_num": 1,
+        "ladder_price": 0,
+        "status": 1
+      },
+      "wmProductStock": {
+        "id": "0",
+        "stock": "10000",
+        "max_stock": "-1",
+        "auto_refresh": 1
+      }
+    },
+    {
+      "attrList": [
+        {
+          "name": "a",
+          "name_id": 0,
+          "value": "a1",
+          "value_id": 0
+        },
+        {
+          "name": "b",
+          "name_id": 0,
+          "value": "b2",
+          "value_id": 0
+        },
+        {
+          "name": "份量",
+          "name_id": 0,
+          "value": "(约1克)",
+          "value_id": 0,
+          "no": 0
+        }
+      ],
+      "box_price": 0.1,
+      "price": 1,
+      "spec": "(约1克)（约1克） a1·b2",
+      "unit": "1克",
+      "weight": 1,
+      "wmProductLadderBoxPrice": {
+        "ladder_num": 1,
+        "ladder_price": 0.1,
+        "status": 1
+      },
+      "wmProductStock": {
+        "id": "0",
+        "stock": -1,
+        "max_stock": "-1",
+        "auto_refresh": 1
+      }
+    },
+    {
+      "attrList": [
+        {
+          "name": "a",
+          "name_id": 0,
+          "value": "a1",
+          "value_id": 0
+        },
+        {
+          "name": "b",
+          "name_id": 0,
+          "value": "b2",
+          "value_id": 0
+        },
+        {
+          "name": "份量",
+          "name_id": 0,
+          "value": "(约2克)",
+          "value_id": 0,
+          "no": 0
+        }
+      ],
+      "box_price": 0.3,
+      "price": 2,
+      "spec": "(约2克)（约2克） a1·b2",
+      "unit": "2克",
+      "weight": 2,
+      "wmProductLadderBoxPrice": {
+        "ladder_num": 1,
+        "ladder_price": 0.3,
+        "status": 1
+      },
+      "wmProductStock": {
+        "id": "0",
+        "stock": -1,
+        "max_stock": "-1",
+        "auto_refresh": 1
+      }
+    },
+    {
+      "attrList": [
+        {
+          "name": "a",
+          "name_id": 0,
+          "value": "a1",
+          "value_id": 0
+        },
+        {
+          "name": "b",
+          "name_id": 0,
+          "value": "b2",
+          "value_id": 0
+        },
+        {
+          "name": "份量",
+          "name_id": 0,
+          "value": "(2人份)",
+          "value_id": 0,
+          "no": 0
+        }
+      ],
+      "box_price": 0.5,
+      "price": 4,
+      "spec": "(2人份)（2人份） a1·b2",
+      "unit": "2人份",
+      "weight": -2,
+      "wmProductLadderBoxPrice": {
+        "ladder_num": 1,
+        "ladder_price": 0.5,
+        "status": 1
+      },
+      "wmProductStock": {
+        "id": "0",
+        "stock": -1,
+        "max_stock": "-1",
+        "auto_refresh": 1
+      }
+    },
+    {
+      "attrList": [
+        {
+          "name": "a",
+          "name_id": 0,
+          "value": "a1",
+          "value_id": 0
+        },
+        {
+          "name": "b",
+          "name_id": 0,
+          "value": "b2",
+          "value_id": 0
+        },
+        {
+          "name": "份量",
+          "name_id": 0,
+          "value": "-",
+          "value_id": 0,
+          "no": 0
+        }
+      ],
+      "box_price": 0,
+      "price": 498,
+      "spec": "-（1人份） a1·b2",
+      "unit": "1人份",
+      "weight": -2,
+      "wmProductLadderBoxPrice": {
+        "ladder_num": 1,
+        "ladder_price": 0,
+        "status": 1
+      },
+      "wmProductStock": {
+        "id": "0",
+        "stock": "10000",
+        "max_stock": "-1",
+        "auto_refresh": 1
+      }
+    }
+  ],
+  "unifiedPackagingFee": 2,
+  "wmProductLadderBoxPrice": {
+    "ladder_num": 1,
+    "ladder_price": 0.1,
+    "status": 1
+  },
+  "wmProductStock": {
+    "id": "0",
+    "stock": -1,
+    "max_stock": "-1",
+    "auto_refresh": 1
+  },
+  "isShippingTimeSyncPoi": 2,
+  "shipping_time_x": "-",
+  "min_order_count": 1,
+  "labelList": [],
+  "singleOrderNoDelivery": 0,
+  "wmProductVideo": null,
+  "productCardDisplayContent": "",
+  "labelValues": [
+    {
+      "sequence": 1,
+      "value": ""
+    },
+    {
+      "sequence": 2,
+      "value": ""
+    }
+  ]
+}{"id":5578161976,"wm_poi_id":2700545,"tag_id":"271882628","tag_name":"未知事物","name":"t4_2","wmProductPics":[],"specialEffectPic":null,"description":"","category_id":115250,"properties_values":{},"newSpuAttrs":[{"name":"a","name_id":0,"value":"a1","value_id":0,"price":1,"weight":0,"mode":2,"weightUnit":null,"sell_status":0,"value_sequence":1,"no":1,"extFields":null},{"name":"a","name_id":0,"value":"a2","value_id":0,"price":0,"weight":0,"mode":2,"weightUnit":null,"sell_status":0,"value_sequence":2,"no":1,"extFields":null},{"name":"b","name_id":0,"value":"b1","value_id":0,"price":1,"weight":0,"mode":2,"weightUnit":null,"sell_status":0,"value_sequence":1,"no":2,"extFields":null},{"name":"b","name_id":0,"value":"b2","value_id":0,"price":2,"weight":0,"mode":2,"weightUnit":null,"sell_status":0,"value_sequence":2,"no":2,"extFields":null},{"name":"份量","name_id":0,"value":"(约1克)","value_id":0,"price":1,"weight":1,"mode":2,"weightUnit":"克","sell_status":0,"value_sequence":1,"no":0,"extFields":null},{"name":"份量","name_id":0,"value":"(约2克)","value_id":0,"price":2,"weight":2,"mode":2,"weightUnit":"克","sell_status":0,"value_sequence":2,"no":0,"extFields":null},{"name":"份量","name_id":0,"value":"(2人份)","value_id":0,"price":4,"weight":-2,"mode":2,"weightUnit":"2人份","sell_status":0,"value_sequence":3,"no":0,"extFields":null},{"name":"份量","name_id":0,"price":497,"value_id":0,"value":"-","no":0,"mode":2,"weight":-2,"weightUnit":"1人份","sell_status":0,"value_sequence":4}],"stockAndBoxPriceSkus":[{"attrList":[{"name":"a","name_id":0,"value":"a1","value_id":0},{"name":"b","name_id":0,"value":"b1","value_id":0},{"name":"份量","name_id":0,"value":"(约1克)","value_id":0,"no":0}],"box_price":0.1,"price":1,"spec":"(约1克)（约1克） a1·b1","unit":"1克","weight":1,"wmProductLadderBoxPrice":{"ladder_num":1,"ladder_price":0.1,"status":1},"wmProductStock":{"id":"0","stock":-1,"max_stock":"-1","auto_refresh":1}},{"attrList":[{"name":"a","name_id":0,"value":"a1","value_id":0},{"name":"b","name_id":0,"value":"b1","value_id":0},{"name":"份量","name_id":0,"value":"(约2克)","value_id":0,"no":0}],"box_price":0.3,"price":2,"spec":"(约2克)（约2克） a1·b1","unit":"2克","weight":2,"wmProductLadderBoxPrice":{"ladder_num":1,"ladder_price":0.3,"status":1},"wmProductStock":{"id":"0","stock":-1,"max_stock":"-1","auto_refresh":1}},{"attrList":[{"name":"a","name_id":0,"value":"a1","value_id":0},{"name":"b","name_id":0,"value":"b1","value_id":0},{"name":"份量","name_id":0,"value":"(2人份)","value_id":0,"no":0}],"box_price":0.5,"price":4,"spec":"(2人份)（2人份） a1·b1","unit":"2人份","weight":-2,"wmProductLadderBoxPrice":{"ladder_num":1,"ladder_price":0.5,"status":1},"wmProductStock":{"id":"0","stock":-1,"max_stock":"-1","auto_refresh":1}},{"attrList":[{"name":"a","name_id":0,"value":"a1","value_id":0},{"name":"b","name_id":0,"value":"b1","value_id":0},{"name":"份量","name_id":0,"value":"-","value_id":0,"no":0}],"box_price":0,"price":497,"spec":"-（1人份） a1·b1","unit":"1人份","weight":-2,"wmProductLadderBoxPrice":{"ladder_num":1,"ladder_price":0,"status":1},"wmProductStock":{"id":"0","stock":"10000","max_stock":"-1","auto_refresh":1}},{"attrList":[{"name":"a","name_id":0,"value":"a1","value_id":0},{"name":"b","name_id":0,"value":"b2","value_id":0},{"name":"份量","name_id":0,"value":"(约1克)","value_id":0,"no":0}],"box_price":0.1,"price":1,"spec":"(约1克)（约1克） a1·b2","unit":"1克","weight":1,"wmProductLadderBoxPrice":{"ladder_num":1,"ladder_price":0.1,"status":1},"wmProductStock":{"id":"0","stock":-1,"max_stock":"-1","auto_refresh":1}},{"attrList":[{"name":"a","name_id":0,"value":"a1","value_id":0},{"name":"b","name_id":0,"value":"b2","value_id":0},{"name":"份量","name_id":0,"value":"(约2克)","value_id":0,"no":0}],"box_price":0.3,"price":2,"spec":"(约2克)（约2克） a1·b2","unit":"2克","weight":2,"wmProductLadderBoxPrice":{"ladder_num":1,"ladder_price":0.3,"status":1},"wmProductStock":{"id":"0","stock":-1,"max_stock":"-1","auto_refresh":1}},{"attrList":[{"name":"a","name_id":0,"value":"a1","value_id":0},{"name":"b","name_id":0,"value":"b2","value_id":0},{"name":"份量","name_id":0,"value":"(2人份)","value_id":0,"no":0}],"box_price":0.5,"price":4,"spec":"(2人份)（2人份） a1·b2","unit":"2人份","weight":-2,"wmProductLadderBoxPrice":{"ladder_num":1,"ladder_price":0.5,"status":1},"wmProductStock":{"id":"0","stock":-1,"max_stock":"-1","auto_refresh":1}},{"attrList":[{"name":"a","name_id":0,"value":"a1","value_id":0},{"name":"b","name_id":0,"value":"b2","value_id":0},{"name":"份量","name_id":0,"value":"-","value_id":0,"no":0}],"box_price":0,"price":497,"spec":"-（1人份） a1·b2","unit":"1人份","weight":-2,"wmProductLadderBoxPrice":{"ladder_num":1,"ladder_price":0,"status":1},"wmProductStock":{"id":"0","stock":"10000","max_stock":"-1","auto_refresh":1}}],"unifiedPackagingFee":2,"wmProductLadderBoxPrice":{"ladder_num":1,"ladder_price":0.1,"status":1},"wmProductStock":{"id":"0","stock":-1,"max_stock":"-1","auto_refresh":1},"isShippingTimeSyncPoi":2,"shipping_time_x":"-","min_order_count":1,"labelList":[],"singleOrderNoDelivery":0,"wmProductVideo":null,"productCardDisplayContent":"","labelValues":[{"sequence":1,"value":""},{"sequence":2,"value":""}]}{"id":5578161976,"wm_poi_id":2700545,"tag_id":"271882628","tag_name":"未知事物","name":"t4_2","wmProductPics":[],"specialEffectPic":null,"description":"","category_id":115250,"properties_values":{},"newSpuAttrs":[{"name":"份量","name_id":0,"price":497,"value":"-","value_id":0,"no":0,"mode":2,"weight":-2,"weightUnit":"1人份","sell_status":0,"value_sequence":1}],"stockAndBoxPriceSkus":[],"unifiedPackagingFee":1,"wmProductLadderBoxPrice":{"ladder_num":1,"ladder_price":0,"status":1},"wmProductStock":{"id":"0","stock":-1,"max_stock":"-1","auto_refresh":1},"isShippingTimeSyncPoi":2,"shipping_time_x":"-","min_order_count":1,"labelList":[],"singleOrderNoDelivery":0,"wmProductVideo":null,"productCardDisplayContent":"","labelValues":[{"sequence":1,"value":""},{"sequence":2,"value":""}]}{"id":5578161976,"wm_poi_id":2700545,"tag_id":"271882628","tag_name":"未知事物","name":"t4_2","wmProductPics":[],"specialEffectPic":null,"description":"","category_id":115250,"properties_values":{},"newSpuAttrs":[{"name":"a","name_id":0,"value":"a1","value_id":0,"price":1,"weight":0,"mode":2,"weightUnit":null,"sell_status":0,"value_sequence":1,"no":1,"extFields":null},{"name":"a","name_id":0,"value":"a2","value_id":0,"price":0,"weight":0,"mode":2,"weightUnit":null,"sell_status":0,"value_sequence":2,"no":1,"extFields":null},{"name":"b","name_id":0,"value":"b1","value_id":0,"price":1,"weight":0,"mode":2,"weightUnit":null,"sell_status":0,"value_sequence":1,"no":2,"extFields":null},{"name":"b","name_id":0,"value":"b2","value_id":0,"price":2,"weight":0,"mode":2,"weightUnit":null,"sell_status":0,"value_sequence":2,"no":2,"extFields":null},{"name":"份量","name_id":0,"value":"(约1克)","value_id":0,"price":1,"weight":1,"mode":2,"weightUnit":"克","sell_status":0,"value_sequence":1,"no":0,"extFields":null},{"name":"份量","name_id":0,"value":"(约2克)","value_id":0,"price":2,"weight":2,"mode":2,"weightUnit":"克","sell_status":0,"value_sequence":2,"no":0,"extFields":null},{"name":"份量","name_id":0,"value":"(2人份)","value_id":0,"price":4,"weight":-2,"mode":2,"weightUnit":"2人份","sell_status":0,"value_sequence":3,"no":0,"extFields":null},{"name":"份量","name_id":0,"price":497,"value_id":0,"value":"-","no":0,"mode":2,"weight":-2,"weightUnit":"1人份","sell_status":0,"value_sequence":4}],"stockAndBoxPriceSkus":[{"attrList":[{"name":"a","name_id":0,"value":"a1","value_id":0},{"name":"b","name_id":0,"value":"b1","value_id":0},{"name":"份量","name_id":0,"value":"(约1克)","value_id":0,"no":0}],"box_price":0.1,"price":1,"spec":"(约1克)（约1克） a1·b1","unit":"1克","weight":1,"wmProductLadderBoxPrice":{"ladder_num":1,"ladder_price":0.1,"status":1},"wmProductStock":{"id":"0","stock":10000,"max_stock":"-1","auto_refresh":1}},{"attrList":[{"name":"a","name_id":0,"value":"a1","value_id":0},{"name":"b","name_id":0,"value":"b1","value_id":0},{"name":"份量","name_id":0,"value":"(约2克)","value_id":0,"no":0}],"box_price":0.3,"price":2,"spec":"(约2克)（约2克） a1·b1","unit":"2克","weight":2,"wmProductLadderBoxPrice":{"ladder_num":1,"ladder_price":0.3,"status":1},"wmProductStock":{"id":"0","stock":10000,"max_stock":"-1","auto_refresh":1}},{"attrList":[{"name":"a","name_id":0,"value":"a1","value_id":0},{"name":"b","name_id":0,"value":"b1","value_id":0},{"name":"份量","name_id":0,"value":"(2人份)","value_id":0,"no":0}],"box_price":0.5,"price":4,"spec":"(2人份)（2人份） a1·b1","unit":"2人份","weight":-2,"wmProductLadderBoxPrice":{"ladder_num":1,"ladder_price":0.5,"status":1},"wmProductStock":{"id":"0","stock":10000,"max_stock":"-1","auto_refresh":1}},{"attrList":[{"name":"a","name_id":0,"value":"a1","value_id":0},{"name":"b","name_id":0,"value":"b1","value_id":0},{"name":"份量","name_id":0,"value":"-","value_id":0,"no":0}],"box_price":0,"price":497,"spec":"-（1人份） a1·b1","unit":"1人份","weight":-2,"wmProductLadderBoxPrice":{"ladder_num":1,"ladder_price":0,"status":1},"wmProductStock":{"id":"0","stock":"10000","max_stock":"-1","auto_refresh":1}},{"attrList":[{"name":"a","name_id":0,"value":"a1","value_id":0},{"name":"b","name_id":0,"value":"b2","value_id":0},{"name":"份量","name_id":0,"value":"(约1克)","value_id":0,"no":0}],"box_price":0.2,"price":1,"spec":"(约1克)（约1克） a1·b2","unit":"1克","weight":1,"wmProductLadderBoxPrice":{"ladder_num":1,"ladder_price":0.2,"status":1},"wmProductStock":{"id":"0","stock":10000,"max_stock":"-1","auto_refresh":1}},{"attrList":[{"name":"a","name_id":0,"value":"a1","value_id":0},{"name":"b","name_id":0,"value":"b2","value_id":0},{"name":"份量","name_id":0,"value":"(约2克)","value_id":0,"no":0}],"box_price":0.4,"price":2,"spec":"(约2克)（约2克） a1·b2","unit":"2克","weight":2,"wmProductLadderBoxPrice":{"ladder_num":1,"ladder_price":0.4,"status":1},"wmProductStock":{"id":"0","stock":10000,"max_stock":"-1","auto_refresh":1}},{"attrList":[{"name":"a","name_id":0,"value":"a1","value_id":0},{"name":"b","name_id":0,"value":"b2","value_id":0},{"name":"份量","name_id":0,"value":"(2人份)","value_id":0,"no":0}],"box_price":0.6,"price":4,"spec":"(2人份)（2人份） a1·b2","unit":"2人份","weight":-2,"wmProductLadderBoxPrice":{"ladder_num":1,"ladder_price":0.6,"status":1},"wmProductStock":{"id":"0","stock":10000,"max_stock":"-1","auto_refresh":1}},{"attrList":[{"name":"a","name_id":0,"value":"a1","value_id":0},{"name":"b","name_id":0,"value":"b2","value_id":0},{"name":"份量","name_id":0,"value":"-","value_id":0,"no":0}],"box_price":0,"price":497,"spec":"-（1人份） a1·b2","unit":"1人份","weight":-2,"wmProductLadderBoxPrice":{"ladder_num":1,"ladder_price":0,"status":1},"wmProductStock":{"id":"0","stock":"10000","max_stock":"-1","auto_refresh":1}}],"unifiedPackagingFee":2,"wmProductLadderBoxPrice":{"ladder_num":1,"ladder_price":0.1,"status":1},"wmProductStock":{"id":"0","stock":10000,"max_stock":"-1","auto_refresh":1},"isShippingTimeSyncPoi":2,"shipping_time_x":"-","min_order_count":1,"labelList":[],"singleOrderNoDelivery":0,"wmProductVideo":null,"productCardDisplayContent":"","labelValues":[{"sequence":1,"value":""},{"sequence":2,"value":""}]}{"id":5578161976,"wm_poi_id":2700545,"tag_id":"271882628","tag_name":"未知事物","name":"t4_2","wmProductPics":[],"specialEffectPic":null,"description":"","category_id":115250,"properties_values":{},"newSpuAttrs":[{"name":"份量","name_id":0,"price":497,"value":"-","value_id":0,"no":0,"mode":2,"weight":-2,"weightUnit":"1人份","sell_status":0,"value_sequence":1}],"stockAndBoxPriceSkus":[],"unifiedPackagingFee":1,"wmProductLadderBoxPrice":{"ladder_num":1,"ladder_price":0,"status":1},"wmProductStock":{"id":"0","stock":10000,"max_stock":"-1","auto_refresh":1},"isShippingTimeSyncPoi":2,"shipping_time_x":"-","min_order_count":1,"labelList":[],"singleOrderNoDelivery":0,"wmProductVideo":null,"productCardDisplayContent":"","labelValues":[{"sequence":1,"value":""},{"sequence":2,"value":""}]}{"id":5578161976,"wm_poi_id":2700545,"tag_id":"271882628","tag_name":"未知事物","name":"测试","wmProductPics":[],"specialEffectPic":null,"description":"","category_id":115250,"properties_values":{},"newSpuAttrs":[{"name":"a","name_id":0,"value":"a1","value_id":0,"price":1,"weight":0,"mode":2,"weightUnit":null,"sell_status":0,"value_sequence":1,"no":1,"extFields":null},{"name":"份量","name_id":0,"value":"(约1克)","value_id":0,"price":1,"weight":1,"mode":2,"weightUnit":"克","sell_status":0,"value_sequence":1,"no":0,"extFields":null},{"name":"份量","name_id":0,"value":"(1人份)","value_id":0,"price":2,"weight":-2,"mode":2,"weightUnit":"1人份","sell_status":0,"value_sequence":2,"no":0,"extFields":null}],"stockAndBoxPriceSkus":[{"attrList":[{"name":"a","name_id":0,"value":"a1","value_id":0},{"name":"份量","name_id":0,"value":"(约1克)","value_id":0,"no":0}],"box_price":0,"price":1,"spec":"(约1克)（约1克） a1","unit":"1克","weight":1,"wmProductLadderBoxPrice":{"ladder_num":1,"ladder_price":0,"status":1},"wmProductStock":{"id":"0","stock":-1,"max_stock":"-1","auto_refresh":1}},{"attrList":[{"name":"a","name_id":0,"value":"a1","value_id":0},{"name":"份量","name_id":0,"value":"(1人份)","value_id":0,"no":0}],"box_price":0,"price":2,"spec":"(1人份)（1人份） a1","unit":"1人份","weight":-2,"wmProductLadderBoxPrice":{"ladder_num":1,"ladder_price":0,"status":1},"wmProductStock":{"id":"0","stock":-1,"max_stock":"-1","auto_refresh":1}}],"unifiedPackagingFee":1,"wmProductLadderBoxPrice":{"status":1,"ladder_num":1,"ladder_price":0,"setLadder_num":true,"setLadder_price":true,"setStatus":true},"wmProductStock":{"id":"0","stock":-1,"max_stock":"-1","auto_refresh":1},"isShippingTimeSyncPoi":2,"shipping_time_x":"-","min_order_count":1,"labelList":[],"singleOrderNoDelivery":0,"wmProductVideo":null,"productCardDisplayContent":"","labelValues":[{"sequence":1,"value":""},{"sequence":2,"value":""}]}{"id":5550954019,"wm_poi_id":2700545,"tag_id":"271882628","tag_name":"未知事物","name":"t3_2","wmProductPics":[],"specialEffectPic":null,"description":"","category_id":115250,"properties_values":{},"newSpuAttrs":[{"name":"a","name_id":0,"value":"a1","value_id":0,"price":1,"weight":0,"mode":2,"weightUnit":null,"sell_status":0,"value_sequence":1,"no":1,"extFields":null},{"name":"份量","name_id":0,"value":"(约1克)","value_id":0,"price":1,"weight":1,"mode":2,"weightUnit":"克","sell_status":0,"value_sequence":1,"no":0,"extFields":null},{"name":"份量","name_id":0,"value":"(1人份)","value_id":0,"price":2,"weight":-2,"mode":2,"weightUnit":"1人份","sell_status":0,"value_sequence":2,"no":0,"extFields":null},{"name":"份量","name_id":0,"price":499,"value_id":0,"value":"-","no":0,"mode":2,"weight":-2,"weightUnit":"1人份","sell_status":0,"value_sequence":3}],"stockAndBoxPriceSkus":[{"attrList":[{"name":"a","name_id":0,"value":"a1","value_id":0},{"name":"份量","name_id":0,"value":"(约1克)","value_id":0,"no":0}],"box_price":0,"price":1,"spec":"(约1克)（约1克） a1","unit":"1克","weight":1,"wmProductLadderBoxPrice":{"ladder_num":1,"ladder_price":0,"status":1},"wmProductStock":{"id":"0","stock":-1,"max_stock":"-1","auto_refresh":1}},{"attrList":[{"name":"a","name_id":0,"value":"a1","value_id":0},{"name":"份量","name_id":0,"value":"(1人份)","value_id":0,"no":0}],"box_price":0,"price":2,"spec":"(1人份)（1人份） a1","unit":"1人份","weight":-2,"wmProductLadderBoxPrice":{"ladder_num":1,"ladder_price":0,"status":1},"wmProductStock":{"id":"0","stock":-1,"max_stock":"-1","auto_refresh":1}},{"attrList":[{"name":"a","name_id":0,"value":"a1","value_id":0},{"name":"份量","name_id":0,"value":"-","value_id":0,"no":0}],"box_price":0,"price":499,"spec":"-（1人份） a1","unit":"1人份","weight":-2,"wmProductLadderBoxPrice":{"ladder_num":1,"ladder_price":0,"status":1},"wmProductStock":{"id":"0","stock":"10000","max_stock":"-1","auto_refresh":1}}],"unifiedPackagingFee":2,"wmProductLadderBoxPrice":{"status":1,"ladder_num":1,"ladder_price":0,"setStatus":true,"setLadder_num":true,"setLadder_price":true},"wmProductStock":{"id":"0","stock":-1,"max_stock":"-1","auto_refresh":1},"isShippingTimeSyncPoi":2,"shipping_time_x":"-","min_order_count":1,"labelList":[],"singleOrderNoDelivery":0,"wmProductVideo":null,"productCardDisplayContent":"","labelValues":[{"sequence":1,"value":""},{"sequence":2,"value":""}]}{"id":5550954019,"wm_poi_id":2700545,"tag_id":"271882628","tag_name":"未知事物","name":"t3_2","wmProductPics":[],"specialEffectPic":null,"description":"","category_id":115250,"properties_values":{},"newSpuAttrs":[{"name":"份量","name_id":0,"price":499,"value":"-","value_id":0,"no":0,"mode":2,"weight":-2,"weightUnit":"1人份","sell_status":0,"value_sequence":1}],"stockAndBoxPriceSkus":[],"unifiedPackagingFee":1,"wmProductLadderBoxPrice":{"ladder_num":1,"ladder_price":0,"status":1},"wmProductStock":{"id":"0","stock":-1,"max_stock":"-1","auto_refresh":1},"isShippingTimeSyncPoi":2,"shipping_time_x":"-","min_order_count":1,"labelList":[],"singleOrderNoDelivery":0,"wmProductVideo":null,"productCardDisplayContent":"","labelValues":[{"sequence":1,"value":""},{"sequence":2,"value":""}]}{"id":5550954019,"wm_poi_id":2700545,"tag_id":"271882628","tag_name":"未知事物","name":"t4_2","wmProductPics":[],"specialEffectPic":null,"description":"","category_id":115250,"properties_values":{},"newSpuAttrs":[{"name":"a","name_id":0,"value":"a1","value_id":0,"price":1,"weight":0,"mode":2,"weightUnit":null,"sell_status":0,"value_sequence":1,"no":1,"extFields":null},{"name":"a","name_id":0,"value":"a2","value_id":0,"price":0,"weight":0,"mode":2,"weightUnit":null,"sell_status":0,"value_sequence":2,"no":1,"extFields":null},{"name":"b","name_id":0,"value":"b1","value_id":0,"price":1,"weight":0,"mode":2,"weightUnit":null,"sell_status":0,"value_sequence":1,"no":2,"extFields":null},{"name":"b","name_id":0,"value":"b2","value_id":0,"price":2,"weight":0,"mode":2,"weightUnit":null,"sell_status":0,"value_sequence":2,"no":2,"extFields":null},{"name":"份量","name_id":0,"value":"(约1克)","value_id":0,"price":1,"weight":1,"mode":2,"weightUnit":"克","sell_status":0,"value_sequence":1,"no":0,"extFields":null},{"name":"份量","name_id":0,"value":"(约2克)","value_id":0,"price":2,"weight":2,"mode":2,"weightUnit":"克","sell_status":0,"value_sequence":2,"no":0,"extFields":null},{"name":"份量","name_id":0,"value":"(2人份)","value_id":0,"price":4,"weight":-2,"mode":2,"weightUnit":"2人份","sell_status":0,"value_sequence":3,"no":0,"extFields":null}],"stockAndBoxPriceSkus":[{"price":3,"unit":"1克","box_price":0.1,"spec":"(约1克)(1克)·a1·b1","weight":1,"wmProductStock":{"id":0,"wm_poi_id":2700545,"wm_product_sku_id":6728545629,"stock":10000,"max_stock":-1,"auto_refresh":1,"ctime":0,"utime":0,"limitStock":0,"stockLimit":0,"opId":78648864,"setWm_poi_id":true,"setStock":true,"setWm_product_sku_id":true,"setAuto_refresh":true,"setLimitStock":true,"setStockLimit":true,"setMax_stock":true,"setOpId":true,"setId":false,"setCtime":false,"setUtime":false},"wmProductLadderBoxPrice":{"status":1,"ladder_num":1,"ladder_price":0.1,"setLadder_num":true,"setLadder_price":true,"setStatus":true},"attrList":[{"id":677457071,"wm_food_id":6728545629,"no":2,"name":"b","name_id":0,"value":"b1","value_id":0,"ctime":1631696303,"utime":1631696303,"valid":1,"wm_poi_id":2700545,"wm_food_spu_attr_id":9295471317,"wm_food_spu_id":5578161976,"setWm_poi_id":true,"setWm_food_id":true,"setValue_id":true,"setWm_food_spu_id":true,"setNo":true,"setName_id":true,"setWm_food_spu_attr_id":true,"setName":true,"setId":true,"setValue":true,"setCtime":true,"setUtime":true,"setValid":true},{"id":677457072,"wm_food_id":6728545629,"no":1,"name":"a","name_id":0,"value":"a1","value_id":0,"ctime":1631696303,"utime":1631696303,"valid":1,"wm_poi_id":2700545,"wm_food_spu_attr_id":9295471315,"wm_food_spu_id":5578161976,"setWm_poi_id":true,"setWm_food_id":true,"setValue_id":true,"setWm_food_spu_id":true,"setNo":true,"setName_id":true,"setWm_food_spu_attr_id":true,"setName":true,"setId":true,"setValue":true,"setCtime":true,"setUtime":true,"setValid":true},{"id":677457073,"wm_food_id":6728545629,"no":0,"name":"份量","name_id":0,"value":"(约1克)","value_id":0,"ctime":1631696303,"utime":1631696303,"valid":1,"wm_poi_id":2700545,"wm_food_spu_attr_id":9295471312,"wm_food_spu_id":5578161976,"setWm_poi_id":true,"setWm_food_id":true,"setValue_id":true,"setWm_food_spu_id":true,"setNo":true,"setName_id":true,"setWm_food_spu_attr_id":true,"setName":true,"setId":true,"setValue":true,"setCtime":true,"setUtime":true,"setValid":true}]},{"price":4,"unit":"2克","box_price":0.3,"spec":"(约2克)(2克)·a1·b1","weight":2,"wmProductStock":{"id":0,"wm_poi_id":2700545,"wm_product_sku_id":6728545630,"stock":10000,"max_stock":-1,"auto_refresh":1,"ctime":0,"utime":0,"limitStock":0,"stockLimit":0,"opId":78648864,"setWm_poi_id":true,"setStock":true,"setWm_product_sku_id":true,"setAuto_refresh":true,"setLimitStock":true,"setStockLimit":true,"setMax_stock":true,"setOpId":true,"setId":false,"setCtime":false,"setUtime":false},"wmProductLadderBoxPrice":{"status":1,"ladder_num":1,"ladder_price":0.3,"setLadder_num":true,"setLadder_price":true,"setStatus":true},"attrList":[{"id":677457074,"wm_food_id":6728545630,"no":2,"name":"b","name_id":0,"value":"b1","value_id":0,"ctime":1631696303,"utime":1631696303,"valid":1,"wm_poi_id":2700545,"wm_food_spu_attr_id":9295471317,"wm_food_spu_id":5578161976,"setWm_poi_id":true,"setWm_food_id":true,"setValue_id":true,"setWm_food_spu_id":true,"setNo":true,"setName_id":true,"setWm_food_spu_attr_id":true,"setName":true,"setId":true,"setValue":true,"setCtime":true,"setUtime":true,"setValid":true},{"id":677457075,"wm_food_id":6728545630,"no":1,"name":"a","name_id":0,"value":"a1","value_id":0,"ctime":1631696303,"utime":1631696303,"valid":1,"wm_poi_id":2700545,"wm_food_spu_attr_id":9295471315,"wm_food_spu_id":5578161976,"setWm_poi_id":true,"setWm_food_id":true,"setValue_id":true,"setWm_food_spu_id":true,"setNo":true,"setName_id":true,"setWm_food_spu_attr_id":true,"setName":true,"setId":true,"setValue":true,"setCtime":true,"setUtime":true,"setValid":true},{"id":677457076,"wm_food_id":6728545630,"no":0,"name":"份量","name_id":0,"value":"(约2克)","value_id":0,"ctime":1631696303,"utime":1631696303,"valid":1,"wm_poi_id":2700545,"wm_food_spu_attr_id":9295471313,"wm_food_spu_id":5578161976,"setWm_poi_id":true,"setWm_food_id":true,"setValue_id":true,"setWm_food_spu_id":true,"setNo":true,"setName_id":true,"setWm_food_spu_attr_id":true,"setName":true,"setId":true,"setValue":true,"setCtime":true,"setUtime":true,"setValid":true}]},{"price":6,"unit":"2人份","box_price":0.5,"spec":"(2人份)(2人份)·a1·b1","weight":-2,"wmProductStock":{"id":0,"wm_poi_id":2700545,"wm_product_sku_id":6728545631,"stock":10000,"max_stock":-1,"auto_refresh":1,"ctime":0,"utime":0,"limitStock":0,"stockLimit":0,"opId":78648864,"setWm_poi_id":true,"setStock":true,"setWm_product_sku_id":true,"setAuto_refresh":true,"setLimitStock":true,"setStockLimit":true,"setMax_stock":true,"setOpId":true,"setId":false,"setCtime":false,"setUtime":false},"wmProductLadderBoxPrice":{"status":1,"ladder_num":1,"ladder_price":0.5,"setLadder_num":true,"setLadder_price":true,"setStatus":true},"attrList":[{"id":677457077,"wm_food_id":6728545631,"no":2,"name":"b","name_id":0,"value":"b1","value_id":0,"ctime":1631696303,"utime":1631696303,"valid":1,"wm_poi_id":2700545,"wm_food_spu_attr_id":9295471317,"wm_food_spu_id":5578161976,"setWm_poi_id":true,"setWm_food_id":true,"setValue_id":true,"setWm_food_spu_id":true,"setNo":true,"setName_id":true,"setWm_food_spu_attr_id":true,"setName":true,"setId":true,"setValue":true,"setCtime":true,"setUtime":true,"setValid":true},{"id":677457078,"wm_food_id":6728545631,"no":1,"name":"a","name_id":0,"value":"a1","value_id":0,"ctime":1631696303,"utime":1631696303,"valid":1,"wm_poi_id":2700545,"wm_food_spu_attr_id":9295471315,"wm_food_spu_id":5578161976,"setWm_poi_id":true,"setWm_food_id":true,"setValue_id":true,"setWm_food_spu_id":true,"setNo":true,"setName_id":true,"setWm_food_spu_attr_id":true,"setName":true,"setId":true,"setValue":true,"setCtime":true,"setUtime":true,"setValid":true},{"id":677457079,"wm_food_id":6728545631,"no":0,"name":"份量","name_id":0,"value":"(2人份)","value_id":0,"ctime":1631696303,"utime":1631696303,"valid":1,"wm_poi_id":2700545,"wm_food_spu_attr_id":9295471314,"wm_food_spu_id":5578161976,"setWm_poi_id":true,"setWm_food_id":true,"setValue_id":true,"setWm_food_spu_id":true,"setNo":true,"setName_id":true,"setWm_food_spu_attr_id":true,"setName":true,"setId":true,"setValue":true,"setCtime":true,"setUtime":true,"setValid":true}]},{"price":4,"unit":"1克","box_price":0.2,"spec":"(约1克)(1克)·a1·b2","weight":1,"wmProductStock":{"id":0,"wm_poi_id":2700545,"wm_product_sku_id":6728545635,"stock":10000,"max_stock":-1,"auto_refresh":1,"ctime":0,"utime":0,"limitStock":0,"stockLimit":0,"opId":78648864,"setWm_poi_id":true,"setStock":true,"setWm_product_sku_id":true,"setAuto_refresh":true,"setLimitStock":true,"setStockLimit":true,"setMax_stock":true,"setOpId":true,"setId":false,"setCtime":false,"setUtime":false},"wmProductLadderBoxPrice":{"status":1,"ladder_num":1,"ladder_price":0.2,"setLadder_num":true,"setLadder_price":true,"setStatus":true},"attrList":[{"id":677457089,"wm_food_id":6728545635,"no":2,"name":"b","name_id":0,"value":"b2","value_id":0,"ctime":1631696303,"utime":1631696303,"valid":1,"wm_poi_id":2700545,"wm_food_spu_attr_id":9295471318,"wm_food_spu_id":5578161976,"setWm_poi_id":true,"setWm_food_id":true,"setValue_id":true,"setWm_food_spu_id":true,"setNo":true,"setName_id":true,"setWm_food_spu_attr_id":true,"setName":true,"setId":true,"setValue":true,"setCtime":true,"setUtime":true,"setValid":true},{"id":677457090,"wm_food_id":6728545635,"no":1,"name":"a","name_id":0,"value":"a1","value_id":0,"ctime":1631696303,"utime":1631696303,"valid":1,"wm_poi_id":2700545,"wm_food_spu_attr_id":9295471315,"wm_food_spu_id":5578161976,"setWm_poi_id":true,"setWm_food_id":true,"setValue_id":true,"setWm_food_spu_id":true,"setNo":true,"setName_id":true,"setWm_food_spu_attr_id":true,"setName":true,"setId":true,"setValue":true,"setCtime":true,"setUtime":true,"setValid":true},{"id":677457091,"wm_food_id":6728545635,"no":0,"name":"份量","name_id":0,"value":"(约1克)","value_id":0,"ctime":1631696303,"utime":1631696303,"valid":1,"wm_poi_id":2700545,"wm_food_spu_attr_id":9295471312,"wm_food_spu_id":5578161976,"setWm_poi_id":true,"setWm_food_id":true,"setValue_id":true,"setWm_food_spu_id":true,"setNo":true,"setName_id":true,"setWm_food_spu_attr_id":true,"setName":true,"setId":true,"setValue":true,"setCtime":true,"setUtime":true,"setValid":true}]},{"price":5,"unit":"2克","box_price":0.4,"spec":"(约2克)(2克)·a1·b2","weight":2,"wmProductStock":{"id":0,"wm_poi_id":2700545,"wm_product_sku_id":6728545636,"stock":10000,"max_stock":-1,"auto_refresh":1,"ctime":0,"utime":0,"limitStock":0,"stockLimit":0,"opId":78648864,"setWm_poi_id":true,"setStock":true,"setWm_product_sku_id":true,"setAuto_refresh":true,"setLimitStock":true,"setStockLimit":true,"setMax_stock":true,"setOpId":true,"setId":false,"setCtime":false,"setUtime":false},"wmProductLadderBoxPrice":{"status":1,"ladder_num":1,"ladder_price":0.4,"setLadder_num":true,"setLadder_price":true,"setStatus":true},"attrList":[{"id":677457092,"wm_food_id":6728545636,"no":2,"name":"b","name_id":0,"value":"b2","value_id":0,"ctime":1631696303,"utime":1631696303,"valid":1,"wm_poi_id":2700545,"wm_food_spu_attr_id":9295471318,"wm_food_spu_id":5578161976,"setWm_poi_id":true,"setWm_food_id":true,"setValue_id":true,"setWm_food_spu_id":true,"setNo":true,"setName_id":true,"setWm_food_spu_attr_id":true,"setName":true,"setId":true,"setValue":true,"setCtime":true,"setUtime":true,"setValid":true},{"id":677457093,"wm_food_id":6728545636,"no":1,"name":"a","name_id":0,"value":"a1","value_id":0,"ctime":1631696303,"utime":1631696303,"valid":1,"wm_poi_id":2700545,"wm_food_spu_attr_id":9295471315,"wm_food_spu_id":5578161976,"setWm_poi_id":true,"setWm_food_id":true,"setValue_id":true,"setWm_food_spu_id":true,"setNo":true,"setName_id":true,"setWm_food_spu_attr_id":true,"setName":true,"setId":true,"setValue":true,"setCtime":true,"setUtime":true,"setValid":true},{"id":677457094,"wm_food_id":6728545636,"no":0,"name":"份量","name_id":0,"value":"(约2克)","value_id":0,"ctime":1631696303,"utime":1631696303,"valid":1,"wm_poi_id":2700545,"wm_food_spu_attr_id":9295471313,"wm_food_spu_id":5578161976,"setWm_poi_id":true,"setWm_food_id":true,"setValue_id":true,"setWm_food_spu_id":true,"setNo":true,"setName_id":true,"setWm_food_spu_attr_id":true,"setName":true,"setId":true,"setValue":true,"setCtime":true,"setUtime":true,"setValid":true}]},{"price":7,"unit":"2人份","box_price":0.6,"spec":"(2人份)(2人份)·a1·b2","weight":-2,"wmProductStock":{"id":0,"wm_poi_id":2700545,"wm_product_sku_id":6728545637,"stock":10000,"max_stock":-1,"auto_refresh":1,"ctime":0,"utime":0,"limitStock":0,"stockLimit":0,"opId":78648864,"setWm_poi_id":true,"setStock":true,"setWm_product_sku_id":true,"setAuto_refresh":true,"setLimitStock":true,"setStockLimit":true,"setMax_stock":true,"setOpId":true,"setId":false,"setCtime":false,"setUtime":false},"wmProductLadderBoxPrice":{"status":1,"ladder_num":1,"ladder_price":0.6,"setLadder_num":true,"setLadder_price":true,"setStatus":true},"attrList":[{"id":677457095,"wm_food_id":6728545637,"no":2,"name":"b","name_id":0,"value":"b2","value_id":0,"ctime":1631696303,"utime":1631696303,"valid":1,"wm_poi_id":2700545,"wm_food_spu_attr_id":9295471318,"wm_food_spu_id":5578161976,"setWm_poi_id":true,"setWm_food_id":true,"setValue_id":true,"setWm_food_spu_id":true,"setNo":true,"setName_id":true,"setWm_food_spu_attr_id":true,"setName":true,"setId":true,"setValue":true,"setCtime":true,"setUtime":true,"setValid":true},{"id":677457096,"wm_food_id":6728545637,"no":1,"name":"a","name_id":0,"value":"a1","value_id":0,"ctime":1631696303,"utime":1631696303,"valid":1,"wm_poi_id":2700545,"wm_food_spu_attr_id":9295471315,"wm_food_spu_id":5578161976,"setWm_poi_id":true,"setWm_food_id":true,"setValue_id":true,"setWm_food_spu_id":true,"setNo":true,"setName_id":true,"setWm_food_spu_attr_id":true,"setName":true,"setId":true,"setValue":true,"setCtime":true,"setUtime":true,"setValid":true},{"id":677457097,"wm_food_id":6728545637,"no":0,"name":"份量","name_id":0,"value":"(2人份)","value_id":0,"ctime":1631696303,"utime":1631696303,"valid":1,"wm_poi_id":2700545,"wm_food_spu_attr_id":9295471314,"wm_food_spu_id":5578161976,"setWm_poi_id":true,"setWm_food_id":true,"setValue_id":true,"setWm_food_spu_id":true,"setNo":true,"setName_id":true,"setWm_food_spu_attr_id":true,"setName":true,"setId":true,"setValue":true,"setCtime":true,"setUtime":true,"setValid":true}]}],"unifiedPackagingFee":2,"wmProductLadderBoxPrice":{"ladder_num":1,"ladder_price":0.1,"status":1},"wmProductStock":{"id":"0","stock":10000,"max_stock":"-1","auto_refresh":1},"isShippingTimeSyncPoi":2,"shipping_time_x":"-","min_order_count":1,"labelList":[],"singleOrderNoDelivery":0,"wmProductVideo":null,"productCardDisplayContent":"","labelValues":[{"sequence":1,"value":""},{"sequence":2,"value":""}]}{"id":1488701694,"wm_poi_id":2700545,"tag_id":"100421029","tag_name":"饮料汤羹","name":"皮蛋粥（正餐）","wmProductPics":[{"id":40605512908,"wm_product_sku_id":6701435413,"pic_large_url":"http://p0.meituan.net/wmproduct/1efd4ebdf14cbd92942bd9d55c7c0447216678.png","pic_small_url":"","sequence":1,"valid":1,"ctime":1631525579,"utime":1631525579,"wm_poi_id":2700545,"quality_score":1,"white_rate_score":1,"specialEffectUrl":"","specialEffectEnable":0,"isMaster":0,"wmProductPicMaterialList":null,"wm_food_spu_id":1488701694,"is_quality_low":false,"border_result":1,"border_score":0.988,"blur_result":1,"blur_score":0.999,"recapture_result":1,"recapture_score":1,"detailList":[{"type":"recapture","typeName":"图片翻拍","score":1,"extra":"","picPropaganda":{"type":"recapture","typeName":"翻拍","badPicUrl":"http://p0.meituan.net/wmproductdwm/72a1d552290012f83bd9eb47cc0acf5a448050.jpg","goodPicUrl":"http://p0.meituan.net/xianfu/bf616611fd610ab0d3100113140346de76679.jpg","suggestion":"商品图片翻拍,建议重新上传图片","setBadPicUrl":true,"setGoodPicUrl":true,"setSuggestion":true,"setTypeName":true,"setType":true},"result":1,"setPicPropaganda":true,"setScore":true,"setExtra":true,"setTypeName":true,"setType":true,"setResult":true},{"type":"blur","typeName":"图片模糊","score":0.999,"extra":"","picPropaganda":{"type":"blur","typeName":"模糊","badPicUrl":"http://p1.meituan.net/wmproductdwm/3e71604928c625676f39e7857409925965729.jpg","goodPicUrl":"http://p0.meituan.net/xianfu/9df73a7781e51d848d4c04f40b97abf8333771.jpg","suggestion":"商品图片模糊，建议重新上传图","setBadPicUrl":true,"setGoodPicUrl":true,"setSuggestion":true,"setTypeName":true,"setType":true},"result":1,"setPicPropaganda":true,"setScore":true,"setExtra":true,"setTypeName":true,"setType":true,"setResult":true},{"type":"border","typeName":"图片有边框","score":0.988,"extra":"","picPropaganda":{"type":"border","typeName":"图片周围有边框","badPicUrl":"http://p0.meituan.net/wmproduct/960ef4b268590602b6796fe58f1c3bfc202945.jpg","goodPicUrl":"http://p0.meituan.net/wmproduct/018ca93eb5e1cad8d759e1e1bf834ba557993.jpg","suggestion":"商品图片周围存在边框，建议重新上传图片","setBadPicUrl":true,"setGoodPicUrl":true,"setSuggestion":true,"setTypeName":true,"setType":true},"result":1,"setPicPropaganda":true,"setScore":true,"setExtra":true,"setTypeName":true,"setType":true,"setResult":true}],"is_scored":1,"picExtend":"","specialEffectBigUrl":"","setWm_poi_id":true,"detailListSize":3,"detailListIterator":[{"type":"recapture","typeName":"图片翻拍","score":1,"extra":"","picPropaganda":{"type":"recapture","typeName":"翻拍","badPicUrl":"http://p0.meituan.net/wmproductdwm/72a1d552290012f83bd9eb47cc0acf5a448050.jpg","goodPicUrl":"http://p0.meituan.net/xianfu/bf616611fd610ab0d3100113140346de76679.jpg","suggestion":"商品图片翻拍,建议重新上传图片","setBadPicUrl":true,"setGoodPicUrl":true,"setSuggestion":true,"setTypeName":true,"setType":true},"result":1,"setPicPropaganda":true,"setScore":true,"setExtra":true,"setTypeName":true,"setType":true,"setResult":true},{"type":"blur","typeName":"图片模糊","score":0.999,"extra":"","picPropaganda":{"type":"blur","typeName":"模糊","badPicUrl":"http://p1.meituan.net/wmproductdwm/3e71604928c625676f39e7857409925965729.jpg","goodPicUrl":"http://p0.meituan.net/xianfu/9df73a7781e51d848d4c04f40b97abf8333771.jpg","suggestion":"商品图片模糊，建议重新上传图","setBadPicUrl":true,"setGoodPicUrl":true,"setSuggestion":true,"setTypeName":true,"setType":true},"result":1,"setPicPropaganda":true,"setScore":true,"setExtra":true,"setTypeName":true,"setType":true,"setResult":true},{"type":"border","typeName":"图片有边框","score":0.988,"extra":"","picPropaganda":{"type":"border","typeName":"图片周围有边框","badPicUrl":"http://p0.meituan.net/wmproduct/960ef4b268590602b6796fe58f1c3bfc202945.jpg","goodPicUrl":"http://p0.meituan.net/wmproduct/018ca93eb5e1cad8d759e1e1bf834ba557993.jpg","suggestion":"商品图片周围存在边框，建议重新上传图片","setBadPicUrl":true,"setGoodPicUrl":true,"setSuggestion":true,"setTypeName":true,"setType":true},"result":1,"setPicPropaganda":true,"setScore":true,"setExtra":true,"setTypeName":true,"setType":true,"setResult":true}],"setDetailList":true,"setWm_product_sku_id":true,"setSequence":true,"setWm_food_spu_id":true,"setSpecialEffectUrl":true,"setId":true,"setIsMaster":true,"setPic_large_url":true,"setPic_small_url":true,"setQuality_score":true,"setWhite_rate_score":true,"setSpecialEffectEnable":true,"wmProductPicMaterialListSize":0,"wmProductPicMaterialListIterator":null,"setWmProductPicMaterialList":false,"setIs_quality_low":true,"setBorder_result":true,"setBorder_score":true,"setBlur_result":true,"setBlur_score":true,"setRecapture_result":true,"setRecapture_score":true,"setIs_scored":true,"setPicExtend":true,"setSpecialEffectBigUrl":true,"setCtime":true,"setUtime":true,"setValid":true}],"specialEffectPic":null,"description":"我们超有料","category_id":115405,"properties_values":{"1000000003":[{"id":88312342153,"wm_poi_id":2700545,"wm_product_spu_id":1488701694,"getWm_product_property_category_id":115405,"parent_tag_id":0,"wm_product_lib_tag_id":1000000003,"wm_product_lib_tag_name":"口味","value":"不辣","value_id":887,"level":2,"is_leaf":1,"sequence":3}],"1000000015":[{"id":88312342154,"wm_poi_id":2700545,"wm_product_spu_id":1488701694,"getWm_product_property_category_id":115405,"parent_tag_id":0,"wm_product_lib_tag_id":1000000015,"wm_product_lib_tag_name":"主料","value":"火腿肠","value_id":105185,"level":2,"is_leaf":1,"sequence":1},{"id":88312342156,"wm_poi_id":2700545,"wm_product_spu_id":1488701694,"getWm_product_property_category_id":115405,"parent_tag_id":0,"wm_product_lib_tag_id":1000000015,"wm_product_lib_tag_name":"主料","value":"动物淡奶油","value_id":114432,"level":2,"is_leaf":1,"sequence":1}],"1200001152":[{"id":88312342155,"wm_poi_id":2700545,"wm_product_spu_id":1488701694,"getWm_product_property_category_id":0,"parent_tag_id":0,"wm_product_lib_tag_id":1200001152,"wm_product_lib_tag_name":"库存包装费设置方式","value":"2","value_id":0,"level":1,"is_leaf":1,"sequence":0}]},"newSpuAttrs":[{"name":"份量","name_id":0,"value":"a(1克)","value_id":0,"price":5.5,"weight":1,"mode":2,"weightUnit":"克","sell_status":0,"value_sequence":1,"no":0,"extFields":null},{"name":"份量","name_id":0,"value":"b(2克)","value_id":0,"price":6.5,"weight":2,"mode":2,"weightUnit":"克","sell_status":0,"value_sequence":2,"no":0,"extFields":null},{"name":"份量","name_id":0,"price":500,"value_id":0,"value":"-","no":0,"mode":2,"weight":-2,"weightUnit":"1人份","sell_status":0,"value_sequence":3}],"stockAndBoxPriceSkus":[{"attrList":[{"name":"份量","name_id":0,"value":"a(1克)","value_id":0,"no":0}],"box_price":0.5,"price":5.5,"spec":"a(1克)（约1克）","unit":"1克","weight":1,"wmProductLadderBoxPrice":{"ladder_num":1,"ladder_price":0.5,"status":1},"wmProductStock":{"id":"0","stock":9999,"max_stock":"-1","auto_refresh":1}},{"attrList":[{"name":"份量","name_id":0,"value":"b(2克)","value_id":0,"no":0}],"box_price":0.8,"price":6.5,"spec":"b(2克)（约2克）","unit":"2克","weight":2,"wmProductLadderBoxPrice":{"ladder_num":1,"ladder_price":0.8,"status":1},"wmProductStock":{"id":"0","stock":9999,"max_stock":"-1","auto_refresh":1}},{"attrList":[{"name":"份量","name_id":0,"value":"-","value_id":0,"no":0}],"box_price":0,"price":500,"spec":"-（1人份）","unit":"1人份","weight":-2,"wmProductLadderBoxPrice":{"ladder_num":1,"ladder_price":0,"status":1},"wmProductStock":{"id":"0","stock":"10000","max_stock":"-1","auto_refresh":1}}],"unifiedPackagingFee":2,"wmProductLadderBoxPrice":{"ladder_num":1,"ladder_price":0.5,"status":1},"wmProductStock":{"id":"0","stock":9999,"max_stock":"-1","auto_refresh":1},"isShippingTimeSyncPoi":2,"shipping_time_x":"-","min_order_count":1,"labelList":[],"singleOrderNoDelivery":0,"wmProductVideo":null,"productCardDisplayContent":"","labelValues":[{"sequence":1,"value":""},{"sequence":2,"value":""}]}{"id":1488701694,"wm_poi_id":2700545,"tag_id":"100421029","tag_name":"饮料汤羹","name":"皮蛋粥（正餐）","wmProductPics":[{"id":40605512908,"wm_product_sku_id":6701435413,"pic_large_url":"http://p0.meituan.net/wmproduct/1efd4ebdf14cbd92942bd9d55c7c0447216678.png","pic_small_url":"","sequence":1,"valid":1,"ctime":1631525579,"utime":1631525579,"wm_poi_id":2700545,"quality_score":1,"white_rate_score":1,"specialEffectUrl":"","specialEffectEnable":0,"isMaster":0,"wmProductPicMaterialList":null,"wm_food_spu_id":1488701694,"is_quality_low":false,"border_result":1,"border_score":0.988,"blur_result":1,"blur_score":0.999,"recapture_result":1,"recapture_score":1,"detailList":[{"type":"recapture","typeName":"图片翻拍","score":1,"extra":"","picPropaganda":{"type":"recapture","typeName":"翻拍","badPicUrl":"http://p0.meituan.net/wmproductdwm/72a1d552290012f83bd9eb47cc0acf5a448050.jpg","goodPicUrl":"http://p0.meituan.net/xianfu/bf616611fd610ab0d3100113140346de76679.jpg","suggestion":"商品图片翻拍,建议重新上传图片","setBadPicUrl":true,"setGoodPicUrl":true,"setSuggestion":true,"setTypeName":true,"setType":true},"result":1,"setPicPropaganda":true,"setScore":true,"setExtra":true,"setTypeName":true,"setType":true,"setResult":true},{"type":"blur","typeName":"图片模糊","score":0.999,"extra":"","picPropaganda":{"type":"blur","typeName":"模糊","badPicUrl":"http://p1.meituan.net/wmproductdwm/3e71604928c625676f39e7857409925965729.jpg","goodPicUrl":"http://p0.meituan.net/xianfu/9df73a7781e51d848d4c04f40b97abf8333771.jpg","suggestion":"商品图片模糊，建议重新上传图","setBadPicUrl":true,"setGoodPicUrl":true,"setSuggestion":true,"setTypeName":true,"setType":true},"result":1,"setPicPropaganda":true,"setScore":true,"setExtra":true,"setTypeName":true,"setType":true,"setResult":true},{"type":"border","typeName":"图片有边框","score":0.988,"extra":"","picPropaganda":{"type":"border","typeName":"图片周围有边框","badPicUrl":"http://p0.meituan.net/wmproduct/960ef4b268590602b6796fe58f1c3bfc202945.jpg","goodPicUrl":"http://p0.meituan.net/wmproduct/018ca93eb5e1cad8d759e1e1bf834ba557993.jpg","suggestion":"商品图片周围存在边框，建议重新上传图片","setBadPicUrl":true,"setGoodPicUrl":true,"setSuggestion":true,"setTypeName":true,"setType":true},"result":1,"setPicPropaganda":true,"setScore":true,"setExtra":true,"setTypeName":true,"setType":true,"setResult":true}],"is_scored":1,"picExtend":"","specialEffectBigUrl":"","setWm_poi_id":true,"detailListSize":3,"detailListIterator":[{"type":"recapture","typeName":"图片翻拍","score":1,"extra":"","picPropaganda":{"type":"recapture","typeName":"翻拍","badPicUrl":"http://p0.meituan.net/wmproductdwm/72a1d552290012f83bd9eb47cc0acf5a448050.jpg","goodPicUrl":"http://p0.meituan.net/xianfu/bf616611fd610ab0d3100113140346de76679.jpg","suggestion":"商品图片翻拍,建议重新上传图片","setBadPicUrl":true,"setGoodPicUrl":true,"setSuggestion":true,"setTypeName":true,"setType":true},"result":1,"setPicPropaganda":true,"setScore":true,"setExtra":true,"setTypeName":true,"setType":true,"setResult":true},{"type":"blur","typeName":"图片模糊","score":0.999,"extra":"","picPropaganda":{"type":"blur","typeName":"模糊","badPicUrl":"http://p1.meituan.net/wmproductdwm/3e71604928c625676f39e7857409925965729.jpg","goodPicUrl":"http://p0.meituan.net/xianfu/9df73a7781e51d848d4c04f40b97abf8333771.jpg","suggestion":"商品图片模糊，建议重新上传图","setBadPicUrl":true,"setGoodPicUrl":true,"setSuggestion":true,"setTypeName":true,"setType":true},"result":1,"setPicPropaganda":true,"setScore":true,"setExtra":true,"setTypeName":true,"setType":true,"setResult":true},{"type":"border","typeName":"图片有边框","score":0.988,"extra":"","picPropaganda":{"type":"border","typeName":"图片周围有边框","badPicUrl":"http://p0.meituan.net/wmproduct/960ef4b268590602b6796fe58f1c3bfc202945.jpg","goodPicUrl":"http://p0.meituan.net/wmproduct/018ca93eb5e1cad8d759e1e1bf834ba557993.jpg","suggestion":"商品图片周围存在边框，建议重新上传图片","setBadPicUrl":true,"setGoodPicUrl":true,"setSuggestion":true,"setTypeName":true,"setType":true},"result":1,"setPicPropaganda":true,"setScore":true,"setExtra":true,"setTypeName":true,"setType":true,"setResult":true}],"setDetailList":true,"setWm_product_sku_id":true,"setSequence":true,"setWm_food_spu_id":true,"setSpecialEffectUrl":true,"setId":true,"setIsMaster":true,"setPic_large_url":true,"setPic_small_url":true,"setQuality_score":true,"setWhite_rate_score":true,"setSpecialEffectEnable":true,"wmProductPicMaterialListSize":0,"wmProductPicMaterialListIterator":null,"setWmProductPicMaterialList":false,"setIs_quality_low":true,"setBorder_result":true,"setBorder_score":true,"setBlur_result":true,"setBlur_score":true,"setRecapture_result":true,"setRecapture_score":true,"setIs_scored":true,"setPicExtend":true,"setSpecialEffectBigUrl":true,"setCtime":true,"setUtime":true,"setValid":true}],"specialEffectPic":null,"description":"我们超有料","category_id":115405,"properties_values":{"1000000003":[{"id":88312342153,"wm_poi_id":2700545,"wm_product_spu_id":1488701694,"getWm_product_property_category_id":115405,"parent_tag_id":0,"wm_product_lib_tag_id":1000000003,"wm_product_lib_tag_name":"口味","value":"不辣","value_id":887,"level":2,"is_leaf":1,"sequence":3}],"1000000015":[{"id":88312342154,"wm_poi_id":2700545,"wm_product_spu_id":1488701694,"getWm_product_property_category_id":115405,"parent_tag_id":0,"wm_product_lib_tag_id":1000000015,"wm_product_lib_tag_name":"主料","value":"火腿肠","value_id":105185,"level":2,"is_leaf":1,"sequence":1},{"id":88312342156,"wm_poi_id":2700545,"wm_product_spu_id":1488701694,"getWm_product_property_category_id":115405,"parent_tag_id":0,"wm_product_lib_tag_id":1000000015,"wm_product_lib_tag_name":"主料","value":"动物淡奶油","value_id":114432,"level":2,"is_leaf":1,"sequence":1}],"1200001152":[{"id":88312342155,"wm_poi_id":2700545,"wm_product_spu_id":1488701694,"getWm_product_property_category_id":0,"parent_tag_id":0,"wm_product_lib_tag_id":1200001152,"wm_product_lib_tag_name":"库存包装费设置方式","value":"2","value_id":0,"level":1,"is_leaf":1,"sequence":0}]},"newSpuAttrs":[{"name":"份量","name_id":0,"price":500,"value":"-","value_id":0,"no":0,"mode":2,"weight":-2,"weightUnit":"1人份","sell_status":0,"value_sequence":1}],"stockAndBoxPriceSkus":[],"unifiedPackagingFee":1,"wmProductLadderBoxPrice":{"ladder_num":1,"ladder_price":0,"status":1},"wmProductStock":{"id":"0","stock":9999,"max_stock":"-1","auto_refresh":1},"isShippingTimeSyncPoi":2,"shipping_time_x":"-","min_order_count":1,"labelList":[],"singleOrderNoDelivery":0,"wmProductVideo":null,"productCardDisplayContent":"","labelValues":[{"sequence":1,"value":""},{"sequence":2,"value":""}]}{"id":1488701694,"wm_poi_id":2700545,"tag_id":"100421029","tag_name":"饮料汤羹","name":"测试","wmProductPics":[{"id":40625788003,"wm_product_sku_id":6711578635,"pic_large_url":"http://p0.meituan.net/wmproduct/3c46c3a5d522dc7e74d4c0d5faa4cb5a160531.jpg","pic_small_url":"","sequence":1,"valid":1,"ctime":1631525552,"utime":1631525552,"wm_poi_id":2700545,"quality_score":1,"white_rate_score":1,"specialEffectUrl":"","specialEffectEnable":0,"isMaster":0,"wmProductPicMaterialList":null,"wm_food_spu_id":1488652225,"is_quality_low":false,"border_result":1,"border_score":1,"blur_result":1,"blur_score":1,"recapture_result":1,"recapture_score":1,"detailList":[{"type":"recapture","typeName":"图片翻拍","score":1,"extra":"","picPropaganda":{"type":"recapture","typeName":"翻拍","badPicUrl":"http://p0.meituan.net/wmproductdwm/72a1d552290012f83bd9eb47cc0acf5a448050.jpg","goodPicUrl":"http://p0.meituan.net/xianfu/bf616611fd610ab0d3100113140346de76679.jpg","suggestion":"商品图片翻拍,建议重新上传图片","setBadPicUrl":true,"setGoodPicUrl":true,"setSuggestion":true,"setTypeName":true,"setType":true},"result":1,"setPicPropaganda":true,"setScore":true,"setExtra":true,"setTypeName":true,"setType":true,"setResult":true},{"type":"blur","typeName":"图片模糊","score":1,"extra":"","picPropaganda":{"type":"blur","typeName":"模糊","badPicUrl":"http://p1.meituan.net/wmproductdwm/3e71604928c625676f39e7857409925965729.jpg","goodPicUrl":"http://p0.meituan.net/xianfu/9df73a7781e51d848d4c04f40b97abf8333771.jpg","suggestion":"商品图片模糊，建议重新上传图","setBadPicUrl":true,"setGoodPicUrl":true,"setSuggestion":true,"setTypeName":true,"setType":true},"result":1,"setPicPropaganda":true,"setScore":true,"setExtra":true,"setTypeName":true,"setType":true,"setResult":true},{"type":"border","typeName":"图片有边框","score":1,"extra":"","picPropaganda":{"type":"border","typeName":"图片周围有边框","badPicUrl":"http://p0.meituan.net/wmproduct/960ef4b268590602b6796fe58f1c3bfc202945.jpg","goodPicUrl":"http://p0.meituan.net/wmproduct/018ca93eb5e1cad8d759e1e1bf834ba557993.jpg","suggestion":"商品图片周围存在边框，建议重新上传图片","setBadPicUrl":true,"setGoodPicUrl":true,"setSuggestion":true,"setTypeName":true,"setType":true},"result":1,"setPicPropaganda":true,"setScore":true,"setExtra":true,"setTypeName":true,"setType":true,"setResult":true}],"is_scored":1,"picExtend":"","specialEffectBigUrl":"","setWm_poi_id":true,"detailListSize":3,"detailListIterator":[{"type":"recapture","typeName":"图片翻拍","score":1,"extra":"","picPropaganda":{"type":"recapture","typeName":"翻拍","badPicUrl":"http://p0.meituan.net/wmproductdwm/72a1d552290012f83bd9eb47cc0acf5a448050.jpg","goodPicUrl":"http://p0.meituan.net/xianfu/bf616611fd610ab0d3100113140346de76679.jpg","suggestion":"商品图片翻拍,建议重新上传图片","setBadPicUrl":true,"setGoodPicUrl":true,"setSuggestion":true,"setTypeName":true,"setType":true},"result":1,"setPicPropaganda":true,"setScore":true,"setExtra":true,"setTypeName":true,"setType":true,"setResult":true},{"type":"blur","typeName":"图片模糊","score":1,"extra":"","picPropaganda":{"type":"blur","typeName":"模糊","badPicUrl":"http://p1.meituan.net/wmproductdwm/3e71604928c625676f39e7857409925965729.jpg","goodPicUrl":"http://p0.meituan.net/xianfu/9df73a7781e51d848d4c04f40b97abf8333771.jpg","suggestion":"商品图片模糊，建议重新上传图","setBadPicUrl":true,"setGoodPicUrl":true,"setSuggestion":true,"setTypeName":true,"setType":true},"result":1,"setPicPropaganda":true,"setScore":true,"setExtra":true,"setTypeName":true,"setType":true,"setResult":true},{"type":"border","typeName":"图片有边框","score":1,"extra":"","picPropaganda":{"type":"border","typeName":"图片周围有边框","badPicUrl":"http://p0.meituan.net/wmproduct/960ef4b268590602b6796fe58f1c3bfc202945.jpg","goodPicUrl":"http://p0.meituan.net/wmproduct/018ca93eb5e1cad8d759e1e1bf834ba557993.jpg","suggestion":"商品图片周围存在边框，建议重新上传图片","setBadPicUrl":true,"setGoodPicUrl":true,"setSuggestion":true,"setTypeName":true,"setType":true},"result":1,"setPicPropaganda":true,"setScore":true,"setExtra":true,"setTypeName":true,"setType":true,"setResult":true}],"setDetailList":true,"setWm_product_sku_id":true,"setSequence":true,"setWm_food_spu_id":true,"setSpecialEffectUrl":true,"setIsMaster":true,"setPic_large_url":true,"setPic_small_url":true,"setQuality_score":true,"setWhite_rate_score":true,"setSpecialEffectEnable":true,"wmProductPicMaterialListSize":0,"wmProductPicMaterialListIterator":null,"setWmProductPicMaterialList":false,"setIs_quality_low":true,"setBorder_result":true,"setBorder_score":true,"setBlur_result":true,"setBlur_score":true,"setRecapture_result":true,"setRecapture_score":true,"setIs_scored":true,"setPicExtend":true,"setSpecialEffectBigUrl":true,"setId":true,"setCtime":true,"setUtime":true,"setValid":true}],"specialEffectPic":null,"description":"包含鸡蛋＋菌菇，非油炸，冻干汤块，需75℃以上开水冲泡","category_id":115283,"properties_values":{"103":[{"id":88316438601,"wm_poi_id":2700545,"wm_product_spu_id":1488652225,"getWm_product_property_category_id":115283,"parent_tag_id":1000000003,"wm_product_lib_tag_id":103,"wm_product_lib_tag_name":"辣","value":"酸辣","value_id":104,"level":3,"is_leaf":1,"sequence":3}],"1000000003":[{"id":88316438589,"wm_poi_id":2700545,"wm_product_spu_id":1488652225,"getWm_product_property_category_id":115283,"parent_tag_id":0,"wm_product_lib_tag_id":1000000003,"wm_product_lib_tag_name":"口味","value":"辣","value_id":103,"level":2,"is_leaf":2,"sequence":3}],"1000000004":[{"id":88316438598,"wm_poi_id":2700545,"wm_product_spu_id":1488652225,"getWm_product_property_category_id":115283,"parent_tag_id":0,"wm_product_lib_tag_id":1000000004,"wm_product_lib_tag_name":"凉热","value":"热","value_id":139,"level":2,"is_leaf":1,"sequence":4}],"1000000006":[{"id":88316438590,"wm_poi_id":2700545,"wm_product_spu_id":1488652225,"getWm_product_property_category_id":115283,"parent_tag_id":0,"wm_product_lib_tag_id":1000000006,"wm_product_lib_tag_name":"制作方法","value":"砂锅","value_id":258,"level":2,"is_leaf":1,"sequence":6},{"id":88316438591,"wm_poi_id":2700545,"wm_product_spu_id":1488652225,"getWm_product_property_category_id":115283,"parent_tag_id":0,"wm_product_lib_tag_id":1000000006,"wm_product_lib_tag_name":"制作方法","value":"炖","value_id":237,"level":2,"is_leaf":1,"sequence":6},{"id":88316438596,"wm_poi_id":2700545,"wm_product_spu_id":1488652225,"getWm_product_property_category_id":115283,"parent_tag_id":0,"wm_product_lib_tag_id":1000000006,"wm_product_lib_tag_name":"制作方法","value":"煮","value_id":239,"level":2,"is_leaf":1,"sequence":6}],"1000000012":[{"id":88316438587,"wm_poi_id":2700545,"wm_product_spu_id":1488652225,"getWm_product_property_category_id":115283,"parent_tag_id":0,"wm_product_lib_tag_id":1000000012,"wm_product_lib_tag_name":"荤素","value":"素","value_id":559,"level":2,"is_leaf":1,"sequence":5},{"id":88316438588,"wm_poi_id":2700545,"wm_product_spu_id":1488652225,"getWm_product_property_category_id":115283,"parent_tag_id":0,"wm_product_lib_tag_id":1000000012,"wm_product_lib_tag_name":"荤素","value":"荤","value_id":558,"level":2,"is_leaf":1,"sequence":5}],"1000000015":[{"id":88316438586,"wm_poi_id":2700545,"wm_product_spu_id":1488652225,"getWm_product_property_category_id":115283,"parent_tag_id":0,"wm_product_lib_tag_id":1000000015,"wm_product_lib_tag_name":"主料","value":"绿豆","value_id":743,"level":2,"is_leaf":1,"sequence":1},{"id":88316438592,"wm_poi_id":2700545,"wm_product_spu_id":1488652225,"getWm_product_property_category_id":115283,"parent_tag_id":0,"wm_product_lib_tag_id":1000000015,"wm_product_lib_tag_name":"主料","value":"鸡","value_id":837,"level":2,"is_leaf":1,"sequence":1},{"id":88316438594,"wm_poi_id":2700545,"wm_product_spu_id":1488652225,"getWm_product_property_category_id":115283,"parent_tag_id":0,"wm_product_lib_tag_id":1000000015,"wm_product_lib_tag_name":"主料","value":"海带","value_id":640,"level":2,"is_leaf":1,"sequence":1},{"id":88316438599,"wm_poi_id":2700545,"wm_product_spu_id":1488652225,"getWm_product_property_category_id":115283,"parent_tag_id":0,"wm_product_lib_tag_id":1000000015,"wm_product_lib_tag_name":"主料","value":"蘑菇","value_id":787,"level":2,"is_leaf":1,"sequence":1},{"id":88316438600,"wm_poi_id":2700545,"wm_product_spu_id":1488652225,"getWm_product_property_category_id":115283,"parent_tag_id":0,"wm_product_lib_tag_id":1000000015,"wm_product_lib_tag_name":"主料","value":"花胶","value_id":105618,"level":2,"is_leaf":1,"sequence":1}],"1000000016":[{"id":88316438595,"wm_poi_id":2700545,"wm_product_spu_id":1488652225,"getWm_product_property_category_id":115283,"parent_tag_id":0,"wm_product_lib_tag_id":1000000016,"wm_product_lib_tag_name":"辅料","value":"冰糖","value_id":105202,"level":2,"is_leaf":1,"sequence":2},{"id":88316438597,"wm_poi_id":2700545,"wm_product_spu_id":1488652225,"getWm_product_property_category_id":115283,"parent_tag_id":0,"wm_product_lib_tag_id":1000000016,"wm_product_lib_tag_name":"辅料","value":"胡椒","value_id":105230,"level":2,"is_leaf":1,"sequence":2}],"1200001152":[{"id":88316438593,"wm_poi_id":2700545,"wm_product_spu_id":1488652225,"getWm_product_property_category_id":0,"parent_tag_id":0,"wm_product_lib_tag_id":1200001152,"wm_product_lib_tag_name":"库存包装费设置方式","value":"1","value_id":0,"level":1,"is_leaf":1,"sequence":0}]},"newSpuAttrs":[{"name":"份量","name_id":0,"value":null,"value_id":0,"price":3.5,"weight":-2,"mode":2,"weightUnit":"1人份","sell_status":0,"value_sequence":1,"no":0,"extFields":{"min_required_count":0,"max_required_count":0,"exclude_attr":null,"fld":1,"attr_extend":null,"setMin_required_count":true,"setMax_required_count":true,"setExclude_attr":false,"setFld":true,"setAttr_extend":false}}],"stockAndBoxPriceSkus":[{"attrList":[{"name":"份量","name_id":0,"value":null,"value_id":0,"no":0}],"box_price":0,"price":3.5,"spec":"1人份","unit":"1人份","weight":-2,"wmProductLadderBoxPrice":{"ladder_num":1,"ladder_price":0,"status":1},"wmProductStock":{"id":"0","stock":"10000","max_stock":"-1","auto_refresh":1}}],"unifiedPackagingFee":1,"wmProductLadderBoxPrice":{"status":1,"ladder_num":1,"ladder_price":0.3,"setLadder_num":true,"setLadder_price":true,"setStatus":true},"wmProductStock":{"id":"0","stock":-1,"max_stock":"-1","auto_refresh":1},"isShippingTimeSyncPoi":2,"shipping_time_x":"-","min_order_count":1,"labelList":[],"singleOrderNoDelivery":0,"wmProductVideo":null,"productCardDisplayContent":"","labelValues":[{"sequence":1,"value":""},{"sequence":2,"value":""}]}{"id":1488652225,"wm_poi_id":2700545,"tag_id":"100421029","tag_name":"饮料汤羹","name":"芙蓉菌菇汤（需自备开水）","wmProductPics":[{"id":40625788003,"wm_product_sku_id":6711578635,"pic_large_url":"http://p0.meituan.net/wmproduct/3c46c3a5d522dc7e74d4c0d5faa4cb5a160531.jpg","pic_small_url":"","sequence":1,"valid":1,"ctime":1631525552,"utime":1631525552,"wm_poi_id":2700545,"quality_score":1,"white_rate_score":1,"specialEffectUrl":"","specialEffectEnable":0,"isMaster":0,"wmProductPicMaterialList":null,"wm_food_spu_id":1488652225,"is_quality_low":false,"border_result":1,"border_score":1,"blur_result":1,"blur_score":1,"recapture_result":1,"recapture_score":1,"detailList":[{"type":"recapture","typeName":"图片翻拍","score":1,"extra":"","picPropaganda":{"type":"recapture","typeName":"翻拍","badPicUrl":"http://p0.meituan.net/wmproductdwm/72a1d552290012f83bd9eb47cc0acf5a448050.jpg","goodPicUrl":"http://p0.meituan.net/xianfu/bf616611fd610ab0d3100113140346de76679.jpg","suggestion":"商品图片翻拍,建议重新上传图片","setTypeName":true,"setBadPicUrl":true,"setGoodPicUrl":true,"setSuggestion":true,"setType":true},"result":1,"setScore":true,"setExtra":true,"setTypeName":true,"setPicPropaganda":true,"setType":true,"setResult":true},{"type":"blur","typeName":"图片模糊","score":1,"extra":"","picPropaganda":{"type":"blur","typeName":"模糊","badPicUrl":"http://p1.meituan.net/wmproductdwm/3e71604928c625676f39e7857409925965729.jpg","goodPicUrl":"http://p0.meituan.net/xianfu/9df73a7781e51d848d4c04f40b97abf8333771.jpg","suggestion":"商品图片模糊，建议重新上传图","setTypeName":true,"setBadPicUrl":true,"setGoodPicUrl":true,"setSuggestion":true,"setType":true},"result":1,"setScore":true,"setExtra":true,"setTypeName":true,"setPicPropaganda":true,"setType":true,"setResult":true},{"type":"border","typeName":"图片有边框","score":1,"extra":"","picPropaganda":{"type":"border","typeName":"图片周围有边框","badPicUrl":"http://p0.meituan.net/wmproduct/960ef4b268590602b6796fe58f1c3bfc202945.jpg","goodPicUrl":"http://p0.meituan.net/wmproduct/018ca93eb5e1cad8d759e1e1bf834ba557993.jpg","suggestion":"商品图片周围存在边框，建议重新上传图片","setTypeName":true,"setBadPicUrl":true,"setGoodPicUrl":true,"setSuggestion":true,"setType":true},"result":1,"setScore":true,"setExtra":true,"setTypeName":true,"setPicPropaganda":true,"setType":true,"setResult":true}],"is_scored":1,"picExtend":"","specialEffectBigUrl":"","setWm_poi_id":true,"detailListSize":3,"detailListIterator":[{"type":"recapture","typeName":"图片翻拍","score":1,"extra":"","picPropaganda":{"type":"recapture","typeName":"翻拍","badPicUrl":"http://p0.meituan.net/wmproductdwm/72a1d552290012f83bd9eb47cc0acf5a448050.jpg","goodPicUrl":"http://p0.meituan.net/xianfu/bf616611fd610ab0d3100113140346de76679.jpg","suggestion":"商品图片翻拍,建议重新上传图片","setTypeName":true,"setBadPicUrl":true,"setGoodPicUrl":true,"setSuggestion":true,"setType":true},"result":1,"setScore":true,"setExtra":true,"setTypeName":true,"setPicPropaganda":true,"setType":true,"setResult":true},{"type":"blur","typeName":"图片模糊","score":1,"extra":"","picPropaganda":{"type":"blur","typeName":"模糊","badPicUrl":"http://p1.meituan.net/wmproductdwm/3e71604928c625676f39e7857409925965729.jpg","goodPicUrl":"http://p0.meituan.net/xianfu/9df73a7781e51d848d4c04f40b97abf8333771.jpg","suggestion":"商品图片模糊，建议重新上传图","setTypeName":true,"setBadPicUrl":true,"setGoodPicUrl":true,"setSuggestion":true,"setType":true},"result":1,"setScore":true,"setExtra":true,"setTypeName":true,"setPicPropaganda":true,"setType":true,"setResult":true},{"type":"border","typeName":"图片有边框","score":1,"extra":"","picPropaganda":{"type":"border","typeName":"图片周围有边框","badPicUrl":"http://p0.meituan.net/wmproduct/960ef4b268590602b6796fe58f1c3bfc202945.jpg","goodPicUrl":"http://p0.meituan.net/wmproduct/018ca93eb5e1cad8d759e1e1bf834ba557993.jpg","suggestion":"商品图片周围存在边框，建议重新上传图片","setTypeName":true,"setBadPicUrl":true,"setGoodPicUrl":true,"setSuggestion":true,"setType":true},"result":1,"setScore":true,"setExtra":true,"setTypeName":true,"setPicPropaganda":true,"setType":true,"setResult":true}],"setDetailList":true,"setWm_product_sku_id":true,"setSequence":true,"setWm_food_spu_id":true,"setSpecialEffectUrl":true,"setIsMaster":true,"setPic_large_url":true,"setPic_small_url":true,"setQuality_score":true,"setWhite_rate_score":true,"setSpecialEffectEnable":true,"wmProductPicMaterialListSize":0,"wmProductPicMaterialListIterator":null,"setWmProductPicMaterialList":false,"setIs_quality_low":true,"setBorder_result":true,"setBorder_score":true,"setBlur_result":true,"setBlur_score":true,"setRecapture_result":true,"setRecapture_score":true,"setIs_scored":true,"setPicExtend":true,"setSpecialEffectBigUrl":true,"setId":true,"setValid":true,"setCtime":true,"setUtime":true}],"specialEffectPic":null,"description":"包含鸡蛋＋菌菇，非油炸，冻干汤块，需75℃以上开水冲泡","category_id":115283,"properties_values":{"103":[{"id":88316438601,"wm_poi_id":2700545,"wm_product_spu_id":1488652225,"getWm_product_property_category_id":115283,"parent_tag_id":1000000003,"wm_product_lib_tag_id":103,"wm_product_lib_tag_name":"辣","value":"酸辣","value_id":104,"level":3,"is_leaf":1,"sequence":3}],"1000000003":[{"id":88316438589,"wm_poi_id":2700545,"wm_product_spu_id":1488652225,"getWm_product_property_category_id":115283,"parent_tag_id":0,"wm_product_lib_tag_id":1000000003,"wm_product_lib_tag_name":"口味","value":"辣","value_id":103,"level":2,"is_leaf":2,"sequence":3}],"1000000004":[{"id":88316438598,"wm_poi_id":2700545,"wm_product_spu_id":1488652225,"getWm_product_property_category_id":115283,"parent_tag_id":0,"wm_product_lib_tag_id":1000000004,"wm_product_lib_tag_name":"凉热","value":"热","value_id":139,"level":2,"is_leaf":1,"sequence":4}],"1000000006":[{"id":88316438590,"wm_poi_id":2700545,"wm_product_spu_id":1488652225,"getWm_product_property_category_id":115283,"parent_tag_id":0,"wm_product_lib_tag_id":1000000006,"wm_product_lib_tag_name":"制作方法","value":"砂锅","value_id":258,"level":2,"is_leaf":1,"sequence":6},{"id":88316438591,"wm_poi_id":2700545,"wm_product_spu_id":1488652225,"getWm_product_property_category_id":115283,"parent_tag_id":0,"wm_product_lib_tag_id":1000000006,"wm_product_lib_tag_name":"制作方法","value":"炖","value_id":237,"level":2,"is_leaf":1,"sequence":6},{"id":88316438596,"wm_poi_id":2700545,"wm_product_spu_id":1488652225,"getWm_product_property_category_id":115283,"parent_tag_id":0,"wm_product_lib_tag_id":1000000006,"wm_product_lib_tag_name":"制作方法","value":"煮","value_id":239,"level":2,"is_leaf":1,"sequence":6}],"1000000012":[{"id":88316438587,"wm_poi_id":2700545,"wm_product_spu_id":1488652225,"getWm_product_property_category_id":115283,"parent_tag_id":0,"wm_product_lib_tag_id":1000000012,"wm_product_lib_tag_name":"荤素","value":"素","value_id":559,"level":2,"is_leaf":1,"sequence":5},{"id":88316438588,"wm_poi_id":2700545,"wm_product_spu_id":1488652225,"getWm_product_property_category_id":115283,"parent_tag_id":0,"wm_product_lib_tag_id":1000000012,"wm_product_lib_tag_name":"荤素","value":"荤","value_id":558,"level":2,"is_leaf":1,"sequence":5}],"1000000015":[{"id":88316438586,"wm_poi_id":2700545,"wm_product_spu_id":1488652225,"getWm_product_property_category_id":115283,"parent_tag_id":0,"wm_product_lib_tag_id":1000000015,"wm_product_lib_tag_name":"主料","value":"绿豆","value_id":743,"level":2,"is_leaf":1,"sequence":1},{"id":88316438592,"wm_poi_id":2700545,"wm_product_spu_id":1488652225,"getWm_product_property_category_id":115283,"parent_tag_id":0,"wm_product_lib_tag_id":1000000015,"wm_product_lib_tag_name":"主料","value":"鸡","value_id":837,"level":2,"is_leaf":1,"sequence":1},{"id":88316438594,"wm_poi_id":2700545,"wm_product_spu_id":1488652225,"getWm_product_property_category_id":115283,"parent_tag_id":0,"wm_product_lib_tag_id":1000000015,"wm_product_lib_tag_name":"主料","value":"海带","value_id":640,"level":2,"is_leaf":1,"sequence":1},{"id":88316438599,"wm_poi_id":2700545,"wm_product_spu_id":1488652225,"getWm_product_property_category_id":115283,"parent_tag_id":0,"wm_product_lib_tag_id":1000000015,"wm_product_lib_tag_name":"主料","value":"蘑菇","value_id":787,"level":2,"is_leaf":1,"sequence":1},{"id":88316438600,"wm_poi_id":2700545,"wm_product_spu_id":1488652225,"getWm_product_property_category_id":115283,"parent_tag_id":0,"wm_product_lib_tag_id":1000000015,"wm_product_lib_tag_name":"主料","value":"花胶","value_id":105618,"level":2,"is_leaf":1,"sequence":1}],"1000000016":[{"id":88316438595,"wm_poi_id":2700545,"wm_product_spu_id":1488652225,"getWm_product_property_category_id":115283,"parent_tag_id":0,"wm_product_lib_tag_id":1000000016,"wm_product_lib_tag_name":"辅料","value":"冰糖","value_id":105202,"level":2,"is_leaf":1,"sequence":2},{"id":88316438597,"wm_poi_id":2700545,"wm_product_spu_id":1488652225,"getWm_product_property_category_id":115283,"parent_tag_id":0,"wm_product_lib_tag_id":1000000016,"wm_product_lib_tag_name":"辅料","value":"胡椒","value_id":105230,"level":2,"is_leaf":1,"sequence":2}],"1200001152":[{"id":88316438593,"wm_poi_id":2700545,"wm_product_spu_id":1488652225,"getWm_product_property_category_id":0,"parent_tag_id":0,"wm_product_lib_tag_id":1200001152,"wm_product_lib_tag_name":"库存包装费设置方式","value":"1","value_id":0,"level":1,"is_leaf":1,"sequence":0}]},"newSpuAttrs":[{"name":"份量","name_id":0,"value":null,"value_id":0,"price":3.5,"weight":-2,"mode":2,"weightUnit":"1人份","sell_status":0,"value_sequence":1,"no":0,"extFields":{"min_required_count":0,"max_required_count":0,"exclude_attr":null,"fld":1,"attr_extend":null,"setMin_required_count":true,"setMax_required_count":true,"setExclude_attr":false,"setFld":true,"setAttr_extend":false}},{"name":"份量","name_id":0,"price":500,"value_id":0,"value":"-","no":0,"mode":2,"weight":-2,"weightUnit":"1人份","sell_status":0,"value_sequence":2}],"stockAndBoxPriceSkus":[{"attrList":[{"name":"份量","name_id":0,"value":null,"value_id":0,"no":0}],"box_price":0,"price":3.5,"spec":"null（1人份）","unit":"1人份","weight":-2,"wmProductLadderBoxPrice":{"ladder_num":1,"ladder_price":0,"status":1},"wmProductStock":{"id":"0","stock":"10000","max_stock":"-1","auto_refresh":1}},{"attrList":[{"name":"份量","name_id":0,"value":"-","value_id":0,"no":0}],"box_price":0,"price":500,"spec":"-（1人份）","unit":"1人份","weight":-2,"wmProductLadderBoxPrice":{"ladder_num":1,"ladder_price":0,"status":1},"wmProductStock":{"id":"0","stock":"10000","max_stock":"-1","auto_refresh":1}}],"unifiedPackagingFee":2,"wmProductLadderBoxPrice":{"status":1,"ladder_num":1,"ladder_price":0.3,"setLadder_num":true,"setLadder_price":true,"setStatus":true},"wmProductStock":{"id":"0","stock":-1,"max_stock":"-1","auto_refresh":1},"isShippingTimeSyncPoi":2,"shipping_time_x":"-","min_order_count":1,"labelList":[],"singleOrderNoDelivery":0,"wmProductVideo":null,"productCardDisplayContent":"","labelValues":[{"sequence":1,"value":""},{"sequence":2,"value":""}]}{"id":1488652225,"wm_poi_id":2700545,"tag_id":"100421029","tag_name":"饮料汤羹","name":"芙蓉菌菇汤（需自备开水）","wmProductPics":[{"id":40773729804,"wm_product_sku_id":6711578635,"pic_large_url":"http://p0.meituan.net/wmproduct/3c46c3a5d522dc7e74d4c0d5faa4cb5a160531.jpg","pic_small_url":"","sequence":1,"valid":1,"ctime":1631696481,"utime":1631696481,"wm_poi_id":2700545,"quality_score":1,"white_rate_score":1,"specialEffectUrl":"","specialEffectEnable":0,"isMaster":0,"wmProductPicMaterialList":null,"wm_food_spu_id":1488652225,"is_quality_low":false,"border_result":1,"border_score":1,"blur_result":1,"blur_score":1,"recapture_result":1,"recapture_score":1,"detailList":[{"type":"recapture","typeName":"图片翻拍","score":1,"extra":"","picPropaganda":{"type":"recapture","typeName":"翻拍","badPicUrl":"http://p0.meituan.net/wmproductdwm/72a1d552290012f83bd9eb47cc0acf5a448050.jpg","goodPicUrl":"http://p0.meituan.net/xianfu/bf616611fd610ab0d3100113140346de76679.jpg","suggestion":"商品图片翻拍,建议重新上传图片","setBadPicUrl":true,"setGoodPicUrl":true,"setSuggestion":true,"setTypeName":true,"setType":true},"result":1,"setPicPropaganda":true,"setScore":true,"setTypeName":true,"setExtra":true,"setType":true,"setResult":true},{"type":"blur","typeName":"图片模糊","score":1,"extra":"","picPropaganda":{"type":"blur","typeName":"模糊","badPicUrl":"http://p1.meituan.net/wmproductdwm/3e71604928c625676f39e7857409925965729.jpg","goodPicUrl":"http://p0.meituan.net/xianfu/9df73a7781e51d848d4c04f40b97abf8333771.jpg","suggestion":"商品图片模糊，建议重新上传图","setBadPicUrl":true,"setGoodPicUrl":true,"setSuggestion":true,"setTypeName":true,"setType":true},"result":1,"setPicPropaganda":true,"setScore":true,"setTypeName":true,"setExtra":true,"setType":true,"setResult":true},{"type":"border","typeName":"图片有边框","score":1,"extra":"","picPropaganda":{"type":"border","typeName":"图片周围有边框","badPicUrl":"http://p0.meituan.net/wmproduct/960ef4b268590602b6796fe58f1c3bfc202945.jpg","goodPicUrl":"http://p0.meituan.net/wmproduct/018ca93eb5e1cad8d759e1e1bf834ba557993.jpg","suggestion":"商品图片周围存在边框，建议重新上传图片","setBadPicUrl":true,"setGoodPicUrl":true,"setSuggestion":true,"setTypeName":true,"setType":true},"result":1,"setPicPropaganda":true,"setScore":true,"setTypeName":true,"setExtra":true,"setType":true,"setResult":true}],"is_scored":1,"picExtend":"","specialEffectBigUrl":"","setWm_poi_id":true,"detailListIterator":[{"type":"recapture","typeName":"图片翻拍","score":1,"extra":"","picPropaganda":{"type":"recapture","typeName":"翻拍","badPicUrl":"http://p0.meituan.net/wmproductdwm/72a1d552290012f83bd9eb47cc0acf5a448050.jpg","goodPicUrl":"http://p0.meituan.net/xianfu/bf616611fd610ab0d3100113140346de76679.jpg","suggestion":"商品图片翻拍,建议重新上传图片","setBadPicUrl":true,"setGoodPicUrl":true,"setSuggestion":true,"setTypeName":true,"setType":true},"result":1,"setPicPropaganda":true,"setScore":true,"setTypeName":true,"setExtra":true,"setType":true,"setResult":true},{"type":"blur","typeName":"图片模糊","score":1,"extra":"","picPropaganda":{"type":"blur","typeName":"模糊","badPicUrl":"http://p1.meituan.net/wmproductdwm/3e71604928c625676f39e7857409925965729.jpg","goodPicUrl":"http://p0.meituan.net/xianfu/9df73a7781e51d848d4c04f40b97abf8333771.jpg","suggestion":"商品图片模糊，建议重新上传图","setBadPicUrl":true,"setGoodPicUrl":true,"setSuggestion":true,"setTypeName":true,"setType":true},"result":1,"setPicPropaganda":true,"setScore":true,"setTypeName":true,"setExtra":true,"setType":true,"setResult":true},{"type":"border","typeName":"图片有边框","score":1,"extra":"","picPropaganda":{"type":"border","typeName":"图片周围有边框","badPicUrl":"http://p0.meituan.net/wmproduct/960ef4b268590602b6796fe58f1c3bfc202945.jpg","goodPicUrl":"http://p0.meituan.net/wmproduct/018ca93eb5e1cad8d759e1e1bf834ba557993.jpg","suggestion":"商品图片周围存在边框，建议重新上传图片","setBadPicUrl":true,"setGoodPicUrl":true,"setSuggestion":true,"setTypeName":true,"setType":true},"result":1,"setPicPropaganda":true,"setScore":true,"setTypeName":true,"setExtra":true,"setType":true,"setResult":true}],"setDetailList":true,"detailListSize":3,"setWm_product_sku_id":true,"setSequence":true,"setWm_food_spu_id":true,"setSpecialEffectUrl":true,"setIsMaster":true,"setPic_large_url":true,"setPic_small_url":true,"setQuality_score":true,"setWhite_rate_score":true,"setSpecialEffectEnable":true,"wmProductPicMaterialListSize":0,"wmProductPicMaterialListIterator":null,"setWmProductPicMaterialList":false,"setIs_quality_low":true,"setBorder_result":true,"setBorder_score":true,"setBlur_result":true,"setBlur_score":true,"setRecapture_result":true,"setRecapture_score":true,"setIs_scored":true,"setPicExtend":true,"setSpecialEffectBigUrl":true,"setId":true,"setCtime":true,"setUtime":true,"setValid":true}],"specialEffectPic":null,"description":"包含鸡蛋＋菌菇，非油炸，冻干汤块，需75℃以上开水冲泡","category_id":115283,"properties_values":{"103":[{"id":88316438601,"wm_poi_id":2700545,"wm_product_spu_id":1488652225,"getWm_product_property_category_id":115283,"parent_tag_id":1000000003,"wm_product_lib_tag_id":103,"wm_product_lib_tag_name":"辣","value":"酸辣","value_id":104,"level":3,"is_leaf":1,"sequence":3}],"1000000003":[{"id":88316438589,"wm_poi_id":2700545,"wm_product_spu_id":1488652225,"getWm_product_property_category_id":115283,"parent_tag_id":0,"wm_product_lib_tag_id":1000000003,"wm_product_lib_tag_name":"口味","value":"辣","value_id":103,"level":2,"is_leaf":2,"sequence":3}],"1000000004":[{"id":88316438598,"wm_poi_id":2700545,"wm_product_spu_id":1488652225,"getWm_product_property_category_id":115283,"parent_tag_id":0,"wm_product_lib_tag_id":1000000004,"wm_product_lib_tag_name":"凉热","value":"热","value_id":139,"level":2,"is_leaf":1,"sequence":4}],"1000000006":[{"id":88316438590,"wm_poi_id":2700545,"wm_product_spu_id":1488652225,"getWm_product_property_category_id":115283,"parent_tag_id":0,"wm_product_lib_tag_id":1000000006,"wm_product_lib_tag_name":"制作方法","value":"砂锅","value_id":258,"level":2,"is_leaf":1,"sequence":6},{"id":88316438591,"wm_poi_id":2700545,"wm_product_spu_id":1488652225,"getWm_product_property_category_id":115283,"parent_tag_id":0,"wm_product_lib_tag_id":1000000006,"wm_product_lib_tag_name":"制作方法","value":"炖","value_id":237,"level":2,"is_leaf":1,"sequence":6},{"id":88316438596,"wm_poi_id":2700545,"wm_product_spu_id":1488652225,"getWm_product_property_category_id":115283,"parent_tag_id":0,"wm_product_lib_tag_id":1000000006,"wm_product_lib_tag_name":"制作方法","value":"煮","value_id":239,"level":2,"is_leaf":1,"sequence":6}],"1000000012":[{"id":88316438587,"wm_poi_id":2700545,"wm_product_spu_id":1488652225,"getWm_product_property_category_id":115283,"parent_tag_id":0,"wm_product_lib_tag_id":1000000012,"wm_product_lib_tag_name":"荤素","value":"素","value_id":559,"level":2,"is_leaf":1,"sequence":5},{"id":88316438588,"wm_poi_id":2700545,"wm_product_spu_id":1488652225,"getWm_product_property_category_id":115283,"parent_tag_id":0,"wm_product_lib_tag_id":1000000012,"wm_product_lib_tag_name":"荤素","value":"荤","value_id":558,"level":2,"is_leaf":1,"sequence":5}],"1000000015":[{"id":88316438586,"wm_poi_id":2700545,"wm_product_spu_id":1488652225,"getWm_product_property_category_id":115283,"parent_tag_id":0,"wm_product_lib_tag_id":1000000015,"wm_product_lib_tag_name":"主料","value":"绿豆","value_id":743,"level":2,"is_leaf":1,"sequence":1},{"id":88316438592,"wm_poi_id":2700545,"wm_product_spu_id":1488652225,"getWm_product_property_category_id":115283,"parent_tag_id":0,"wm_product_lib_tag_id":1000000015,"wm_product_lib_tag_name":"主料","value":"鸡","value_id":837,"level":2,"is_leaf":1,"sequence":1},{"id":88316438594,"wm_poi_id":2700545,"wm_product_spu_id":1488652225,"getWm_product_property_category_id":115283,"parent_tag_id":0,"wm_product_lib_tag_id":1000000015,"wm_product_lib_tag_name":"主料","value":"海带","value_id":640,"level":2,"is_leaf":1,"sequence":1},{"id":88316438599,"wm_poi_id":2700545,"wm_product_spu_id":1488652225,"getWm_product_property_category_id":115283,"parent_tag_id":0,"wm_product_lib_tag_id":1000000015,"wm_product_lib_tag_name":"主料","value":"蘑菇","value_id":787,"level":2,"is_leaf":1,"sequence":1},{"id":88316438600,"wm_poi_id":2700545,"wm_product_spu_id":1488652225,"getWm_product_property_category_id":115283,"parent_tag_id":0,"wm_product_lib_tag_id":1000000015,"wm_product_lib_tag_name":"主料","value":"花胶","value_id":105618,"level":2,"is_leaf":1,"sequence":1}],"1000000016":[{"id":88316438595,"wm_poi_id":2700545,"wm_product_spu_id":1488652225,"getWm_product_property_category_id":115283,"parent_tag_id":0,"wm_product_lib_tag_id":1000000016,"wm_product_lib_tag_name":"辅料","value":"冰糖","value_id":105202,"level":2,"is_leaf":1,"sequence":2},{"id":88316438597,"wm_poi_id":2700545,"wm_product_spu_id":1488652225,"getWm_product_property_category_id":115283,"parent_tag_id":0,"wm_product_lib_tag_id":1000000016,"wm_product_lib_tag_name":"辅料","value":"胡椒","value_id":105230,"level":2,"is_leaf":1,"sequence":2}],"1200001152":[{"id":88316438593,"wm_poi_id":2700545,"wm_product_spu_id":1488652225,"getWm_product_property_category_id":0,"parent_tag_id":0,"wm_product_lib_tag_id":1200001152,"wm_product_lib_tag_name":"库存包装费设置方式","value":"2","value_id":0,"level":1,"is_leaf":1,"sequence":0}]},"newSpuAttrs":[{"name":"份量","name_id":0,"price":500,"value":"-","value_id":0,"no":0,"mode":2,"weight":-2,"weightUnit":"1人份","sell_status":0,"value_sequence":1}],"stockAndBoxPriceSkus":[],"unifiedPackagingFee":1,"wmProductLadderBoxPrice":{"ladder_num":1,"ladder_price":0,"status":1},"wmProductStock":{"id":"0","stock":10000,"max_stock":"-1","auto_refresh":1},"isShippingTimeSyncPoi":2,"shipping_time_x":"-","min_order_count":1,"labelList":[],"singleOrderNoDelivery":0,"wmProductVideo":null,"productCardDisplayContent":"","labelValues":[{"sequence":1,"value":""},{"sequence":2,"value":""}]}{"id":1488652225,"wm_poi_id":2700545,"tag_id":"100421029","tag_name":"饮料汤羹","name":"皮蛋粥（正餐）","wmProductPics":[{"id":40605512908,"wm_product_sku_id":6701435413,"pic_large_url":"http://p0.meituan.net/wmproduct/1efd4ebdf14cbd92942bd9d55c7c0447216678.png","pic_small_url":"","sequence":1,"valid":1,"ctime":1631525579,"utime":1631525579,"wm_poi_id":2700545,"quality_score":1,"white_rate_score":1,"specialEffectUrl":"","specialEffectEnable":0,"isMaster":0,"wmProductPicMaterialList":null,"wm_food_spu_id":1488701694,"is_quality_low":false,"border_result":1,"border_score":0.988,"blur_result":1,"blur_score":0.999,"recapture_result":1,"recapture_score":1,"detailList":[{"type":"recapture","typeName":"图片翻拍","score":1,"extra":"","picPropaganda":{"type":"recapture","typeName":"翻拍","badPicUrl":"http://p0.meituan.net/wmproductdwm/72a1d552290012f83bd9eb47cc0acf5a448050.jpg","goodPicUrl":"http://p0.meituan.net/xianfu/bf616611fd610ab0d3100113140346de76679.jpg","suggestion":"商品图片翻拍,建议重新上传图片","setBadPicUrl":true,"setGoodPicUrl":true,"setSuggestion":true,"setTypeName":true,"setType":true},"result":1,"setPicPropaganda":true,"setScore":true,"setExtra":true,"setTypeName":true,"setType":true,"setResult":true},{"type":"blur","typeName":"图片模糊","score":0.999,"extra":"","picPropaganda":{"type":"blur","typeName":"模糊","badPicUrl":"http://p1.meituan.net/wmproductdwm/3e71604928c625676f39e7857409925965729.jpg","goodPicUrl":"http://p0.meituan.net/xianfu/9df73a7781e51d848d4c04f40b97abf8333771.jpg","suggestion":"商品图片模糊，建议重新上传图","setBadPicUrl":true,"setGoodPicUrl":true,"setSuggestion":true,"setTypeName":true,"setType":true},"result":1,"setPicPropaganda":true,"setScore":true,"setExtra":true,"setTypeName":true,"setType":true,"setResult":true},{"type":"border","typeName":"图片有边框","score":0.988,"extra":"","picPropaganda":{"type":"border","typeName":"图片周围有边框","badPicUrl":"http://p0.meituan.net/wmproduct/960ef4b268590602b6796fe58f1c3bfc202945.jpg","goodPicUrl":"http://p0.meituan.net/wmproduct/018ca93eb5e1cad8d759e1e1bf834ba557993.jpg","suggestion":"商品图片周围存在边框，建议重新上传图片","setBadPicUrl":true,"setGoodPicUrl":true,"setSuggestion":true,"setTypeName":true,"setType":true},"result":1,"setPicPropaganda":true,"setScore":true,"setExtra":true,"setTypeName":true,"setType":true,"setResult":true}],"is_scored":1,"picExtend":"","specialEffectBigUrl":"","setWm_poi_id":true,"detailListSize":3,"detailListIterator":[{"type":"recapture","typeName":"图片翻拍","score":1,"extra":"","picPropaganda":{"type":"recapture","typeName":"翻拍","badPicUrl":"http://p0.meituan.net/wmproductdwm/72a1d552290012f83bd9eb47cc0acf5a448050.jpg","goodPicUrl":"http://p0.meituan.net/xianfu/bf616611fd610ab0d3100113140346de76679.jpg","suggestion":"商品图片翻拍,建议重新上传图片","setBadPicUrl":true,"setGoodPicUrl":true,"setSuggestion":true,"setTypeName":true,"setType":true},"result":1,"setPicPropaganda":true,"setScore":true,"setExtra":true,"setTypeName":true,"setType":true,"setResult":true},{"type":"blur","typeName":"图片模糊","score":0.999,"extra":"","picPropaganda":{"type":"blur","typeName":"模糊","badPicUrl":"http://p1.meituan.net/wmproductdwm/3e71604928c625676f39e7857409925965729.jpg","goodPicUrl":"http://p0.meituan.net/xianfu/9df73a7781e51d848d4c04f40b97abf8333771.jpg","suggestion":"商品图片模糊，建议重新上传图","setBadPicUrl":true,"setGoodPicUrl":true,"setSuggestion":true,"setTypeName":true,"setType":true},"result":1,"setPicPropaganda":true,"setScore":true,"setExtra":true,"setTypeName":true,"setType":true,"setResult":true},{"type":"border","typeName":"图片有边框","score":0.988,"extra":"","picPropaganda":{"type":"border","typeName":"图片周围有边框","badPicUrl":"http://p0.meituan.net/wmproduct/960ef4b268590602b6796fe58f1c3bfc202945.jpg","goodPicUrl":"http://p0.meituan.net/wmproduct/018ca93eb5e1cad8d759e1e1bf834ba557993.jpg","suggestion":"商品图片周围存在边框，建议重新上传图片","setBadPicUrl":true,"setGoodPicUrl":true,"setSuggestion":true,"setTypeName":true,"setType":true},"result":1,"setPicPropaganda":true,"setScore":true,"setExtra":true,"setTypeName":true,"setType":true,"setResult":true}],"setDetailList":true,"setWm_product_sku_id":true,"setSequence":true,"setWm_food_spu_id":true,"setSpecialEffectUrl":true,"setId":true,"setIsMaster":true,"setPic_large_url":true,"setPic_small_url":true,"setQuality_score":true,"setWhite_rate_score":true,"setSpecialEffectEnable":true,"wmProductPicMaterialListSize":0,"wmProductPicMaterialListIterator":null,"setWmProductPicMaterialList":false,"setIs_quality_low":true,"setBorder_result":true,"setBorder_score":true,"setBlur_result":true,"setBlur_score":true,"setRecapture_result":true,"setRecapture_score":true,"setIs_scored":true,"setPicExtend":true,"setSpecialEffectBigUrl":true,"setCtime":true,"setUtime":true,"setValid":true}],"specialEffectPic":null,"description":"我们超有料","category_id":115405,"properties_values":{"1000000003":[{"id":88312342153,"wm_poi_id":2700545,"wm_product_spu_id":1488701694,"getWm_product_property_category_id":115405,"parent_tag_id":0,"wm_product_lib_tag_id":1000000003,"wm_product_lib_tag_name":"口味","value":"不辣","value_id":887,"level":2,"is_leaf":1,"sequence":3}],"1000000015":[{"id":88312342154,"wm_poi_id":2700545,"wm_product_spu_id":1488701694,"getWm_product_property_category_id":115405,"parent_tag_id":0,"wm_product_lib_tag_id":1000000015,"wm_product_lib_tag_name":"主料","value":"火腿肠","value_id":105185,"level":2,"is_leaf":1,"sequence":1},{"id":88312342156,"wm_poi_id":2700545,"wm_product_spu_id":1488701694,"getWm_product_property_category_id":115405,"parent_tag_id":0,"wm_product_lib_tag_id":1000000015,"wm_product_lib_tag_name":"主料","value":"动物淡奶油","value_id":114432,"level":2,"is_leaf":1,"sequence":1}],"1200001152":[{"id":88312342155,"wm_poi_id":2700545,"wm_product_spu_id":1488701694,"getWm_product_property_category_id":0,"parent_tag_id":0,"wm_product_lib_tag_id":1200001152,"wm_product_lib_tag_name":"库存包装费设置方式","value":"2","value_id":0,"level":1,"is_leaf":1,"sequence":0}]},"newSpuAttrs":[{"name":"份量","name_id":0,"value":"a(1克)","value_id":0,"price":5.5,"weight":1,"mode":2,"weightUnit":"克","sell_status":0,"value_sequence":1,"no":0,"extFields":null},{"name":"份量","name_id":0,"value":"b(2克)","value_id":0,"price":6.5,"weight":2,"mode":2,"weightUnit":"克","sell_status":0,"value_sequence":2,"no":0,"extFields":null}],"stockAndBoxPriceSkus":[{"price":5.5,"unit":"1克","box_price":0.5,"spec":"a(1克)(1克)","weight":1,"wmProductStock":{"id":0,"wm_poi_id":2700545,"wm_product_sku_id":6701435413,"stock":9999,"max_stock":-1,"auto_refresh":0,"ctime":0,"utime":0,"limitStock":0,"stockLimit":0,"opId":78648864,"setWm_poi_id":true,"setStock":true,"setWm_product_sku_id":true,"setMax_stock":true,"setAuto_refresh":true,"setLimitStock":true,"setStockLimit":true,"setId":false,"setOpId":true,"setCtime":false,"setUtime":false},"wmProductLadderBoxPrice":{"status":1,"ladder_num":1,"ladder_price":0.5,"setLadder_num":true,"setLadder_price":true,"setStatus":true},"attrList":[{"id":673782395,"wm_food_id":6701435413,"no":0,"name":"份量","name_id":0,"value":"a(1克)","value_id":0,"ctime":1631525580,"utime":1631525580,"valid":1,"wm_poi_id":2700545,"wm_food_spu_attr_id":9283654198,"wm_food_spu_id":1488701694,"setWm_poi_id":true,"setWm_food_id":true,"setValue_id":true,"setWm_food_spu_id":true,"setNo":true,"setName_id":true,"setWm_food_spu_attr_id":true,"setName":true,"setId":true,"setValue":true,"setCtime":true,"setUtime":true,"setValid":true}]},{"price":6.5,"unit":"2克","box_price":0.8,"spec":"b(2克)(2克)","weight":2,"wmProductStock":{"id":0,"wm_poi_id":2700545,"wm_product_sku_id":6701435414,"stock":9999,"max_stock":-1,"auto_refresh":0,"ctime":0,"utime":0,"limitStock":0,"stockLimit":0,"opId":78648864,"setWm_poi_id":true,"setStock":true,"setWm_product_sku_id":true,"setMax_stock":true,"setAuto_refresh":true,"setLimitStock":true,"setStockLimit":true,"setId":false,"setOpId":true,"setCtime":false,"setUtime":false},"wmProductLadderBoxPrice":{"status":1,"ladder_num":1,"ladder_price":0.8,"setLadder_num":true,"setLadder_price":true,"setStatus":true},"attrList":[{"id":673782396,"wm_food_id":6701435414,"no":0,"name":"份量","name_id":0,"value":"b(2克)","value_id":0,"ctime":1631525580,"utime":1631525580,"valid":1,"wm_poi_id":2700545,"wm_food_spu_attr_id":9283654199,"wm_food_spu_id":1488701694,"setWm_poi_id":true,"setWm_food_id":true,"setValue_id":true,"setWm_food_spu_id":true,"setNo":true,"setName_id":true,"setWm_food_spu_attr_id":true,"setName":true,"setId":true,"setValue":true,"setCtime":true,"setUtime":true,"setValid":true}]}],"unifiedPackagingFee":2,"wmProductLadderBoxPrice":{"ladder_num":1,"ladder_price":0.5,"status":1},"wmProductStock":{"id":"0","stock":9999,"max_stock":"-1","auto_refresh":1},"isShippingTimeSyncPoi":2,"shipping_time_x":"-","min_order_count":1,"labelList":[],"singleOrderNoDelivery":0,"wmProductVideo":null,"productCardDisplayContent":"","labelValues":[{"sequence":1,"value":""},{"sequence":2,"value":""}]}

@@ -12,14 +12,7 @@ import schedule from 'node-schedule'
 import flatten from 'flatten'
 import knx from '../50/index.js'
 import pLimit from 'p-limit'
-
-function omit(obj, ks) {
-  let newKs = Object.keys(obj).filter(v => !ks.includes(v))
-  let newObj = newKs.reduce((res, k) => {
-    return { ...res, [k]: obj[k] }
-  }, {})
-  return newObj
-}
+import { keepBy, combineArray, isSameArrayBy } from './utils/util.js'
 
 async function test_reduction() {
   try {
@@ -302,7 +295,6 @@ async function delAct(cookie, id, spuId) {
     return Promise.reject(err)
   }
 }
-
 
 async function createAct(cookie, id, name, catName, actPrice, orderLimit = -1, sortIndex = 0, sortNumber = 1) {
   const fallbackApp = new FallbackApp(id, cookie)
@@ -1759,46 +1751,14 @@ async function retrySaveFood(cookie, id, query, updates, retry = 0) {
   }
 }
 
+function queryItem(array, query) {
+  return array.filter(item =>
+    Object.keys(query).reduce((p, v) => p && item[v] == query[v], true)
+  )
+}
+
 function buildStockAndBoxPriceSkus(newSpuAttrs, wmProductSpu) {
-  const r = (root, lev = 0, path = [], paths = []) => {
-    let nodes = root[lev]
-    for (let node of nodes) {
-      if (lev == root.length - 1) {
-        let p = [...path, node]
-        paths.push(p)
-        continue
-      } else {
-        r(root, lev + 1, [...path, node], paths)
-      }
-    }
-    return paths
-  }
-
-  const keep = (item, keys) => {
-    return keys.reduce((acc, key) => ({ ...acc, [key]: item[key] }), {})
-  }
-
-  let new_spu_attrs = newSpuAttrs.map(v => {
-    if (v.name == '份量') {
-      return {
-        ...v,
-        _box: v._box ?? wmProductSpu.wmProductLadderBoxPrice ?? {
-          ladder_num: wmProductSpu.wmProductSkus[v.value_sequence - 1].box_num ?? 1,
-          ladder_price: wmProductSpu.wmProductSkus[v.value_sequence - 1].box_price ?? 0,
-          status: 1
-        },
-        _stock: v._stock ?? wmProductSpu.wmProductStock ?? {
-          id: "0",
-          stock: wmProductSpu.wmProductSkus[v.value_sequence - 1].stock ?? "10000",
-          max_stock: "-1",
-          auto_refresh: 1
-        }
-      }
-    }
-    return v
-  })
-
-  let g_new_spu_attrs = r(Object.values(new_spu_attrs.filter(v => v.price != 0)
+  let g_new_spu_attrs = combineArray(Object.values(newSpuAttrs.filter(v => v.name == '份量' || v.price > 0)
     .reduce((p, v, _, a) => ({ ...p, [v.name]: a.filter(k => k.name == v.name) }), {})))
 
   return g_new_spu_attrs.map(v => {
@@ -1806,22 +1766,40 @@ function buildStockAndBoxPriceSkus(newSpuAttrs, wmProductSpu) {
     let unit = wa.weight == -2 ? wa.weightUnit : `${wa.weight}${wa.weightUnit}`
     let runit = /\d+人份/.test(unit) ? unit : '约' + unit
     let attrList = v.map(k => ({ ...k, value: k.name == '份量' && k.value == '' ? unit : k.value }))
-      .map(k => keep(k, ['name', 'name_id', 'value', 'value_id'].concat(k.name == '份量' ? ['no'] : [])))
+      .map(k => keepBy(k, ['name', 'name_id', 'value', 'value_id'].concat(k.name == '份量' ? ['no'] : [])))
     let spec = (wa.value == '' ? runit : `${wa.value}（${runit}）`) +
       (v.filter(k => k.name != '份量').length > 0 ? ' ' : '') +
       v.filter(k => k.name != '份量').map(k => k.value).join('·')
+    let osku = wmProductSpu.wmProductSkus.find(k => isSameArrayBy(k.attrList, v, ['name', 'value']))
 
     return {
       attrList,
-      box_price: wa._box.ladder_price,
+      box_price: osku?.box_price ?? 0,
       price: wa.price,
       spec,
       unit,
       weight: wa.weight,
-      wmProductLadderBoxPrice: wa._box,
-      wmProductStock: wa._stock
+      wmProductLadderBoxPrice: {
+        ladder_num: osku?.box_num ?? 1,
+        ladder_price: osku?.box_price ?? 0,
+        status: 1
+      },
+      wmProductStock: {
+        id: "0",
+        stock: osku?.stock ?? "10000",
+        max_stock: "-1",
+        auto_refresh: 1
+      }
     }
   })
+}
+
+function buildWmProductPics(url) {
+  return [{
+    "pic_large_url": url,
+    "pic_small_url": url,
+    "sequence": 0, "specialEffectEnable": 0, "is_quality_low": false, "quality_score": 1, "picPropagandaList": [],
+  }]
 }
 
 export async function substituteFood(cookie, id, aCatName, aName, bCatName, bName) {
@@ -1837,10 +1815,10 @@ export async function substituteFood(cookie, id, aCatName, aName, bCatName, bNam
     let obFood = await fallbackApp.food.find(bName, bCatName)
     let obFoodEdit = await fallbackApp.food.getEditView2(bFood.id)
     let obFoodTemp = await fallbackApp.food.getTemplate(bFood.id, 1)
-    let obActs = null,
+    let obActs = [],
       obActIds = obFood.wmProductSkus.map(sku => sku.actInfoList[0]?.actId).filter(id => id != null)
-    if (obActIds) {
-      obActs = (await fallbackApp.act.list())?.filter(v => obActIds.includes(v.id))
+    if (obActIds.length > 0) {
+      obActs = (await fallbackApp.act.list()).filter(v => obActIds.includes(v.id))
     }
 
     fs.appendFileSync('test2.json', JSON.stringify({ obFood, obFoodEdit, obActs }))
@@ -1923,8 +1901,11 @@ export async function substituteFood(cookie, id, aCatName, aName, bCatName, bNam
 
     console.log('// save b1')
 
-    const maxObFoodEditAddedPrice = obFoodEdit.wmProductSpu.newSpuAttrs.filter(v => v.name != '份量').length == 0 ?
-      0 : Math.max(...obFoodEdit.wmProductSpu.newSpuAttrs.filter(v => v.name != '份量').map(v => v.price))
+    const maxObFoodEditAddedPrice = obFoodEdit.wmProductSpu.newSpuAttrs.filter(v => v.name != '份量').length == 0 ? 0 :
+      Math.max(...(combineArray(Object.values(obFoodEdit.wmProductSpu.newSpuAttrs.filter(v => v.name != '份量')
+        .reduce((p, v, _, a) => ({ ...p, [v.name]: a.filter(k => k.name == v.name) }), {})))
+        .map(arr => arr.reduce((p, v) => p + v.price, 0)))
+      )
 
     let b1NewSpuAttrs = [
       ...obFoodEdit.wmProductSpu.newSpuAttrs,
@@ -1939,9 +1920,7 @@ export async function substituteFood(cookie, id, aCatName, aName, bCatName, bNam
         "weight": -2,
         "weightUnit": "1人份",
         "sell_status": 0,
-        "value_sequence": obFoodEdit.wmProductSpu.newSpuAttrs.filter(v => v.name == '份量').length + 1,
-        _box: { ladder_num: 1, ladder_price: 0, status: 1 },
-        _stock: { id: "0", stock: "10000", max_stock: "-1", auto_refresh: 1 }
+        "value_sequence": obFoodEdit.wmProductSpu.newSpuAttrs.filter(v => v.name == '份量').length + 1
       }
     ]
     const saveB1Res = await retrySaveFood(cookie, id, { food: obFood, foodEdit: obFoodEdit, foodTemp: obFoodTemp }, {
@@ -1964,21 +1943,20 @@ export async function substituteFood(cookie, id, aCatName, aName, bCatName, bNam
       "weight": -2,
       "weightUnit": "1人份",
       "sell_status": 0,
-      "value_sequence": 1,
-      _box: { ladder_num: 1, ladder_price: 0, status: 1 },
-      _stock: { id: "0", stock: "10000", max_stock: "-1", auto_refresh: 1 }
+      "value_sequence": 1
     }]
     const saveB2Res = await retrySaveFood(cookie, id, { food: obFood, foodEdit: obFoodEdit, foodTemp: obFoodTemp }, {
-      unifiedPackagingFee: 2,
+      unifiedPackagingFee: 1,
       newSpuAttrs: b2NewSpuAttrs,
-      stockAndBoxPriceSkus: buildStockAndBoxPriceSkus(b2NewSpuAttrs, obFoodEdit.wmProductSpu)
+      stockAndBoxPriceSkus: [],
+      wmProductLadderBoxPrice: { ladder_num: 1, ladder_price: 0, status: 1 }
     })
     console.log(saveB2Res)
     results['[save-b2]'] = saveB2Res?.msg
 
     console.log('// copy a to b')
     const saveBRes = await retrySaveFood(cookie, id, { name: aName, catName: aCatName },
-      { id: bFood.id, name: '测试', labelList: aFoodEdit.wmProductSpu?.labelList?.filter(v => v.group_id != 1) })
+      { id: bFood.id, name: '测试', labelList: aFoodEdit.wmProductSpu?.labelList?.filter(v => v.group_id != 1) ?? [] })
     console.log(saveBRes)
     results['[copy-a->b]'] = saveBRes?.msg
 
@@ -2010,8 +1988,11 @@ export async function substituteFood(cookie, id, aCatName, aName, bCatName, bNam
     }
 
     console.log('// save a1')
-    const maxAFoodEditAddedPrice = aFoodEdit.wmProductSpu.newSpuAttrs.filter(v => v.name != '份量').length == 0 ?
-      0 : Math.max(...aFoodEdit.wmProductSpu.newSpuAttrs.filter(v => v.name != '份量').map(v => v.price))
+    const maxAFoodEditAddedPrice = aFoodEdit.wmProductSpu.newSpuAttrs.filter(v => v.name != '份量').length == 0 ? 0 :
+      Math.max(...(combineArray(Object.values(aFoodEdit.wmProductSpu.newSpuAttrs.filter(v => v.name != '份量')
+        .reduce((p, v, _, a) => ({ ...p, [v.name]: a.filter(k => k.name == v.name) }), {})))
+        .map(arr => arr.reduce((p, v) => p + v.price, 0)))
+      )
 
     let a1NewSpuAttrs = [
       ...aFoodEdit.wmProductSpu.newSpuAttrs,
@@ -2026,9 +2007,7 @@ export async function substituteFood(cookie, id, aCatName, aName, bCatName, bNam
         "weight": -2,
         "weightUnit": "1人份",
         "sell_status": 0,
-        "value_sequence": aFoodEdit.wmProductSpu.newSpuAttrs.filter(v => v.name == '份量').length + 1,
-        _box: { ladder_num: 1, ladder_price: 0, status: 1 },
-        _stock: { id: "0", stock: "10000", max_stock: "-1", auto_refresh: 1 }
+        "value_sequence": aFoodEdit.wmProductSpu.newSpuAttrs.filter(v => v.name == '份量').length + 1
       }
     ]
     const saveA1Res = await retrySaveFood(cookie, id, { name: aName, catName: aCatName }, {
@@ -2051,14 +2030,13 @@ export async function substituteFood(cookie, id, aCatName, aName, bCatName, bNam
       "weight": -2,
       "weightUnit": "1人份",
       "sell_status": 0,
-      "value_sequence": 1,
-      _box: { ladder_num: 1, ladder_price: 0, status: 1 },
-      _stock: { id: "0", stock: "10000", max_stock: "-1", auto_refresh: 1 }
+      "value_sequence": 1
     }]
     const saveA2Res = await retrySaveFood(cookie, id, { name: aName, catName: aCatName }, {
-      unifiedPackagingFee: 2,
+      unifiedPackagingFee: 1,
       newSpuAttrs: a2NewSpuAttrs,
-      stockAndBoxPriceSkus: buildStockAndBoxPriceSkus(a2NewSpuAttrs, aFoodEdit.wmProductSpu)
+      stockAndBoxPriceSkus: [],
+      wmProductLadderBoxPrice: { ladder_num: 1, ladder_price: 0, status: 1 },
     })
     console.log(saveA2Res)
     results['[save-a2]'] = saveA2Res?.msg
@@ -2075,7 +2053,7 @@ export async function substituteFood(cookie, id, aCatName, aName, bCatName, bNam
     console.log('// create a acts')
     if (obActs.length > 0) {
       try {
-        const saveAActsRes = await Promise.allSettled(obActs.map(async obAct => 
+        const saveAActsRes = await Promise.allSettled(obActs.map(async obAct =>
           retryCreateAct(cookie, id, { act: obAct },
             { id: 0, itemName: aFood.name, spuId: aFood.id, wmSkuId: aFood.wmProductSkus.find(k => k.spec == obAct.spec)?.id }
           )
@@ -2104,6 +2082,117 @@ export async function substituteFood(cookie, id, aCatName, aName, bCatName, bNam
     results['[save-b-name]'] = saveBName?.msg
 
     return results
+  } catch (err) {
+    return Promise.reject(err)
+  }
+}
+
+
+/* 
+ctx: {
+  cookie,
+  pois: []
+},
+query: {
+  poi_id/门店ID,
+  poi_name/门店名称,
+  tag_id/分类ID,
+  tag_name/分类名称,
+  spu_id/商品ID,
+  spu_name/商品名称,
+},
+updates: {
+  skus: [{id/规格ID, spec/规格名称, op/规格操作, price/价格, stock/库存, box_num/餐盒数量, box_price/餐盒价格, unit/单位, act: {price/折扣价格, limit/折扣限购}}],
+  min_order_count/最小购买量,
+  sell_status/售卖状态 ?,
+  pic/图片,
+  attr/属性 ?,
+  desc/描述,
+  single_buy/单点不送,
+  label_sign/店内招牌 ?,
+  tag: {} ?,
+}
+*/
+export async function updatePlan4(cookie, ctx, query, updates) {
+  function opSku(op, item, skus) {
+    let nskus = [...skus]
+    let i = nskus.findIndex(v => v.id == item.id || v.spec == item.spec), k = nskus[i]
+    if (op == '-' && i > -1) nskus.splice(i, 1)
+    if (op == '+' && i == -1) nskus.push(item)
+    if (op == '+' && i > -1) nskus[i] = { ...k, ...item }
+    return nskus
+  }
+
+  try {
+    const { pois } = ctx
+    const { poi_id, poi_name, tag_id, tag_name, spu_id, spu_name } = query
+    const { skus, min_order_count, sell_status, pic, attr, desc, single_buy, label_sign } = updates
+    let results = {}, spuUpdates = {}
+
+    const fallbackApp = new FallbackApp(id, cookie)
+
+    // get poi food edit template acts 
+    let poi = pois.find(v => v.id == poi_id || v.poiName == poi_name)
+    if (poi == null) return Promise.reject({ message: `poi:${poi_id} not found` })
+    if (poi.category != 'FOOD_CATE') return Promise.reject({ message: `poi-cate:${poi.category} not supported` })
+
+    let food = await fallbackApp.food.findFood({ spuId: spu_id, spuName: spu_name, tagId: tag_id, tagName: tag_name })
+    let foodEdit = await fallbackApp.getEditView2(food.id)
+    let foodTemp = await fallbackApp.food.getTemplate(food.id, 1)
+
+    let foodActs = []
+    let foodActIds = food.wmProductSkus.map(sku => sku.actInfoList[0]?.actId).filter(id => id != null)
+    if (foodActIds.length > 0) {
+      foodActs = (await fallbackApp.act.list()).filter(v => foodActIds.includes(v.id))
+    }
+
+    // trans edit
+    foodEdit.wmProductSpu.labelList = foodEdit.wmProductSpu.labelList ?? []
+    foodEdit.wmProductSpu.wmProductSkus = foodEdit.wmProductSpu.wmProductSkus.map((v, _, a) => ({ ...v, spec: a.length == 1 ? '' : v.spec }))
+
+    // save food
+    if (min_order_count != null) {
+      if (!/\d+/.test(min_order_count)) return Promise.reject({ message: `min_order_count: ${min_order_count} invalid` })
+      spuUpdates.min_order_count = min_order_count
+    }
+    if (pic != null) {
+      if (!pic.startsWith('http')) return Promise.reject({ message: `pic: ${pic} invalid` })
+      spuUpdates.wmProductPics = buildWmProductPics(pic)
+    }
+    if (desc != null) spuUpdates.description = desc
+    if (single_buy != null) {
+      spuUpdates.singleOrderNoDelivery = single_buy
+      if (single_buy == 0) spuUpdates.labelList = foodEdit.wmProductSpu.labelList.filter(v => v.group_id != 18)
+      else if (single_buy == 1) spuUpdates.labelList = foodEdit.wmProductSpu.labelList.find(v => v.group_id == 18) ?
+        foodEdit.wmProductSpu.labelList : [...foodEdit.wmProductSpu.labelList, { group_id: 18, sub_attr: 0 }]
+      else return Promise.reject({ message: `single_buy: ${single_buy} invalid` })
+    }
+    if (label_sign != null) {
+      if (label_sign == 0) spuUpdates.labelList = foodEdit.wmProductSpu.labelList.filter(v => v.group_id != 1)
+      else if (label_sign == 1) spuUpdates.labelList = foodEdit.wmProductSpu.labelList.find(v => v.group_id == 1) ?
+        foodEdit.wmProductSpu.labelList : [...foodEdit.wmProductSpu.labelList, { group_id: 1, sub_attr: 0 }]
+      else return Promise.reject({ message: `label_sign: ${label_sign} invalid` })
+    }
+
+    // sku -> newSpuAttrs, stockAndBox
+    if (skus.length > 0) {
+      // op sku
+      for (let sku of skus) {
+        const { id, spec, op, price, stock, box_num, box_price, unit } = sku
+        let osku = foodEdit.wmProductSpu.wmProductSkus.find(v => v.id == id || v.spec == spec)
+        if (op == '-') {
+
+        }
+      }
+      // 
+    }
+
+
+    const saveFRes = await fallbackApp.food.save5({ food, foodEdit, foodTemp }, {
+
+    })
+
+
   } catch (err) {
     return Promise.reject(err)
   }
@@ -2250,7 +2339,6 @@ async function test_delNewCustomer() {
   }
 }
 
-
 async function test_delAct() {
   try {
     let data = await readXls('plan/美团折扣商品涨原价表格模板(1).xlsx', 'Sheet1')
@@ -2311,55 +2399,7 @@ async function test_reduction2() {
 
 async function test_delivery() {
   try {
-    let data = `6119122
-    8135116
-    9155621
-    2924399
-    9306217
-    8591999
-    7449372
-    8939455
-    6914754
-    9412662
-    7180353
-    8195835
-    7552065
-    8600359
-    9271561
-    8953861
-    9134834
-    7494614
-    9062221
-    8996740
-    4799060
-    9663962
-    9771558
-    10028591
-    9959091
-    10039526
-    10096975
-    10049050
-    10065090
-    10159750
-    10711763
-    6434760
-    8751302
-    7673028
-    9411129
-    8828359
-    7735904
-    9014461
-    8670629
-    9236042
-    8890748
-    8221674
-    9100878
-    9249572
-    9355348
-    6950373
-    9842782
-    10083564
-    10014983`
+    let data = ``
       .split('\n')
       .map(v => v.trim())
     data = data.map(v => [v, 6.1])
@@ -2783,7 +2823,7 @@ async function test_getHighbox() {
 async function test_substitute() {
   try {
     // const cookie = await cookieMtRedis()
-    const cookie = "_lxsdk_cuid=17b09b195865b-00353994050c4-c501831-1fa400-17b09b19587c8; _lxsdk=17b09b195865b-00353994050c4-c501831-1fa400-17b09b19587c8; device_uuid=!4254ca0c-87b5-44aa-9855-47ebc3ccf297; uuid_update=true; acctId=78648864; token=0bMXqJMWosq9f9vOwFEM_cENQHyO6LQIrUtAZ5SEzfEU*; brandId=-1; wmPoiId=2700545; isOfflineSelfOpen=0; city_id=999999; isChain=0; existBrandPoi=false; ignore_set_router_proxy=false; region_id=2000000001; region_version=1522822151; newCategory=false; bsid=-L-xy-ybMWpJ4-qRmap_r1bKkmzo0qjT2P_3ADlPWjLWeeX19jy6EZdr49VH3MH-989iVO75YdPiBOPMBC9xTw; cityId=440300; provinceId=440000; city_location_id=10000004; location_id=10000005; pushToken=0bMXqJMWosq9f9vOwFEM_cENQHyO6LQIrUtAZ5SEzfEU*; labelInfo=20210901:0:0; set_info=%7B%22wmPoiId%22%3A2700545%2C%22region_id%22%3A%222000000001%22%2C%22region_version%22%3A1522822151%7D; wpush_server_url=wss://wpush.meituan.com; shopCategory=food; JSESSIONID=330uf2c9kwi0pa4l3ipqbm98; logan_session_token=q16m92p12ke80ha09i08; _lxsdk_s=17bde11ee9d-53b-0fc-e0c%7C78648864%7C165"
+    const cookie = "_lxsdk_cuid=17b09b195865b-00353994050c4-c501831-1fa400-17b09b19587c8; _lxsdk=17b09b195865b-00353994050c4-c501831-1fa400-17b09b19587c8; device_uuid=!4254ca0c-87b5-44aa-9855-47ebc3ccf297; uuid_update=true; acctId=78648864; token=0bMXqJMWosq9f9vOwFEM_cENQHyO6LQIrUtAZ5SEzfEU*; brandId=-1; wmPoiId=2700545; isOfflineSelfOpen=0; city_id=999999; isChain=0; existBrandPoi=false; ignore_set_router_proxy=false; region_id=2000000001; region_version=1522822151; newCategory=false; bsid=-L-xy-ybMWpJ4-qRmap_r1bKkmzo0qjT2P_3ADlPWjLWeeX19jy6EZdr49VH3MH-989iVO75YdPiBOPMBC9xTw; cityId=440300; provinceId=440000; city_location_id=10000004; location_id=10000005; pushToken=0bMXqJMWosq9f9vOwFEM_cENQHyO6LQIrUtAZ5SEzfEU*; labelInfo=20210901:0:0; set_info=%7B%22wmPoiId%22%3A2700545%2C%22region_id%22%3A%222000000001%22%2C%22region_version%22%3A1522822151%7D; wpush_server_url=wss://wpush.meituan.com; shopCategory=food; JSESSIONID=3fbhrtr10v2q1cvuts0ol8kkg; logan_session_token=b7t2zb1l4ruvnf5am4gs; _lxsdk_s=17be875287a-22b-c44-e8f%7C78648864%7C34"
 
     console.log(await substituteFood(cookie, 2700545, '饮料汤羹', '芙蓉菌菇汤（需自备开水）',
       '饮料汤羹', '皮蛋粥（正餐）'

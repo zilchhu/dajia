@@ -243,7 +243,7 @@ async function getTableByDate(day_from_today) {
     if (data.length == 0) {
       await insertTable(day_from_today)
       let [data, _] = await knx.raw(sql)
-      return Promise.resolve(formatTable(data))
+      return formatTable(data)
     }
     return Promise.resolve(formatTable(data))
   } catch (err) {
@@ -300,11 +300,13 @@ async function plan(id, a, retry = 1) {
 }
 
 function percent(num) {
+  if (num == null) return null
   if (typeof num === 'string') num = parseFloat(num)
   return `${(num * 100).toFixed(2)}%`
 }
 
 function fixed2(num) {
+  if (num == null) return num
   if (typeof num === 'string') num = parseFloat(num)
   return num.toFixed(2)
 }
@@ -331,6 +333,7 @@ function formatTable(data) {
     cost_sum: fixed2(v.cost_sum),
     cost_ratio: percent(v.cost_ratio),
     cost_sum_ratio: percent(v.cost_sum_ratio),
+    wait_for_improve_cost: fixed2(v.cost * 2 - v.income),
     consume: fixed2(v.consume),
     consume_avg: fixed2(v.consume_avg),
     consume_sum: fixed2(v.consume_sum),

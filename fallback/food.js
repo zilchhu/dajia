@@ -10,6 +10,7 @@ import htmlparser2 from 'htmlparser2'
 import fs from 'fs'
 import flatten from 'flatten'
 import pLimit from 'p-limit'
+import { isSameArrayBy, combineArray, keepBy } from '../utils/util.js'
 
 const axls2Json = util.promisify(xls2Json)
 
@@ -150,19 +151,13 @@ export default class Food {
   }
 
   async listTags() {
-    try {
-      const list2_Res = await this.list2_()
-      if (!list2_Res || !list2_Res.tagList) return Promise.reject({ err: 'tag list failed' })
-      return Promise.resolve(list2_Res.tagList)
-    } catch (err) {
-      return Promise.reject(err)
-    }
+    const list2_Res = await this.list2_()
+    return list2_Res.tagList
   }
 
   async listFoods(tagId) {
     const list2_Res = await this.list2_({ tagId, pageSize: 500 })
-    if (!list2_Res || !list2_Res.productList) return Promise.reject({ err: 'product list failed' })
-    return Promise.resolve(list2_Res.productList)
+    return list2_Res.productList
   }
 
   async listLqs() {
@@ -189,12 +184,36 @@ export default class Food {
     return Promise.resolve(tag)
   }
 
+  async findTag2({ id, name }) {
+    const tags = await this.listTags()
+    const tag = tags.find(v => v.id == id || v.name == name)
+    if (tag == null) return Promise.reject({ message: `tag:${id}/${name} not found` })
+    return tag
+  }
+
   async findInTag(name, catName) {
     const tag = await this.findTag(catName)
     const foods = await this.listFoods(tag.id)
     const food = foods.find(v => v.name == name)
     if (!food) return Promise.reject({ '[搜索商品]': '商品不存在' })
     return food
+  }
+
+  async findFood({ spuId, spuName, tagId, tagName }) {
+    if (spuName != null) {
+      const spus = await this.searchFood(spuName)
+      const spu = await spus.find(v => v.name == spuName && (v.tagId == tagId || v.tagName == tagName))
+      if (spu == null) return Promise.reject({ message: `spu:${spuId}/${spuName} not found` })
+      return spu
+    }
+    if (spuId != null) {
+      const tag = await this.findTag2({ id: tagId, name: tagName })
+      const spus = await this.listFoods(tag.id)
+      const spu = spus.find(v => v.id == spuId)
+      if (spu == null) return Promise.reject({ message: `spu:${spuId}/${spuName} not found` })
+      return spu
+    }
+    return Promise.reject({ message: 'spu not found' })
   }
 
   async delTag(tagId) {
@@ -1343,28 +1362,11 @@ export default class Food {
   }
 
   async save5({ name, catName, food, foodEdit, foodTemp }, updates) {
-    const r = (root, lev = 0, path = [], paths = []) => {
-      let nodes = root[lev]
-      for (let node of nodes) {
-        if (lev == root.length - 1) {
-          let p = [...path, node]
-          paths.push(p)
-          continue
-        } else {
-          r(root, lev + 1, [...path, node], paths)
-        }
-      }
-      return paths
-    }
-
-    const keep = (item, keys) => {
-      return keys.reduce((acc, key) => ({ ...acc, [key]: item[key] }), {})
-    }
-
     const empty = (val) => val == null || val == ''
 
     const basicInfo = (food, foodEdit) => {
       const { wmProductSpu } = foodEdit
+
       return {
         id: wmProductSpu.id, // ✔
         wm_poi_id: wmProductSpu.wm_poi_id,
@@ -1389,22 +1391,7 @@ export default class Food {
       const { wmProductSpu } = foodEdit
 
       const stockAndBoxPriceSkus = () => {
-        let new_spu_attrs = wmProductSpu.newSpuAttrs.map(v => ({
-          ...v,
-          _box: wmProductSpu.wmProductLadderBoxPrice ?? {
-            ladder_num: wmProductSpu.wmProductSkus[0].box_num ?? 1,
-            ladder_price: wmProductSpu.wmProductSkus[0].box_price ?? 0,
-            status: 1
-          },
-          _stock: wmProductSpu.wmProductStock ?? {
-            id: "0",
-            stock: wmProductSpu.wmProductSkus[0].stock ?? "10000",
-            max_stock: "-1",
-            auto_refresh: 1
-          }
-        }))
-
-        let g_new_spu_attrs = r(Object.values(new_spu_attrs.filter(v => v.price != 0)
+        let g_new_spu_attrs = combineArray(Object.values(wmProductSpu.newSpuAttrs.filter(v => v.name == '份量' || v.price > 0)
           .reduce((p, v, _, a) => ({ ...p, [v.name]: a.filter(k => k.name == v.name) }), {})))
 
         return g_new_spu_attrs.map(v => {
@@ -1412,31 +1399,53 @@ export default class Food {
           let unit = wa.weight == -2 ? wa.weightUnit : `${wa.weight}${wa.weightUnit}`
           let runit = /\d+人份/.test(unit) ? unit : '约' + unit
           let attrList = v.map(k => ({ ...k, value: k.name == '份量' && k.value == '' ? unit : k.value }))
-            .map(k => keep(k, ['name', 'name_id', 'value', 'value_id'].concat(k.name == '份量' ? ['no'] : [])))
+            .map(k => keepBy(k, ['name', 'name_id', 'value', 'value_id'].concat(k.name == '份量' ? ['no'] : [])))
           let spec = (empty(wa.value) ? runit : `${wa.value}（${runit}）`) +
             (v.filter(k => k.name != '份量').length > 0 ? ' ' : '') +
             v.filter(k => k.name != '份量').map(k => k.value).join('·')
+          let osku = wmProductSpu.wmProductSkus.find(k => isSameArrayBy(k.attrList, v, ['name', 'value']))
 
           return {
             attrList,
-            box_price: wa._box.ladder_price,
+            box_price: osku?.box_price ?? 0,
             price: wa.price,
             spec,
             unit,
             weight: wa.weight,
-            wmProductLadderBoxPrice: wa._box,
-            wmProductStock: wa._stock
+            wmProductLadderBoxPrice: {
+              ladder_num: osku?.box_num ?? 1,
+              ladder_price: osku?.box_price ?? 0,
+              status: 1
+            },
+            wmProductStock: {
+              id: "0",
+              stock: osku?.stock ?? "10000",
+              max_stock: "-1",
+              auto_refresh: 1
+            }
           }
         })
       }
 
+      const tStockAndBoxPrice = (stockNBoxes) => {
+        return stockNBoxes
+          .map(v => ({
+            ...v,
+            wmProductLadderBoxPrice: v.wmProductLadderBoxPrice ?? { ladder_num: v.box_num ?? 1, ladder_price: v.box_price ?? 0, status: 1 },
+            wmProductStock: v.wmProductStock ?? { id: '0', stock: v.stock ?? '10000', max_stock: '-1', auto_refresh: 1 }
+          }))
+          .map(v => keep(v, ['attrList', 'box_price', 'price', 'spec', 'unit', 'weight', 'wmProductLadderBoxPrice', 'wmProductStock']))
+      }
+
       return {
-        newSpuAttrs: wmProductSpu.newSpuAttrs,
-        stockAndBoxPriceSkus: wmProductSpu.stockAndBoxPriceSkus ?? stockAndBoxPriceSkus(),
+        newSpuAttrs: wmProductSpu.newSpuAttrs.map(v => ({ ...v, no: v.name == '份量' ? 0 : v.no })),
+        stockAndBoxPriceSkus: wmProductSpu.stockAndBoxPriceSkus ?
+          tStockAndBoxPrice(wmProductSpu.stockAndBoxPriceSkus) :
+          stockAndBoxPriceSkus(),
         unifiedPackagingFee: wmProductSpu.unifiedPackagingFee,
-        wmProductLadderBoxPrice: wmProductSpu.wmProductLadderBoxPrice ?? 
-          { ladder_num: wmProductSpu.wmProductSkus[0].box_num, ladder_price: wmProductSpu.wmProductSkus[0].box_price, status: 1 },
-        wmProductStock: wmProductSpu.wmProductStock ?? 
+        wmProductLadderBoxPrice: wmProductSpu.wmProductLadderBoxPrice ??
+          { ladder_num: wmProductSpu.wmProductSkus[0].box_num ?? 1, ladder_price: wmProductSpu.wmProductSkus[0].box_price ?? 0, status: 1 },
+        wmProductStock: wmProductSpu.wmProductStock ??
           { id: "0", stock: wmProductSpu.wmProductSkus[0].stock ?? "10000", max_stock: "-1", auto_refresh: 1 }
       }
     }
@@ -1451,7 +1460,7 @@ export default class Food {
         singleOrderNoDelivery: wmProductSpu.singleOrderNoDelivery,
         wmProductVideo: wmProductSpu.wmProductVideo,
         productCardDisplayContent: wmProductSpu.productCardDisplayContent || '',
-        labelValues: wmProductSpu.labelValues || [],
+        labelValues: wmProductSpu.labelValues || [{ sequence: 1, value: "" }, { sequence: 2, value: "" }],
       }
     }
 
@@ -1474,7 +1483,8 @@ export default class Food {
       ...updates
     }
 
-    // console.log('%o', model.stockAndBoxPriceSkus)
+    // console.log('%o', model)
+    fs.appendFileSync('temp.json', JSON.stringify(model))
 
     const { ok } = await this.setHighBoxPrice2(
       Math.max(...food.wmProductSkus.map(sku => sku.boxPrice)), food.wmProductSkus.length
