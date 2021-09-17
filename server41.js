@@ -2716,7 +2716,7 @@ const 维度订单详情 = (id, activi, counts, date) => `SET @date = ${date};
     FROM
       a JOIN b 
       ON a.shop_id = b.shop_id
-      AND ${counts == null ? 'goods_count IS NULL' : 'goods_count = ' + counts}
+      AND ${counts == null ? 'goods_count IS NULL' : 'ROUND( goods_count, 1 ) = ' + counts}
       AND gear = '${activi}'
     ORDER BY cost_ratio DESC`
 

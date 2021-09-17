@@ -12,7 +12,7 @@ import schedule from 'node-schedule'
 import flatten from 'flatten'
 import knx from '../50/index.js'
 import pLimit from 'p-limit'
-import { keepBy, combineArray, isSameArrayBy } from './utils/util.js'
+import { keepBy, combineArray, isSameArrayBy, mergeObjs, includesBy, diffArrayBy, calcPrice } from './utils/util.js'
 
 async function test_reduction() {
   try {
@@ -2102,8 +2102,12 @@ query: {
   spu_name/商品名称,
 },
 updates: {
-  attrs: [{name/属性名, value/属性值, price/加价}],
-  skus: [{id/规格ID, spec/规格名称, stock/库存, box_num/餐盒数量, box_price/餐盒价格, unit/单位, act: {price/折扣价格, limit/折扣限购}}],
+  attrs: [{name/属性名, value/属性值, op/属性操作, new_value/修改后属性值, price/加价, sell/售卖, unit/单位}], 
+  skus: [{id/规格ID, spec/规格名称, op/规格操作, stock/库存, box_num/餐盒数量, box_price/餐盒价格, unit/单位, act: {price/折扣价格, limit/折扣限购}}],
+  // -: newSpuAttrs {price, unit} -attr <- wmProductSkus(spec).attrList[0]
+        stockAndBox {box_price, box_num, stock} -box,stock wmProductSkus(spec).box,stock
+     +: newSpuAttrs wmProductSkus(spec).attrList[0]->newSpuAttrs 
+           
   min_order_count/最小购买量,
   sell_status/售卖状态 ?,
   pic/图片,
@@ -2122,6 +2126,76 @@ export async function updatePlan4(cookie, ctx, query, updates) {
     if (op == '+' && i == -1) nskus.push(item)
     if (op == '+' && i > -1) nskus[i] = { ...k, ...item }
     return nskus
+  }
+
+  function sortNewSpuAttrs(attrs) {
+    return attrs.sort((a, b) => (a.no * 100 + a.value_sequence - b.no * 100 + b.value_sequence))
+  }
+
+  function groupNewSpuAttrs(attrs) {
+    return attrs.reduce((p, v, _, a) => ({ ...p, [v.name]: a.filter(k => k.name == v.name) }), {})
+  }
+
+  function isAddedPriceGroup(values) {
+    if (values.find(v => v.name == '份量' || v.price > 0)) return true
+    return false
+  }
+
+  function flattenNewSpuAttrsGroup(group) {
+    return Object.keys(group).filter(g => group[g].length > 0)
+      .flatMap((g, i) => group[g].map((v, j, a) => ({
+        ...v,
+        mode: isAddedPriceGroup(a) ? 2 : 1,
+        no: i,
+        value_sequence: j + 1
+      })))
+  }
+
+  function extractWeightUnit(unit) {
+    const m1 = unit?.match(/\d+人份/), m2 = unit?.match(/(\d+)(.*)/)
+    if (m1) return { weight: -2, weightUnit: m1[0] }
+    if (m2) return { weight: m2[1], weightUnit: m2[2] }
+    return { weight: null, weightUnit: null }
+  }
+
+  function mergeAttrToNewSpuAttr(oattr, attr) {
+    const { weight, weightUnit } = extractWeightUnit(attr.unit)
+    let defaultAttr = { name_id: 0, value: attr.value, value_id: 0, sell_status: 0, price: 0, weightUnit: null },
+      defaultWeightAttr = { ...defaultAttr, weight: -1 },
+      defaultOtherAttr = { ...defaultAttr, weight: 0 },
+      partAttr = { name: attr.name, value: attr.new_value, price: attr.price, sell_status: attr.sell, weight, weightUnit }
+
+    if (attr.name == '份量') return mergeObjs(defaultWeightAttr, oattr, partAttr)
+    return mergeObjs(defaultOtherAttr, oattr, partAttr)
+  }
+
+  function mapSkuToAttr(sku, oskus, oattrs) {
+    let fsku = oskus.find(v => v.spec == sku.spec)
+    if (!fsku) return { name: '份量', value: sku.spec, op: sku.op, price: sku.price, unit: sku.unit }
+    let fattrs = oattrs.filter(v => includesBy(fsku.attrList, v, ['name', 'value']))
+    let weight_attr = fattrs.find(v => v.name == '份量')
+    let other_attrs = diffArrayBy(fattrs, [weight_attr], ['name', 'value'])
+    let weight_price = sku.price == null ? null :
+      calcPrice(() => sku.price - other_attrs.map(v => v.price).reduce((p, v) => p + v, 0))
+    return {
+      name: weight_attr.name, value: weight_attr.value, op: sku.op, price: weight_price, unit: sku.unit
+    }
+  }
+
+  function opAttrs(attrs, newSpuAttrs) {
+    let group = groupNewSpuAttrs(sortNewSpuAttrs(newSpuAttrs))
+    for (let attr of attrs) {
+      let g = group[attr.name]
+      let i = g?.findIndex(v => v.value == attr.value) ?? -1
+      if (attr.op == '+') {
+        if (g == null) group[attr.name] = []
+        if (i == -1) group[attr.name].push(mergeAttrToNewSpuAttr(null, attr))
+        else group[attr.name][i] = mergeAttrToNewSpuAttr(g[i], attr)
+      } else if (attr.op == '-') {
+        if (i > -1) group[attr.name].splice(i, 1)
+      }
+    }
+    return flattenNewSpuAttrsGroup(group)
   }
 
   try {
