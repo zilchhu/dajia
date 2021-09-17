@@ -1770,6 +1770,10 @@ function buildStockAndBoxPriceSkus(newSpuAttrs, wmProductSpu) {
     let spec = (wa.value == '' ? runit : `${wa.value}（${runit}）`) +
       (v.filter(k => k.name != '份量').length > 0 ? ' ' : '') +
       v.filter(k => k.name != '份量').map(k => k.value).join('·')
+    let ospec = g_new_spu_attrs.length <= 1 ? '' :
+      (wa.value == '' ? unit : `${wa.value}(${unit})`) +
+      (v.filter(k => k.name != '份量').length > 0 ? '·' : '') +
+      v.filter(k => k.name != '份量').map(k => k.value).join('·')
     let osku = wmProductSpu.wmProductSkus.find(k => isSameArrayBy(k.attrList, v, ['name', 'value']))
 
     return {
@@ -1777,6 +1781,7 @@ function buildStockAndBoxPriceSkus(newSpuAttrs, wmProductSpu) {
       box_price: osku?.box_price ?? 0,
       price: wa.price,
       spec,
+      ospec: osku?.spec ?? ospec,
       unit,
       weight: wa.weight,
       wmProductLadderBoxPrice: {
@@ -2169,6 +2174,15 @@ export async function updatePlan4(cookie, ctx, query, updates) {
     return mergeObjs(defaultOtherAttr, oattr, partAttr)
   }
 
+  function mergeSkuToStockAndBox(ostockAndBox, sku) {
+    return mergeObjs(ostockAndBox, {
+      box_price: sku.box_price,
+      wmProductLadderBoxPrice: mergeObjs(ostockAndBox.wmProductLadderBoxPrice,
+        { ladder_num: sku.box_num, ladder_price: sku.box_price }),
+      wmProductStock: mergeObjs(ostockAndBox.wmProductStock, { stock: sku.stock })
+    })
+  }
+
   function mapSkuToAttr(sku, oskus, oattrs) {
     let fsku = oskus.find(v => v.spec == sku.spec)
     if (!fsku) return { name: '份量', value: sku.spec, op: sku.op, price: sku.price, unit: sku.unit }
@@ -2196,6 +2210,17 @@ export async function updatePlan4(cookie, ctx, query, updates) {
       }
     }
     return flattenNewSpuAttrsGroup(group)
+  }
+
+  function opSkus(skus, oskus, attrs) {
+    let boxAndStocks = buildStockAndBoxPriceSkus(attrs, { wmProductSkus: oskus })
+    for (let sku of skus) {
+      let i = boxAndStocks.findIndex(v => v.ospec == sku.spec)
+      if (sku.op == '+') {
+        if (i > -1) boxAndStocks[i] = mergeSkuToStockAndBox(boxAndStocks[i], sku)
+      }
+    }
+    return boxAndStocks
   }
 
   try {
