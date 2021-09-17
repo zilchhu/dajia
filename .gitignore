@@ -2,6 +2,7 @@ node_modules
 plan
 dist
 uploads/*.xlsx
+uploads/*.xlsm
 uploads/*.zip
 uploads/*.rar
 uploads/*.json
