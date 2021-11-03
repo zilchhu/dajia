@@ -236,8 +236,7 @@ export default class Act {
         "endTime": dayjs().startOf('day').add(360, 'days').add(23, 'hours').add(59, 'minutes').add(59, 'seconds').unix(),
         "weeksTime": "1,2,3,4,5,6,7",
         "period": "00:00-23:59",
-        "autoDelayDays": 30,
-        "priority": 0
+        "autoDelayDays": 30
       }
     }
 
@@ -248,15 +247,15 @@ export default class Act {
           "originPrice": act.charge.originPrice, "actPrice": act.charge.actPrice, "mtCharge": "0",
           "agentCharge": 0, "poiCharge": Math.round((act.charge.originPrice - act.charge.actPrice) * 100) / 100
         },
-        "wmUserType": act.wmUserType, "poiUserType": act.poiUserType,
+        "wmUserType": act.wmUserType, "poiUserType": act.poiUserType, priority: 0,
         "orderLimit": act.orderLimit, "limitTimeSale": "-1", "todaySaleNum": act.todaySaleNum,
-        "settingType": act.settingType, "chargeType": act.chargeType, "orderPayType": act.orderPayType,
+        "settingType": act.settingType, "chargeType": act.chargeType, "orderPayType": act.orderPayType, 
       }
     }
 
     const idInfo = (act) => {
       return {
-        "foodKey": 1, "id": act.id, "wmPoiId": act.wmPoiId, "wmActPolicyId": act.wmActPolicyId,
+        "foodKey": 1, "id": act.id, "wmPoiId": this.wmPoiId, "wmActPolicyId": act.wmActPolicyId,
         "wmSkuId": act.wmSkuId, "spuId": act.spuId, "spec": act.spec, "itemName": act.itemName,
         "originId": act.originId, "sortIndex": act.sortIndex,
       }

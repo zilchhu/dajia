@@ -1558,10 +1558,13 @@ async function freshMt(userTasks, userRule) {
               actsT = await execRequest(undefined, y.requests.mt['折扣商品/get'], [wmPoiId])
             } catch (e) { }
 
+            console.log(acts)
             acts = acts
-              .filter(item => !(item.priority === 1200 || item.priority === 1400 || item.priority === 1600))
-              .filter(item => !actsT.find(k => k.itemName == item.itemName))
+              // .filter(item => !(item.priority === 1200 || item.priority === 1400 || item.priority === 1600))
+              .filter(item => actsT.find(k => k.itemName == item.itemName) == null)
               .reverse()
+            console.log(acts, actsT)
+
             const limit = pLimit(5)
 
             return Promise.allSettled(acts.map(item => limit(async () => {

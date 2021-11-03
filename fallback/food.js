@@ -1398,10 +1398,9 @@ export default class Food {
           let wa = v.find(k => k.name == '份量')
           let unit = wa.weight == -2 ? wa.weightUnit : `${wa.weight}${wa.weightUnit}`
           let runit = /\d+人份/.test(unit) ? unit : '约' + unit
-          let attrList = v.map(k => ({ ...k, value: k.name == '份量' && k.value == '' ? unit : k.value }))
+          let attrList = v.map(k => ({ ...k, value: k.name == '份量' && empty(k.value) ? unit : k.value }))
             .map(k => keepBy(k, ['name', 'name_id', 'value', 'value_id'].concat(k.name == '份量' ? ['no'] : [])))
-          let spec = (empty(wa.value) ? runit : `${wa.value}（${runit}）`) +
-            (v.filter(k => k.name != '份量').length > 0 ? ' ' : '') +
+          let spec = (empty(wa.value) ? runit : `${wa.value}（${runit}）`) + ' '
             v.filter(k => k.name != '份量').map(k => k.value).join('·')
           let osku = wmProductSpu.wmProductSkus.find(k => isSameArrayBy(k.attrList, v, ['name', 'value']))
 

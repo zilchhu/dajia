@@ -100,8 +100,12 @@ async function updateElmFoods(state, ws) {
   let ctx = { errors: [] }
   const limit = pLimit(10)
 
+  let ksid = auth
+  let ksid_match = auth?.match(/ksid\s*=\s*(\w+)\s*;/)
+  if (ksid_match) ksid = ksid_match[1]
+
   let data = jsonTable.map(v => [
-    auth,
+    ksid,
     v.店铺id,
     v.商品名称,
     v.分类名称,
@@ -110,6 +114,7 @@ async function updateElmFoods(state, ws) {
     v.价格 == '' ? null : v.价格,
     (v.折扣价格 == '' || v.折扣价格 == 0) ? null : v.折扣价格,
     v.折扣限购 == '' ? null : v.折扣限购,
+    v.删除折扣 != 1 ? false : true,
     v._i
   ])
 

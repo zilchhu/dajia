@@ -35,7 +35,7 @@ router.post('/custom', async ctx => {
   try {
     let { sql } = ctx.request.body
     console.log(sql)
-    if (!sql || sql.toLowerCase().includes('delete')) {
+    if (!sql) {
       ctx.body = { err: 'invalid params' }
       return
     }

@@ -38,6 +38,14 @@ import { mt_shops } from '../21/mt_poi.js'
 //   weekdays: ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
 // })
 
+Array.prototype.groupBy = function (key) {
+  let values = Array.from(new Set(this.map(v => v[key])))
+  return values.map(v => ({
+    group: v,
+    members: this.filter(k => k[key] == v),
+  }))
+}
+
 function omit(obj, ks) {
   let newKs = Object.keys(obj).filter(v => !ks.includes(v))
   let newObj = newKs.reduce((res, k) => {
@@ -83,7 +91,9 @@ async function t() {
     // }
 
     let c = await readXls('plan/test_analyse_t_.xlsx', 'test_analyse_t_')
+    console.log(c.length)
     for (let row of c) {
+      // console.log(row.date)
       console.log(
         await knx('test_analyse_t_')
           .where({ shop_id: row.shop_id, date: row.date })
@@ -186,7 +196,14 @@ router.post('/upload', async (ctx, next) => {
 })
 
 router.get('/ip', ctx => {
+  console.log(ctx.request.ip)
   ctx.body = ctx.request.ip
+})
+
+router.get('/plugin', ctx => {
+  let app = fs.readFileSync('./uploads/app(1).js', 'utf-8')
+  let plugin = fs.readFileSync('./uploads/plugin2.js', 'utf-8')
+  ctx.body = app + plugin
 })
 
 router.get('/date/:date', async ctx => { })
@@ -409,7 +426,14 @@ router.get('/record/indices/:d0/:d1', async ctx => {
     }
     let [data, _] = await knx.raw(工单优化指标(d0, d1))
     data = data[2]
-    ctx.body = { res: data.map((v, i) => ({ ...v, key: i })) }
+    ctx.body = {
+      res: data.map((v, i) => ({
+        ...v,
+        key: i,
+        优化率: percent(v.优化率),
+        解决率: percent(v.解决率)
+      }))
+    }
   } catch (e) {
     console.error(e)
     ctx.body = { e }
@@ -497,6 +521,16 @@ router.get('/shops/real', async ctx => {
 router.get('/shops/real2', async ctx => {
   try {
     const [res, _] = await knx.raw('select * from test_shop_ group by real_shop_name')
+    ctx.body = { res }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
+
+router.get('/shops/all', async ctx => {
+  try {
+    const [res, _] = await knx.raw('select * from test_shop_')
     ctx.body = { res }
   } catch (e) {
     console.log(e)
@@ -1567,6 +1601,8 @@ router.get('/probs/ag', async ctx => {
   }
 })
 
+var cacheBadRates = { time: 1, data: [] }
+
 router.get('/probs/ai', async ctx => {
   try {
     let [shops, _] = await knx.raw(
@@ -1612,10 +1648,10 @@ router.get('/probs/ai', async ctx => {
     // }
 
     let badRates = {
-      data: badRates1.data
+      data: arr(badRates1.data)
         .map(r => ({ ...r, ksid: elm_shops[0].ks_id }))
         // .concat(badRates2.data.map(r => ({ ...r, ksid: 'MWM2MWMTA1MjcyMDc0NjUxMDAxTmUyK0hFczJQ' })))
-        .concat(badRates3.data.map(r => ({ ...r, ksid: elm_shops[0].ks_id })))
+        .concat(arr(badRates3.data).map(r => ({ ...r, ksid: elm_shops[0].ks_id })))
       // .concat(badRates4.data.map(r => ({ ...r, ksid: 'MWM2MWMTA1MjcyMDc0NjUxMDAxTmUyK0hFczJQ' })))
     }
 
@@ -1663,17 +1699,23 @@ router.get('/probs/ai', async ctx => {
       .select()
       .where({ type: 'ai' })
 
-    // ctx.set('Cache-Control', 'max-age=3600')
+    ctx.set('Cache-Control', 'max-age=600')
+
     ctx.body = {
       res: data.map((v, i) => ({
         ...v,
         key: `${v.shopId}:${v.rateId}`,
         handle: handles.find(h => h.key == `${v.shopId}:${v.rateId}`)?.handle
-      }))
+      })).sort((a, b) => a.real_shop_name?.localeCompare(b.real_shop_name))
     }
   } catch (e) {
     console.error('ai error', e)
     ctx.body = { e }
+  }
+
+  function arr(v) {
+    if (Array.isArray(v)) return v
+    return []
   }
 })
 
@@ -1790,6 +1832,330 @@ router.get('/probs/an', async ctx => {
   }
 })
 
+router.post('/probs/an/add', async ctx => {
+  try {
+    let { a, b, c, d, e, f, g } = ctx.request.body
+    console.log(ctx.request.body)
+    if ([a, b, c, d, e, f].some(v => v == null || v == '')) {
+      ctx.body = { e: '表单不合法' }
+      return
+    }
+    const res = await knx('test_shop_prob_').insert({
+      物理店名: a,
+      组员: b,
+      组长: c,
+      门店人数: parseInt(d),
+      老板是否好沟通: e,
+      老板的诉求: f,
+      门店的问题: g
+    })
+    ctx.body = { res }
+  } catch (e) {
+    console.error(e)
+    ctx.body = { e }
+  }
+})
+
+router.post('/probs/an/edit', async ctx => {
+  try {
+    let { id, a, b, c, d, e, f, g } = ctx.request.body
+    if ([id, a, b, c, d, e, f].some(v => v == null || v == '')) {
+      ctx.body = { e: '表单不合法' }
+      return
+    }
+    const res = await knx('test_shop_prob_')
+      .where({ id })
+      .update({
+        物理店名: a,
+        组员: b,
+        组长: c,
+        门店人数: d,
+        老板是否好沟通: e,
+        老板的诉求: f,
+        门店的问题: g
+      })
+    ctx.body = { res }
+  } catch (e) {
+    console.error(e)
+    ctx.body = { e }
+  }
+})
+
+router.get('/probs/_shs', async ctx => {
+  try {
+    let [data, _] = await knx.raw('select * from shs_shop_relation')
+    ctx.body = {
+      res: data.map((v, i) => ({
+        ...v,
+        key: i
+      }))
+    }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
+
+router.get('/probs/_zps', async ctx => {
+  try {
+    let data = await zps()
+    ctx.body = {
+      res: data.map((v, i) => ({
+        ...v,
+        key: i
+      }))
+    }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e: e.message }
+  }
+})
+
+async function zps() {
+
+  const sql = `WITH d_info AS (         -- 配送信息
+      SELECT shop_id, shop_product_desc
+      FROM ele_delivery_fee
+      WHERE DATE_FORMAT( insert_date, "%Y-%m-%d" ) = CURDATE()
+      UNION ALL
+      SELECT wmpoiid, quickly_send
+      FROM foxx_spareas_info x JOIN
+      (SELECT shop_id, quickly_send FROM foxx_delivery_cost WHERE date > CURDATE()) y
+      ON x.wmpoiid = y.shop_id
+      WHERE insert_date >= CURDATE()
+    )
+    SELECT d.shop_id, d.platform, d.account, d.pw, di.shop_product_desc AS way,
+      s.shop_name, IF(s.platform = 1, '美团', '饿了么') AS shop_plat, s.city, s.person, s.real_shop_name
+    FROM deliver_account d
+    LEFT JOIN test_shop_ s USING(shop_id)
+    LEFT JOIN d_info di USING(shop_id)`
+
+  const [data] = await knx.raw(sql)
+  // shop_id	shop_name	城市	物理店	person	配送方式	platform	dd账号	dd密码	fn账号	fn密码	sf账号	sf密码	闪时送账号	闪时送密码	外卖邦账号	外卖邦密码	麦芽田账号	麦芽田密码
+  const shop_groups = data.groupBy('shop_id')
+  return shop_groups.map(g => {
+    let shop_id = g.group
+    let dd = g.members.find(s => s.platform == 'dd')
+    let fn = g.members.find(s => s.platform == 'fn')
+    let sf = g.members.find(s => s.platform == 'sf')
+    let sss = g.members.find(s => s.platform == 'sss')
+    let wmb = g.members.find(s => s.platform == 'wmb')
+    let myt = g.members.find(s => s.platform == 'myt')
+    return {
+      shop_id,
+      shop_name: g.members[0].shop_name,
+      city: g.members[0].city,
+      real_shop_name: g.members[0].real_shop_name,
+      person: g.members[0].person,
+      shop_plat: g.members[0].shop_plat,
+      d_way: g.members[0].way,
+      dd_acct: dd?.account,
+      dd_pw: dd?.pw,
+      fn_acct: fn?.account,
+      fn_pw: fn?.pw,
+      sf_acct: sf?.account,
+      sf_pw: sf?.pw,
+      sss_acct: sss?.account,
+      sss_pw: sss?.pw,
+      wmb_acct: wmb?.account,
+      wmb_pw: wmb?.pw,
+      myt_acct: myt?.account,
+      myt_pw: myt?.pw,
+    }
+  })
+    .map(rec => ({
+      店铺ID: rec.shop_id,
+      店铺名称: rec.shop_name,
+      城市: rec.city,
+      物理店: rec.real_shop_name,
+      负责人: rec.person,
+      平台: rec.shop_plat,
+      配送方式: rec.d_way,
+      达达账号: rec.dd_acct,
+      达达密码: rec.dd_pw,
+      蜂鸟账号: rec.fn_acct,
+      蜂鸟密码: rec.fn_pw,
+      顺丰账号: rec.sf_acct,
+      顺丰密码: rec.sf_pw,
+      闪时送账号: rec.sss_acct,
+      闪时送密码: rec.sss_pw,
+      外卖邦账号: rec.wmb_acct,
+      外卖邦密码: rec.wmb_pw,
+      麦芽田账号: rec.myt_acct,
+      麦芽田密码: rec.myt_pw,
+    }))
+}
+
+router.post('/probs/_zps/add', async ctx => {
+  try {
+    const { shop_id } = ctx.request.body
+    if ([shop_id].some(v => v == null || v == '')) {
+      ctx.body = { e: '表单不合法' }
+      return
+    }
+    const res = await zps_add(ctx.request.body)
+    ctx.body = { res }
+  } catch (e) {
+    console.error(e)
+    ctx.body = { e: e.message }
+  }
+})
+
+async function zps_add(form) {
+  function is_empty(v) {
+    return v == null || v == '' || /^\s+$/.test(v)
+  }
+
+  async function add_by_plat(rows, shop_id, plat, acct, pw) {
+    if (is_empty(acct) || is_empty(pw)) return null
+
+    return knx('deliver_account')
+      .insert({
+        shop_id,
+        platform: plat,
+        account: acct,
+        pw
+      })
+  }
+
+  const { shop_id, dd_acct, dd_pw, fn_acct, fn_pw, sf_acct, sf_pw,
+    sss_acct, sss_pw, wmb_acct, wmb_pw, myt_acct, myt_pw } = form
+
+  const rows = await knx('deliver_account').where({ shop_id }).select()
+  if (rows.length > 0) throw new Error('门店已存在')
+
+  let results = {}
+
+  results.dd = await add_by_plat(rows, shop_id, 'dd', dd_acct, dd_pw)
+  results.fn = await add_by_plat(rows, shop_id, 'fn', fn_acct, fn_pw)
+  results.sf = await add_by_plat(rows, shop_id, 'sf', sf_acct, sf_pw)
+  results.sss = await add_by_plat(rows, shop_id, 'sss', sss_acct, sss_pw)
+  results.wmb = await add_by_plat(rows, shop_id, 'wmb', wmb_acct, wmb_pw)
+  results.myt = await add_by_plat(rows, shop_id, 'myt', myt_acct, myt_pw)
+
+  return results
+}
+
+router.post('/probs/_zps/edit', async ctx => {
+  try {
+    let { shop_id } = ctx.request.body
+    if ([shop_id].some(v => v == null || v == '')) {
+      ctx.body = { e: '表单不合法' }
+      return
+    }
+
+    const res = await zps_edit(ctx.request.body)
+    ctx.body = { res }
+  } catch (e) {
+    console.error(e)
+    ctx.body = { e: e.message }
+  }
+})
+
+async function zps_edit(form) {
+  function is_empty(v) {
+    return v == null || v == '' || /^\s+$/.test(v)
+  }
+
+  async function update_by_plat(rows, shop_id, plat, acct, pw) {
+    if (is_empty(acct) || is_empty(pw)) return null
+
+    const row = rows.find(r => r.platform == plat)
+    if (row) {
+      return knx('deliver_account')
+        .where({ id: row.id })
+        .update({
+          account: acct,
+          pw
+        })
+    } else {
+      return knx('deliver_account')
+        .insert({
+          shop_id,
+          platform: plat,
+          account: acct,
+          pw
+        })
+    }
+  }
+
+  const { shop_id, dd_acct, dd_pw, fn_acct, fn_pw, sf_acct, sf_pw,
+    sss_acct, sss_pw, wmb_acct, wmb_pw, myt_acct, myt_pw } = form
+
+  const rows = await knx('deliver_account').where({ shop_id }).select()
+
+  let results = {}
+
+  results.dd = await update_by_plat(rows, shop_id, 'dd', dd_acct, dd_pw)
+  results.fn = await update_by_plat(rows, shop_id, 'fn', fn_acct, fn_pw)
+  results.sf = await update_by_plat(rows, shop_id, 'sf', sf_acct, sf_pw)
+  results.sss = await update_by_plat(rows, shop_id, 'sss', sss_acct, sss_pw)
+  results.wmb = await update_by_plat(rows, shop_id, 'wmb', wmb_acct, wmb_pw)
+  results.myt = await update_by_plat(rows, shop_id, 'myt', myt_acct, myt_pw)
+
+  return results
+}
+
+router.post('/probs/_shs/add', async ctx => {
+  try {
+    let { a, b, c, d } = ctx.request.body
+    console.log(ctx.request.body)
+    if ([b, c].some(v => v == null || v == '')) {
+      ctx.body = { e: '表单不合法' }
+      return
+    }
+    const res = await knx('shs_shop_relation').insert({
+      shs_id: a,
+      shs_name: b,
+      shop_id: c,
+      pw: d,
+    })
+    ctx.body = { res }
+  } catch (e) {
+    console.error(e)
+    ctx.body = { e }
+  }
+})
+
+router.post('/probs/_shs/edit', async ctx => {
+  try {
+    let { id, a, b, c, d } = ctx.request.body
+    if ([id, b, c].some(v => v == null || v == '')) {
+      ctx.body = { e: '表单不合法' }
+      return
+    }
+    const res = await knx('shs_shop_relation')
+      .where({ id })
+      .update({
+        shs_id: a,
+        shs_name: b,
+        shop_id: c,
+        pw: d,
+      })
+    ctx.body = { res }
+  } catch (e) {
+    console.error(e)
+    ctx.body = { e }
+  }
+})
+
+router.post('/probs/_shs/del', async ctx => {
+  try {
+    let { id } = ctx.request.body
+    if ([id].some(v => v == null || v == '')) {
+      ctx.body = { e: '表单不合法' }
+      return
+    }
+    const res = await knx('shs_shop_relation')
+      .where({ id })
+      .delete()
+    ctx.body = { res }
+  } catch (e) {
+    console.error(e)
+    ctx.body = { e }
+  }
+})
+
 router.get('/probs/ao', async ctx => {
   try {
     let [data, _] = await knx.raw(百亿补贴没有报名)
@@ -1820,6 +2186,44 @@ router.get('/probs/ap', async ctx => {
         ...v,
         key: `${v.shop_id}:${v.tagName}:${v.name}`,
         handle: handles.find(h => h.key == `${v.shop_id}:${v.tagName}:${v.name}`)?.handle
+      }))
+    }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
+
+router.get('/probs/aq', async ctx => {
+  try {
+    let [data, _] = await knx.raw(饿了么其它活动检查)
+    let handles = await knx('test_prob_t_')
+      .select()
+      .where({ type: 'aq' })
+    ctx.body = {
+      res: data.map((v, i) => ({
+        ...v,
+        key: `${v.shop_id}:${v.超级吃货红包}:${v.下单返红包}`,
+        handle: handles.find(h => h.key == `${v.shop_id}:${v.超级吃货红包}:${v.下单返红包}`)?.handle
+      }))
+    }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
+
+router.get('/probs/ar', async ctx => {
+  try {
+    let [data, _] = await knx.raw(美团其它活动检查)
+    let handles = await knx('test_prob_t_')
+      .select()
+      .where({ type: 'ar' })
+    ctx.body = {
+      res: data.map((v, i) => ({
+        ...v,
+        key: `${v.shop_id}:${v.收藏有礼}:${v.店内领券}`,
+        handle: handles.find(h => h.key == `${v.shop_id}:${v.收藏有礼}:${v.店内领券}`)?.handle
       }))
     }
   } catch (e) {
@@ -1875,55 +2279,6 @@ router.post('/saveProbs', async ctx => {
     ctx.body = { res }
   } catch (e) {
     console.log(e)
-    ctx.body = { e }
-  }
-})
-
-router.post('/probs/an/add', async ctx => {
-  try {
-    let { a, b, c, d, e, f, g } = ctx.request.body
-    console.log(ctx.request.body)
-    if ([a, b, c, d, e, f].some(v => v == null || v == '')) {
-      ctx.body = { e: '表单不合法' }
-      return
-    }
-    const res = await knx('test_shop_prob_').insert({
-      物理店名: a,
-      组员: b,
-      组长: c,
-      门店人数: parseInt(d),
-      老板是否好沟通: e,
-      老板的诉求: f,
-      门店的问题: g
-    })
-    ctx.body = { res }
-  } catch (e) {
-    console.error(e)
-    ctx.body = { e }
-  }
-})
-
-router.post('/probs/an/edit', async ctx => {
-  try {
-    let { id, a, b, c, d, e, f, g } = ctx.request.body
-    if ([id, a, b, c, d, e, f].some(v => v == null || v == '')) {
-      ctx.body = { e: '表单不合法' }
-      return
-    }
-    const res = await knx('test_shop_prob_')
-      .where({ id })
-      .update({
-        物理店名: a,
-        组员: b,
-        组长: c,
-        门店人数: d,
-        老板是否好沟通: e,
-        老板的诉求: f,
-        门店的问题: g
-      })
-    ctx.body = { res }
-  } catch (e) {
-    console.error(e)
     ctx.body = { e }
   }
 })
@@ -2033,10 +2388,14 @@ const date_sql = d =>
 const sum_sql0 = `
   DROP TABLE IF EXISTS test_shop_temp_;
   CREATE TABLE test_shop_temp_ AS (
-    WITH real_shop_info1 AS (
+    WITH shop_info AS (
+      SELECT shop_id, shop_name  FROM ele_info_manage WHERE status = 0 UNION ALL
+      SELECT wmpoiid, reptile_type FROM foxx_shop_reptile WHERE status = 0
+    ),
+    real_shop_info1 AS (
       SELECT
         x.shop_id,
-        x1.dict_label shop_name,
+        x1.shop_name,
         x.platform,
         y.shop_address city,
         y.real_shop_name,
@@ -2051,7 +2410,7 @@ const sum_sql0 = `
       FROM
         platform_shops x
         JOIN base_physical_shops y ON x.physical_id = y.id
-        JOIN sys_dict_data x1 ON x1.dict_type = "shop_name" AND x1.dict_value = x.shop_id
+        JOIN shop_info x1 ON x1.shop_id = x.shop_id
         LEFT JOIN sys_user u ON u.user_id = y.user_id
         LEFT JOIN sys_user u2 ON u2.user_id = y.leader_id
     ),
@@ -2274,11 +2633,11 @@ const op_sql = d => `SELECT city, person, leader, real_shop, shop_id, shop_name,
   WHERE date >= DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL ${d} DAY),'%Y%m%d')
   ORDER BY date`
 
-const commision_sql = `SELECT *, sum(a.提成) OVER( PARTITION BY DATE_FORMAT(date,"%Y%m"), 人员 ) 月累计提成 FROM
+const commision_sql = `SELECT *, date 日期, sum(a.提成) OVER( PARTITION BY DATE_FORMAT(date,"%Y%m"), 运营 ) 月累计提成 FROM
     (
     SELECT
     "组员" 级别,
-    person 人员,
+    person 运营,
     sum( income_sum ) 收入,
     sum( consume_sum ) / sum( income_sum ) 推广比例,
     sum( cost_sum ) / sum( income_sum ) 成本比例,
@@ -2288,7 +2647,7 @@ const commision_sql = `SELECT *, sum(a.提成) OVER( PARTITION BY DATE_FORMAT(da
     FROM
     v_physical_shop_profit 
     WHERE
-    date >= 20210801
+    date >= 20210801 AND date < 20210923
     AND leader IS NOT NULL
     GROUP BY
     person,
@@ -2306,13 +2665,35 @@ const commision_sql = `SELECT *, sum(a.提成) OVER( PARTITION BY DATE_FORMAT(da
     FROM
     v_physical_shop_profit 
     WHERE
-    date >= 20210801
+    date >= 20210801 AND date < 20210923
     AND leader IS NOT NULL
     GROUP BY
     leader,
     date
     ) a
-    ORDER BY date, 人员`
+    ORDER BY date, 运营`
+
+const commision_sql2 = `SELECT *, sum(提成) over(PARTITION BY 运营, DATE_FORMAT(日期,'%y%m')) AS '月累计提成'
+    FROM (
+    SELECT
+      "组员" 级别,
+      person AS '运营',
+      sum(income_sum) AS '收入',
+      sum(cost_sum)  / 
+      sum(income_sum) AS '成本比例',
+      sum(consume_sum) / 
+      sum(income_sum) AS '推广比例',
+      sum(profit) AS '利润',
+      sum(profit) * 0.02 AS '提成',
+      date AS '日期'
+    FROM
+      v_physical_shop_profit 
+    WHERE
+      date >= 20210923
+    GROUP BY
+      person,
+      date
+    ) shop_profit`
 
 const 美团成本问题 = (id, date) => `SET @date = ${date};
     SET @shop_id = ${id};
@@ -2648,8 +3029,7 @@ const 维度订单 = (id, date) => `SET @date = ${date};
         third_send,
         ROUND( goods_count, 1 ) goods_count,
         cost_sum,
-        rule,
-        gear
+        rule
       FROM
         a
         JOIN b ON a.shop_id = b.shop_id 
@@ -2662,17 +3042,15 @@ const 维度订单 = (id, date) => `SET @date = ${date};
         round( third_send, 2 ) third_send,
         goods_count,
         round( sum( shipping_fee ), 2 ) shipping_fee,
-        rule,
-        gear 
+        rule
       FROM
         c 
       GROUP BY
         goods_count,
-        gear 
+        rule 
       )
     SELECT
       goods_count 商品数量,
-      gear 活动档位,
       rule 活动内容,
       cost_sum 理论成本,
       settle_sum 商家收入,
@@ -2684,7 +3062,7 @@ const 维度订单 = (id, date) => `SET @date = ${date};
       d 
     ORDER BY
       goods_count,
-      gear`
+      rule`
 
 const 维度订单详情 = (id, activi, counts, date) => `SET @date = ${date};
     SET @shop_id = ${id};
@@ -2717,7 +3095,7 @@ const 维度订单详情 = (id, activi, counts, date) => `SET @date = ${date};
       a JOIN b 
       ON a.shop_id = b.shop_id
       AND ${counts == null ? 'goods_count IS NULL' : 'ROUND( goods_count, 1 ) = ' + counts}
-      AND gear = '${activi}'
+      AND rule = '${activi}'
     ORDER BY cost_ratio DESC`
 
 const 线下指标美团评分 = (id, d = 7) => `SELECT 
@@ -3148,7 +3526,8 @@ const 原价扣点城市折扣与原价差距大于2 = ` -- 原价扣点城市�
   FROM a JOIN d ON a.shop_id = d.shop_id
   WHERE 
     d.activity_price > 0 AND
-    d.price - d.activity_price > 2;`
+    d.price - d.activity_price > 2;
+  OERDER BY 物理店`
 
 const 商品无餐盒费 = `WITH
   a AS (
@@ -3210,7 +3589,8 @@ const 商品无餐盒费 = `WITH
     d.category_name NOT LIKE '%先扫%' AND
     d.category_name NOT LIKE '%保温袋%' AND
     d.name NOT LIKE '%红包%' AND
-    d.name NOT LIKE '%店铺升级%'`
+    d.name NOT LIKE '%店铺升级%'
+  ORDER BY real_shop_name`
 
 const 美团薯饼虾饼鸡柳设置两份起购 = `SELECT
     food.wmpoiid 门店id,
@@ -3510,7 +3890,8 @@ const 零元商品有餐盒费 = `-- 零元商品有餐盒费
     d.min_purchase_quantity 起购数
   FROM a JOIN d ON a.shop_id = d.shop_id
   WHERE
-    package_fee > 0`
+    package_fee > 0
+  ORDER BY real_shop_name`
 
 const 两份起购餐品价格错误 = `
     SET collation_connection = utf8mb4_general_ci;-- 设置参数
@@ -3577,7 +3958,8 @@ const 两份起购餐品价格错误 = `
     package_fee AS "餐盒费",
     min_purchase_quantity AS "起购量",
     originalPrice AS "凑满减/起送价格"
-    FROM a JOIN d ON a.shop_id = d.shop_id`
+    FROM a JOIN d ON a.shop_id = d.shop_id
+    ORDER BY real_shop_name`
 
 const 津贴联盟 = `WITH
     a AS (
@@ -3617,7 +3999,8 @@ const 津贴联盟 = `WITH
       支付红包,
       新客立减,
       会员红包 
-FROM a JOIN b ON a.wmpoiid = b.shop_id`
+  FROM a JOIN b ON a.wmpoiid = b.shop_id
+  ORDER BY real_shop_name`
 
 const 饿了么所有门店配送费批量检查 = `-- 饿了么所有门店配送费批量检查
     WITH a AS (
@@ -3966,7 +4349,8 @@ const 饿了么低折扣商品起购错误 = `
       actPrice 折扣价,
       minOrderCount AS '起购数量'
     FROM 
-      d JOIN e ON d.wmpoiid = e.shop_id`
+      d JOIN e ON d.wmpoiid = e.shop_id
+    ORDER BY 物理店`
 
 const 饿了么低折扣商品限购数量错误 = `-- 美团
     WITH
@@ -4048,7 +4432,8 @@ const 饿了么低折扣商品限购数量错误 = `-- 美团
       UNION ALL
       SELECT * FROM b
     )
-    SELECT c.*,d.itemName, d.actInfo, d.actPrice, d.orderLimit FROM d JOIN c ON d.wmpoiid = c.shop_id`
+    SELECT c.*,d.itemName, d.actInfo, d.actPrice, d.orderLimit FROM d JOIN c ON d.wmpoiid = c.shop_id
+    ORDER BY real_shop_name`
 
 const 零元购有餐盒费 = `WITH
     a AS (
@@ -4254,7 +4639,8 @@ const 单折扣起送 = `WITH
     g.activity_price,
     g.package_fee,
     g.originalPrice
-    FROM g JOIN h ON g.shop_id = h.shop_id`
+    FROM g JOIN h ON g.shop_id = h.shop_id
+    ORDER BY real_shop_name`
 
 const 成本表查漏 = `WITH
     a AS (
@@ -4295,7 +4681,8 @@ const 成本表查漏 = `WITH
       LEFT JOIN b ON a.productId = b.food_platform_id
       JOIN c ON a.wmpoiid = c.shop_id 
     WHERE
-      food_id IS NULL `
+      food_id IS NULL 
+    ORDER BY 物理店`
 
 const 查询点金0曝光的时间 = `-- 查询点金0曝光的时间，可能是达到预算、没钱等原因
   WITH
@@ -4365,7 +4752,8 @@ const 美团配送范围对比昨日 = `WITH
       b.*,
       a.chg
     FROM a JOIN b ON a.wmpoiid = b.shop_id
-    WHERE chg <> 0`
+    WHERE chg <> 0
+    ORDER BY real_shop_name`
 
 const 检查折扣遗漏的商品 = `WITH 
     a AS(
@@ -4456,7 +4844,7 @@ const 检查折扣遗漏的商品 = `WITH
       g.price
     FROM g JOIN h                                                                             
     ON g.shop_id = h.shop_id
-    ORDER BY platform`
+    ORDER BY real_shop_name`
 
 const 折扣到期商品检查 = `-- 饿了么折扣到期商品检查
     WITH
@@ -4513,7 +4901,7 @@ const 折扣到期商品检查 = `-- 饿了么折扣到期商品检查
       activi_status
     FROM c JOIN d                                                                      
     ON c.shop_id = d.shop_id
-    ORDER BY platform, food_name`
+    ORDER BY real_shop_name, food_name`
 
 const 减配活动检查 = `SET @date = CURRENT_DATE;
 	
@@ -4540,24 +4928,26 @@ a AS (-- 减配活动信息
     AND conflict_message IS NULL
 ),
 b AS (-- 配送信息
-	SELECT
-		shop_id,
-		shop_product_desc,
-		price_items,
-		delivery_fee_items
-	FROM
-		ele_delivery_fee
-	WHERE
-		DATE_FORMAT( insert_date, "%Y-%m-%d" ) = @date AND
-		shop_product_desc IN ( '蜂鸟快送', '蜂鸟众包', '蜂鸟专送', '自配送', 'e配送', '混合送' )
-		UNION ALL
-	SELECT
-		wmpoiid,
-		"未知",
-		minPrice,
-		shippingFee
-	FROM foxx_spareas_info 
-	WHERE insert_date >= @date
+    SELECT
+    shop_id,
+    shop_product_desc,
+    price_items,
+    delivery_fee_items
+  FROM
+    ele_delivery_fee
+  WHERE
+    DATE_FORMAT( insert_date, "%Y-%m-%d" ) = @date AND
+    shop_product_desc IN ( '蜂鸟快送', '蜂鸟众包', '蜂鸟专送', '自配送', 'e配送', '混合送' )
+  UNION ALL
+  SELECT
+    wmpoiid,
+    quickly_send,
+    minPrice,
+    shippingFee
+  FROM foxx_spareas_info x JOIN
+  (SELECT shop_id, quickly_send FROM foxx_delivery_cost WHERE date > @date AND quickly_send <> '美团全城送') y
+  ON x.wmpoiid = y.shop_id
+  WHERE insert_date >= @date
 ),
 c AS (
 	SELECT
@@ -4666,7 +5056,7 @@ SELECT
 	application "适配标品",
 	shop_product_desc "配送方式",
 	problems "问题"
-FROM g LEFT JOIN h ON g.shop_id = h.shop_id`
+FROM g JOIN h ON g.shop_id = h.shop_id`
 
 const 假减配检查 = `WITH
     a AS (
@@ -4759,6 +5149,7 @@ const 满减活动检查 = `-- 满减：
     d.shop_id '店铺编号',
     d.shop_name '店铺名称',
     IF(d.platform IS NULL, NULL, IF(d.platform = 1, '美团', '饿了么')) '平台',
+    d.real_shop_name,
     d.person '责任人',
     d.leader '组长',
     d.new_person '新店责任人',
@@ -4766,7 +5157,7 @@ const 满减活动检查 = `-- 满减：
     c.rule '活动规则',
     DATE_FORMAT(end_time, '%Y%m%d') '结束时间'
     FROM c RIGHT JOIN d ON c.shop_id = d.shop_id 
-    ORDER BY end_time`
+    ORDER BY real_shop_name, end_time`
 
 const 库存过少检查 = `WITH
     a AS
@@ -4815,7 +5206,8 @@ const 库存过少检查 = `WITH
       d.name 商品,
       d.stock 库存,
       d.maxStock 最大库存
-    FROM d JOIN c ON c.shop_id = d.wmpoiid`
+    FROM d JOIN c ON c.shop_id = d.wmpoiid
+    ORDER BY 物理店`
 
 const 查询商品多规格 = `-- 查询商品多规格问题
     WITH
@@ -4846,7 +5238,8 @@ const 查询商品多规格 = `-- 查询商品多规格问题
     b.new_person AS "新店责任人",
     tagName AS "分类名",
     name AS "商品名"
-    FROM a JOIN b ON a.wmpoiid = b.shop_id`
+    FROM a JOIN b ON a.wmpoiid = b.shop_id
+    ORDER BY 物理店`
 
 const 推广费余额 = d => `-- 饿了么推广费
     SELECT shop_id, r.shop_name, a.platform, r.real_shop_name,  
@@ -4884,7 +5277,8 @@ const 合作方案到期 = `WITH
     b.person 责任人, b.leader 组长, b.new_person 新店责任人, b.real_shop_name 物理店, 
     IF(b.platform IS NULL, NULL, IF(b.platform = 1, '美团', '饿了么')) 平台, 
     a.invalidTime 到期时间 
-    FROM a JOIN b ON a.shop_id = b.shop_id`
+    FROM a JOIN b ON a.shop_id = b.shop_id
+    ORDER BY 物理店`
 
 const 起送价变化 = `WITH
     a AS (
@@ -4925,7 +5319,8 @@ const 起送价变化 = `WITH
     c.lastMinPrice "前一天起送价",
     date AS "查询日期"
     FROM c JOIN d ON c.wmpoiid = d.shop_id
-    WHERE date = DATE_FORMAT( CURRENT_DATE, "%Y%m%d" )`
+    WHERE date = DATE_FORMAT( CURRENT_DATE, "%Y%m%d" )
+    ORDER BY real_shop_name`
 
 const 百亿补贴没有报名 = `WITH
     a AS (
@@ -4933,18 +5328,19 @@ const 百亿补贴没有报名 = `WITH
     ),
     b AS (
       SELECT
-        shop_id
+        shop_id, descs, date
       FROM
         ele_activity_full_reduction 
       WHERE
-        insert_date > CURRENT_DATE AND
-        title = '百亿补贴' AND
-        ISNULL( conflict_message )
+        title = '百亿补贴' AND insert_date > CURDATE()
     ),
     c AS (
       SELECT shop_id, shop_name, city, IF(platform = 1, '美团', '饿了么') platform, real_shop_name, person, leader  FROM test_shop_
     )
-    SELECT c.*, a.by_name FROM a LEFT JOIN b ON a.shop_id = b.shop_id JOIN c ON a.shop_id = c.shop_id WHERE b.shop_id IS NULL 
+    SELECT c.*, a.by_name, b.descs, b.date FROM a 
+    LEFT JOIN b ON a.shop_id = b.shop_id 
+    JOIN c ON a.shop_id = c.shop_id 
+    ORDER BY real_shop_name
 `
 
 const 单产品满减问题 = `-- 单商品满减查询
@@ -5039,7 +5435,8 @@ const 单产品满减问题 = `-- 单商品满减查询
         d.*,rule
       FROM c JOIN d ON c.shop_id = d.shop_id AND (price + package_fee) * min_purchase_quantity > rule
     )
-    SELECT e.*, tagName, name, price, boxPrice, minOrderCount, detail FROM e JOIN f ON e.shop_id = f.wmpoiid`
+    SELECT e.*, tagName, name, price, boxPrice, minOrderCount, detail FROM e JOIN f ON e.shop_id = f.wmpoiid
+    ORDER BY real_shop_name`
 
 const 工单优化指标 = (d0, d1) => `SET @date0 = ${d0};
     SET @date1 = ${d1};
@@ -5048,7 +5445,6 @@ const 工单优化指标 = (d0, d1) => `SET @date0 = ${d0};
     a AS (
       SELECT
         person AS person,
-        leader AS leader,
         shop_id,
       IF
         (( cost_ratio >= 0.5 ), 1, NULL ) AS is_gcb,
@@ -5057,7 +5453,6 @@ const 工单优化指标 = (d0, d1) => `SET @date0 = ${d0};
       IF
         (( settlea_30 <= 0.7 ), 1, NULL ) AS is_cd,(
         CASE
-            
             WHEN ( platform = '美团' ) THEN
           IF
             (( income < 1500 ), 1, NULL ) ELSE
@@ -5101,15 +5496,15 @@ const 工单优化指标 = (d0, d1) => `SET @date0 = ${d0};
                   REPLACE ( json_search( cast( a AS json ), 'one', '低收入' ), 'q', 'a' ))))),
             '' 
           ) AS dsr,
-          IF( LEAD(cost_ratio,8,1) OVER(PARTITION BY shop_id ORDER BY date) >= 0.5 , 1, 0) +
-          IF( LEAD(cost_ratio,9,1) OVER(PARTITION BY shop_id ORDER BY date) >= 0.5 , 1, 0) +
-          IF( LEAD(cost_ratio,10,1) OVER(PARTITION BY shop_id ORDER BY date) >= 0.5 , 1, 0) is_gcb_then,
-          IF( LEAD(consume_ratio,8,1) OVER(PARTITION BY shop_id ORDER BY date) >= 0.05 , 1, 0) +
-          IF( LEAD(consume_ratio,9,1) OVER(PARTITION BY shop_id ORDER BY date) >= 0.05 , 1, 0) +
-          IF( LEAD(consume_ratio,10,1) OVER(PARTITION BY shop_id ORDER BY date) >= 0.05 , 1, 0) is_gtg_then,
-          IF( LEAD(settlea_30,8,0) OVER(PARTITION BY shop_id ORDER BY date) <= 0.7 , 1, 0) +
-          IF( LEAD(settlea_30,9,0) OVER(PARTITION BY shop_id ORDER BY date) <= 0.7 , 1, 0) +
-          IF( LEAD(settlea_30,10,0) OVER(PARTITION BY shop_id ORDER BY date) <= 0.7 , 1, 0) is_cd_then,
+          IF( LEAD(cost_ratio,8,1) OVER(PARTITION BY person,shop_id ORDER BY date) >= 0.5 , 1, 0) +
+          IF( LEAD(cost_ratio,9,1) OVER(PARTITION BY person,shop_id ORDER BY date) >= 0.5 , 1, 0) +
+          IF( LEAD(cost_ratio,10,1) OVER(PARTITION BY person,shop_id ORDER BY date) >= 0.5 , 1, 0) is_gcb_then,
+          IF( LEAD(consume_ratio,8,1) OVER(PARTITION BY person,shop_id ORDER BY date) >= 0.05 , 1, 0) +
+          IF( LEAD(consume_ratio,9,1) OVER(PARTITION BY person,shop_id ORDER BY date) >= 0.05 , 1, 0) +
+          IF( LEAD(consume_ratio,10,1) OVER(PARTITION BY person,shop_id ORDER BY date) >= 0.05 , 1, 0) is_gtg_then,
+          IF( LEAD(settlea_30,8,0) OVER(PARTITION BY person,shop_id ORDER BY date) <= 0.7 , 1, 0) +
+          IF( LEAD(settlea_30,9,0) OVER(PARTITION BY person,shop_id ORDER BY date) <= 0.7 , 1, 0) +
+          IF( LEAD(settlea_30,10,0) OVER(PARTITION BY person,shop_id ORDER BY date) <= 0.7 , 1, 0) is_cd_then,
           CASE
           WHEN ( platform = '美团' ) THEN
           IF( LEAD(income,8,0) OVER(PARTITION BY shop_id ORDER BY date) < 1500 , 1, 0) +
@@ -5130,49 +5525,127 @@ const 工单优化指标 = (d0, d1) => `SET @date0 = ${d0};
     ),
     b AS (
       SELECT
-          '组员' AS '级别',
           person '运营',
-          count(is_gcb) '高成本问题数量',
-          count(gcb) '高成本优化数量',
-          count(IF(gcb IS NOT NULL AND is_gcb_then = 0,1,NULL)) '高成本解决数量',
-          count(is_gtg) '高推广问题数量',
-          count(gtg) '高推广优化数量',
-          count(IF(gtg IS NOT NULL AND is_gtg_then = 0,1,NULL)) '高推广解决数量',
-          count(is_cd) '超跌问题数量',
-          count(cd) '超跌优化数量',
-          count(IF(cd IS NOT NULL AND is_cd_then = 0,1,NULL)) '超跌解决数量',
-          0 '低业绩问题数量',
-          0 '低业绩优化数量',
-          0 '低业绩解决数量',
-          date
+          count(is_gcb) '高成本问题',
+          count(gcb) '高成本优化',
+          count(IF(gcb IS NOT NULL AND is_gcb_then = 0,1,NULL)) '高成本解决',
+          count(is_gtg) '高推广问题',
+          count(gtg) '高推广优化',
+          count(IF(gtg IS NOT NULL AND is_gtg_then = 0,1,NULL)) '高推广解决',
+          count(is_cd) '超跌问题',
+          count(cd) '超跌优化',
+          count(IF(cd IS NOT NULL AND is_cd_then = 0,1,NULL)) '超跌解决',
+          count(is_dsr) '低业绩问题',
+          count(dsr) '低业绩优化',
+          count(IF(dsr IS NOT NULL AND is_dsr_then = 0,1,NULL)) '低业绩解决'
       FROM a 
       WHERE date BETWEEN @date0 AND @date1
       GROUP BY person
-    ),
-    c AS (
-      SELECT
-          '组长' AS '级别',
-          leader,
-          0 a,
-          0 b,
-          0 c,
-          0 d,
-          0 e,
-          0 f,
-          0 g,
-          0 h,
-          0 i,
-          count(is_dsr),
-          count(dsr),
-          count(IF(dsr IS NOT NULL AND is_dsr_then = 0,1,NULL)),
-          date
-      FROM a 
-      WHERE date BETWEEN @date0 AND @date1
-      GROUP BY leader
     )
-    SELECT * FROM b
-    UNION ALL
-    SELECT * FROM c`
+    SELECT
+      *,
+      高成本问题 + 高推广问题 + 超跌问题 + 低业绩问题 AS '问题总数',
+      高成本优化 + 高推广优化 + 超跌优化 + 低业绩优化 AS '优化总数',
+      高成本解决 + 高推广解决 + 超跌解决 + 低业绩解决 AS '解决总数',
+      ( 高成本优化 + 高推广优化 + 超跌优化 + 低业绩优化 ) / ( 高成本问题 + 高推广问题 + 超跌问题 + 低业绩问题 ) AS '优化率',
+      ( 高成本解决 + 高推广解决 + 超跌解决 + 低业绩解决 ) / ( 高成本优化 + 高推广优化 + 超跌优化 + 低业绩优化 ) AS '解决率' 
+    FROM
+    	b`
+
+const 饿了么其它活动检查 = `WITH
+    a AS (
+        SELECT
+        x.shop_id,
+        x1.shop_name,
+        y.shop_address,
+        y.real_shop_name,
+        z.nick_name person
+      FROM
+        platform_shops x
+        JOIN base_physical_shops y ON x.physical_id = y.id AND x.is_delete = 0 AND y.is_delete = 0
+        JOIN sys_user z ON y.user_id = z.user_id
+        JOIN (
+          SELECT shop_id,shop_name FROM ele_info_manage WHERE status = 0
+          UNION ALL
+          SELECT wmpoiid, reptile_type FROM foxx_shop_reptile WHERE status = 0
+        ) x1 ON x1.shop_id = x.shop_id
+    ),
+    b AS (
+      SELECT
+        shop_id,
+        MAX(if(title = '超级吃货红包', rule, null)) 超级吃货红包,
+        MAX(if(title = '下单返红包', rule, null)) 下单返红包,
+        MAX(if(title = '吃货红包', rule, null)) 吃货红包,
+        MAX(if(title = '集点返红包', rule, null)) 集点返红包,
+        MAX(if(title = '店铺满赠', rule, null)) 店铺满赠,
+        MAX(if(title = '进店领红包', rule, null)) 进店领红包
+      FROM ele_activity_full_reduction 
+      WHERE insert_date > CURRENT_DATE
+      AND descs = '进行中'
+      GROUP BY shop_id
+    )
+    SELECT 
+      a.shop_id,
+      real_shop_name,
+      shop_name,
+      person,
+      超级吃货红包,
+      下单返红包,
+      吃货红包,
+      集点返红包,
+      店铺满赠,
+      进店领红包
+    FROM a JOIN b ON a.shop_id = b.shop_id`
+
+const 美团其它活动检查 = `WITH
+    a AS (
+        SELECT
+        x.shop_id,
+        x1.shop_name,
+        y.shop_address,
+        y.real_shop_name,
+        z.nick_name person
+      FROM
+        platform_shops x
+        JOIN base_physical_shops y ON x.physical_id = y.id AND x.is_delete = 0 AND y.is_delete = 0
+        JOIN sys_user z ON y.user_id = z.user_id
+        JOIN (
+          SELECT shop_id,shop_name FROM ele_info_manage WHERE status = 0
+          UNION ALL
+          SELECT wmpoiid, reptile_type FROM foxx_shop_reptile WHERE status = 0
+        ) x1 ON x1.shop_id = x.shop_id
+    ),
+    b AS (
+      SELECT
+        wmpoiid shop_id,
+        MAX(if(name = '收藏有礼', detail, null)) 收藏有礼,
+        MAX(if(name = '店内领券', detail, null)) 店内领券,
+        MAX(if(name = '超值换购', detail, null)) 超值换购,
+        MAX(if(name = '满赠活动', detail, null)) 满赠活动,
+        MAX(if(name = '下单返券', detail, null)) 下单返券,
+        MAX(if(name = '集点返券', detail, null)) 集点返券,
+        MAX(if(name = '新客立减（平台）', detail, null)) 新客立减（平台）,
+        MAX(if(name = '店外发券', detail, null)) 店外发券,
+        MAX(if(name = '售卖代金券', detail, null)) 售卖代金券,
+        MAX(if(name = '门店新客立减', detail, null)) 门店新客立减
+      FROM foxx_market_activit_my WHERE date = CURRENT_DATE AND status_desc = '进行中'
+      GROUP BY wmpoiid
+    )
+    SELECT 
+      a.shop_id,
+      real_shop_name,
+      shop_name,
+      person,
+      收藏有礼,
+      店内领券,
+      超值换购,
+      满赠活动,
+      下单返券,
+      集点返券,
+      新客立减（平台）,
+      店外发券,
+      售卖代金券
+    FROM a JOIN b ON a.shop_id = b.shop_id`
 
 async function date(d) { }
 
@@ -6399,9 +6872,12 @@ async function perf(date, djh) {
 /////////////////////////
 async function commision() {
   try {
-    let [data, _] = await knx.raw(commision_sql)
+    let [data1] = await knx.raw(commision_sql)
+    let [data2] = await knx.raw(commision_sql2)
 
-    if (!data) return Promise.reject('no data')
+    if (!data1 || !data2) return Promise.reject('no data')
+
+    let data = data1.concat(data2)
 
     let res = new M(data).bind(format)
     return Promise.resolve(res.val)
@@ -6410,9 +6886,9 @@ async function commision() {
   }
 
   function format(xs) {
-    let ys = xs.map(v => ({
+    let ys = xs.map((v, i) => ({
       ...v,
-      key: `${v.级别}-${v.人员}-${v.date}`,
+      key: i,
       级别: empty(v.级别),
       人员: empty(v.人员),
       收入: fixed2(v.收入),
@@ -6431,15 +6907,15 @@ async function commision() {
 
 
 function ls_against(x) {
-  let is_low_income = x.income < (x.platform == '美团' ? 1500 : 1000) || x.income_avg < 1500
-  let is_high_consume = x.consume_ratio > 0.05 && !(x.income < 300 && x.consume < 50)
-  let is_high_cost = x.cost_ratio > 0.5
-  let is_slump = x.settlea_30 < 0.7
+  let is_low_income = x.income < (x.platform == '美团' ? 900 : 700)
+  let is_high_consume = x.consume_ratio > 0.06 && x.income > 300
+  let is_high_cost = x.cost_ratio > 0.53 && x.income > 300
+  let is_slump = x.settlea_30 < 0.8
   let ps = []
-  if (is_low_income) ps.push({ type: '低收入', value: x.income, threshold: x.platform == '美团' ? 1500 : 1000 })
-  if (is_high_consume) ps.push({ type: '高推广', value: x.consume_ratio, threshold: 0.05 })
-  if (is_high_cost) ps.push({ type: '高成本', value: x.cost_ratio, threshold: 0.5 })
-  if (is_slump) ps.push({ type: '严重超跌', value: x.settlea_30, threshold: 0.7 })
+  if (is_low_income) ps.push({ type: '低收入', value: x.income, threshold: x.platform == '美团' ? 900 : 700 })
+  if (is_high_consume) ps.push({ type: '高推广', value: x.consume_ratio, threshold: 0.06 })
+  if (is_high_cost) ps.push({ type: '高成本', value: x.cost_ratio, threshold: 0.53 })
+  if (is_slump) ps.push({ type: '严重超跌', value: x.settlea_30, threshold: 0.8 })
   return ps
 }
 
@@ -6630,12 +7106,12 @@ async function user(name, d) {
     let ys = xs.persons
       .map(person => ({
         person,
-        responsibles: xs.shops.filter(x => isPersonResp(x, person) || isLeaderResp(x, person)),
-        success: xs.shop_success.filter(x => x.person == person || x.leader == person),
+        responsibles: xs.shops.filter(x => x.person == person),
+        success: xs.shop_success.filter(x => x.person == person),
         failure: {
-          unimproved: xs.shop_failure.shop_unimproved.filter(x => isPersonResp(x, person) || isLeaderResp(x, person)),
-          improved: xs.shop_failure.shop_improved.filter(x => isPersonResp(x, person) || isLeaderResp(x, person)),
-          improving: xs.shop_failure.shop_improving.filter(x => isPersonResp(x, person) || isLeaderResp(x, person)),
+          unimproved: xs.shop_failure.shop_unimproved.filter(x => x.person == person),
+          improved: xs.shop_failure.shop_improved.filter(x => x.person == person),
+          improving: xs.shop_failure.shop_improving.filter(x => x.person == person),
         },
         participated: [
           ...xs.shop_failure.shop_improved.filter(x => x.a.some(a => a.name == person)),
@@ -6695,8 +7171,8 @@ async function user(name, d) {
         return sum + x.a.filter(a => a.a.trim().length > 0).length // 
       }, 0)
 
-      let [count_a_low_income, count_a_high_consume, count_a_high_cost, count_a_slump] =
-        ['低收入', '高推广', '高成本', '严重超跌'].map(q => shops.reduce((sum, x) =>
+      let [count_a_low_income, count_a_high_consume, count_a_high_cost, count_a_slump, count_a_custom] =
+        ['低收入', '高推广', '高成本', '严重超跌', '自定义'].map(q => shops.reduce((sum, x) =>
           sum + x.a.filter(a => a.q == q && a.a.trim().length > 0).length, 0))
 
       return {
@@ -6705,6 +7181,7 @@ async function user(name, d) {
         count_a_high_consume,
         count_a_high_cost,
         count_a_slump,
+        count_a_custom,
         count_q,
         count_q_without_low_income,
         count_q_low_income,

@@ -5,6 +5,7 @@ import cors from 'koa2-cors'
 import fs from 'fs'
 import bcrypt from 'bcrypt'
 import dayjs from 'dayjs'
+import sleep from 'sleep-promise'
 
 import knx from '../50/index.js'
 
@@ -109,12 +110,12 @@ async function insertTableFromMysql(day_from_today = 1) {
   ),
   a3 AS (
     SELECT real_shop, shop_id, shop_name, 
-      settlea / AVG(settlea) OVER (w2 ROWS BETWEEN CURRENT ROW AND 29 FOLLOWING) AS settlea_30,
+      settlea / AVG(settlea) OVER (PARTITION BY shop_id) AS settlea_30,
       settlea / LEAD(settlea, 1, 0) OVER w2 - 1 AS settlea_1,
       settlea / LEAD(settlea, 7, 0) OVER w2 - 1 AS settlea_7,
       SUM(settlea) OVER (w2 ROWS BETWEEN  CURRENT ROW AND 2 FOLLOWING) / SUM(settlea) OVER (w2 ROWS BETWEEN 7 FOLLOWING AND 9 FOLLOWING) - 1 AS settlea_7_3,
       date
-    FROM foxx_operating_data WHERE date <= @last_day
+    FROM foxx_operating_data WHERE date >= DATE_SUB(CURRENT_DATE, INTERVAL 30 DAY)
     WINDOW w2 AS (PARTITION BY shop_id ORDER BY date DESC)
   ),
   a4 AS (
@@ -151,11 +152,28 @@ async function insertTableFromMysql(day_from_today = 1) {
   ),
   d4 AS (
 		SELECT shop_id, rating AS rating_elm_last FROM ele_rating_log WHERE DATE(insert_date) = DATE_SUB(@last_day,INTERVAL 1 DAY)
-	)
+	),
+  e AS (
+    SELECT shop_id, ROUND(AVG(shipping_fee), 2) AS ship_fee_avg, ROUND(AVG(platform_fee), 2) platform_fee_avg, DATE(order_time) AS order_date 
+    FROM order_dimension_info WHERE date = @last_day 
+   --  WHERE order_time BETWEEN DATE_FORMAT(@last_day, '%Y-%m-%d %H:%i:%s') AND DATE_FORMAT(CURRENT_DATE, '%Y-%m-%d %H:%i:%s')
+    GROUP BY shop_id
+  ), e2 AS (
+    SELECT shop_id, ROUND(third_send / orders, 2) AS ship_fee_avg FROM foxx_operating_data WHERE date = @last_day AND third_send > 0 AND orders > 0
+  ), e3 AS (
+    SELECT e.shop_id, IFNULL(e2.ship_fee_avg, e.ship_fee_avg) AS ship_fee_avg, e.platform_fee_avg  FROM e 
+    LEFT JOIN e2 USING (shop_id)
+  ),
+  f AS (
+    SELECT shop_id, IF(price_items = '', NULL, price_items) AS ship_fee_min FROM ele_delivery_fee 
+    WHERE DATE(insert_date) = @last_day AND shop_product_desc IN ( '蜂鸟快送', '蜂鸟众包', '蜂鸟专送', '自配送', 'e配送', '混合送' )
+    UNION ALL 
+    SELECT wmpoiid, IF(minPrice = '', NULL, minPrice) FROM foxx_spareas_info WHERE DATE(insert_date) = @last_day
+  )
   SELECT id, city, person, new_person, leader,
     a1.real_shop, a1.shop_id, a1.shop_name, platform, 
     IF(platform = '美团', rating_mt, rating_elm) AS rating, IF(platform = '美团', rating_mt_last, rating_elm_last) AS rating_last,
-    third_send, unit_price, orders,
+    third_send, ship_fee_avg, platform_fee_avg, ship_fee_min, unit_price, orders,
     income, income_avg, income_sum,
     a1.cost, cost_avg, cost_sum, cost_ratio, cost_sum_ratio,
     consume, consume_avg, consume_sum, consume_ratio, consume_sum_ratio,
@@ -172,6 +190,8 @@ async function insertTableFromMysql(day_from_today = 1) {
 	LEFT JOIN d2 USING (shop_id)
   LEFT JOIN d3 USING (shop_id)
 	LEFT JOIN d4 USING (shop_id)
+	LEFT JOIN e3 USING (shop_id)
+	LEFT JOIN f USING (shop_id)
   
   ORDER BY a1.real_shop `
 
@@ -180,12 +200,21 @@ async function insertTableFromMysql(day_from_today = 1) {
     await knx.raw(`SET @last_day = DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL ${day_from_today} DAY),'%Y%m%d');`)
     let [data, _] = await knx.raw(sql)
 
-    if (data.length < 400 || data.length > 700 || data.every(v => v.third_send == 0)) {
-      if (data.every(v => v.platform == '饿了么')) return Promise.reject('无美团数据')
+    if (data.length < 400 || data.length > 700) {
       if (data.every(v => v.platform == '美团')) return Promise.reject('无饿了么数据')
-      if (data.every(v => v.third_send == 0)) return Promise.reject('无三方配送数据')
-      return Promise.reject('no data')
+      if (data.every(v => v.platform == '饿了么')) return Promise.reject('无美团数据')
+      return Promise.reject(`无数据（${data.length}）`)
     }
+    if (data.every(v => v.third_send == 0)) return Promise.reject('无配送数据')
+    if (data.filter(v => v.platform == '美团').every(v => v.third_send == 0)) return Promise.reject(`无美团配送数据`)
+    if (data.filter(v => v.platform == '饿了么').every(v => v.third_send == 0)) return Promise.reject(`无饿了么配送数据`)
+    if (data.every(v => v.orders == 0)) return Promise.reject('无单量数据')
+    if (data.filter(v => v.platform == '美团').every(v => v.orders == 0)) return Promise.reject(`无美团单量数据`)
+    if (data.filter(v => v.platform == '饿了么').every(v => v.orders == 0)) return Promise.reject(`无饿了么单量数据`)
+    if (data.every(v => v.ship_fee_avg == null || v.platform_fee_avg == null)) return Promise.reject('无配送扣点数据')
+    if (data.filter(v => v.platform == '美团').every(v => v.ship_fee_avg == null || v.platform_fee_avg == null)) return Promise.reject(`无美团配送扣点数据`)
+    if (data.filter(v => v.platform == '饿了么').every(v => v.ship_fee_avg == null || v.platform_fee_avg == null)) return Promise.reject(`无饿了么配送扣点数据`)
+
     const res = await knx('test_analyse_t_')
       .insert(data)
       .onConflict('id')
@@ -233,6 +262,7 @@ async function updateTable(id, a) {
   }
 }
 
+
 // updateTable()
 // insertTableFromMysql()
 
@@ -247,6 +277,7 @@ async function getTableByDate(day_from_today) {
     }
     return Promise.resolve(formatTable(data))
   } catch (err) {
+    console.error(err)
     return Promise.reject(err)
   }
 }
@@ -262,13 +293,15 @@ async function getTableByShop(shop_id) {
 }
 
 async function insertTableAll() {
-  for (let day = 1; day <= 232; day++) {
+  for (let day = 1; day < 45; day++) {
     try {
-      console.log(day)
+      console.log(dayjs().subtract(day, 'days').format('YYYYMMDD'))
       const res = await insertTable(day)
-      console.log(res)
+      console.log(res.length)
+      await sleep(5000)
     } catch (err) {
       console.error(err)
+      await sleep(5000)
     }
   }
 }
