@@ -1896,6 +1896,95 @@ router.get('/probs/_shs', async ctx => {
   }
 })
 
+router.get('/probs/_sss', async ctx => {
+  try {
+    let data = await sss()
+    ctx.body = {
+      res: data.map((v, i) => ({
+        ...v,
+        key: i
+      }))
+    }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e: e.message }
+  }
+})
+
+async function sss() {
+  const sql = `SELECT d.shop_id, d.relation_shop, s.shop_name, IF(s.platform = 1, '美团', '饿了么') AS shop_plat
+    FROM deliver_account d
+    LEFT JOIN test_shop_ s USING(shop_id)
+    WHERE d.platform = 'sss'`
+
+  const [data] = await knx.raw(sql)
+
+  return data.map(r => ({
+    店铺ID: r.shop_id,
+    店铺名称: r.shop_name,
+    平台: r.shop_plat,
+    闪时送名称: r.relation_shop
+  }))
+}
+
+router.post('/probs/_sss/add', async ctx => {
+  try {
+    const { shop_id, sss_name } = ctx.request.body
+    if ([shop_id, sss_name].some(v => v == null || v == '')) {
+      ctx.body = { e: '表单不合法' }
+      return
+    }
+    const res = await sss_add(ctx.request.body)
+    ctx.body = { res }
+  } catch (e) {
+    console.error(e)
+    ctx.body = { e: e.message }
+  }
+})
+
+async function sss_add(form) {
+  const { shop_id, sss_name } = form
+  const row = await knx('deliver_account').where({ shop_id, platform: 'sss' }).first()
+  if (row) throw new Error('门店已存在')
+
+  return knx('deliver_account')
+    .insert({
+      shop_id,
+      platform: 'sss',
+      account: '13927429391',
+      pw: 'ystp8888',
+      relation_shop: sss_name
+    })
+}
+
+router.post('/probs/_sss/edit', async ctx => {
+  try {
+    let { shop_id } = ctx.request.body
+    if ([shop_id].some(v => v == null || v == '')) {
+      ctx.body = { e: '表单不合法' }
+      return
+    }
+
+    const res = await sss_edit(ctx.request.body)
+    ctx.body = { res }
+  } catch (e) {
+    console.error(e)
+    ctx.body = { e: e.message }
+  }
+})
+
+async function sss_edit(form) {
+  const { shop_id, sss_name } = form
+  const row = await knx('deliver_account').where({ shop_id, platform: 'sss' }).first()
+
+  if (row) {
+    return knx('deliver_account')
+      .where({ id: row.id })
+      .update({ relation_shop: sss_name })
+  }
+  throw new Error('门店不存在')
+}
+
 router.get('/probs/_zps', async ctx => {
   try {
     let data = await zps()
@@ -1913,22 +2002,27 @@ router.get('/probs/_zps', async ctx => {
 
 async function zps() {
 
-  const sql = `WITH d_info AS (         -- 配送信息
+  const sql = `WITH d_info AS (-- 配送信息
       SELECT shop_id, shop_product_desc
       FROM ele_delivery_fee
       WHERE DATE_FORMAT( insert_date, "%Y-%m-%d" ) = CURDATE()
+        AND shop_product_desc IN ( '蜂鸟快送', '蜂鸟众包', '蜂鸟专送', '自配送', 'e配送', '混合送' )
       UNION ALL
-      SELECT wmpoiid, quickly_send
-      FROM foxx_spareas_info x JOIN
-      (SELECT shop_id, quickly_send FROM foxx_delivery_cost WHERE date > CURDATE()) y
-      ON x.wmpoiid = y.shop_id
-      WHERE insert_date >= CURDATE()
+      SELECT shop_id, quickly_send
+      FROM foxx_delivery_cost 
+      WHERE date > CURDATE()
+        AND quickly_send <> '美团全城送'
+    ),
+    a_info AS (
+      SELECT d.shop_id, d.platform, d.account, d.pw, d.sf_id
+      FROM deliver_account d
     )
-    SELECT d.shop_id, d.platform, d.account, d.pw, di.shop_product_desc AS way,
-      s.shop_name, IF(s.platform = 1, '美团', '饿了么') AS shop_plat, s.city, s.person, s.real_shop_name
-    FROM deliver_account d
-    LEFT JOIN test_shop_ s USING(shop_id)
-    LEFT JOIN d_info di USING(shop_id)`
+    SELECT s.shop_id, s.shop_name, IF(s.platform = 1, '美团', '饿了么') AS shop_plat, s.city, s.person, s.real_shop_name, 
+      d.platform, d.account, d.pw, d.sf_id, di.shop_product_desc AS way 
+    FROM test_shop_ s
+    LEFT JOIN a_info d USING(shop_id)
+    LEFT JOIN d_info di USING(shop_id)
+    ORDER BY s.real_shop_name`
 
   const [data] = await knx.raw(sql)
   // shop_id	shop_name	城市	物理店	person	配送方式	platform	dd账号	dd密码	fn账号	fn密码	sf账号	sf密码	闪时送账号	闪时送密码	外卖邦账号	外卖邦密码	麦芽田账号	麦芽田密码
@@ -1941,6 +2035,9 @@ async function zps() {
     let sss = g.members.find(s => s.platform == 'sss')
     let wmb = g.members.find(s => s.platform == 'wmb')
     let myt = g.members.find(s => s.platform == 'myt')
+    let ss = g.members.find(s => s.platform == 'ss')
+    let uu = g.members.find(s => s.platform == 'uu')
+
     return {
       shop_id,
       shop_name: g.members[0].shop_name,
@@ -1955,12 +2052,17 @@ async function zps() {
       fn_pw: fn?.pw,
       sf_acct: sf?.account,
       sf_pw: sf?.pw,
+      sf_id: sf?.sf_id,
       sss_acct: sss?.account,
       sss_pw: sss?.pw,
       wmb_acct: wmb?.account,
       wmb_pw: wmb?.pw,
       myt_acct: myt?.account,
       myt_pw: myt?.pw,
+      ss_acct: ss?.account,
+      ss_pw: ss?.pw,
+      uu_acct: uu?.account,
+      uu_pw: uu?.pw,
     }
   })
     .map(rec => ({
@@ -1977,12 +2079,17 @@ async function zps() {
       蜂鸟密码: rec.fn_pw,
       顺丰账号: rec.sf_acct,
       顺丰密码: rec.sf_pw,
+      顺丰ID: rec.sf_id,
       闪时送账号: rec.sss_acct,
       闪时送密码: rec.sss_pw,
-      外卖邦账号: rec.wmb_acct,
-      外卖邦密码: rec.wmb_pw,
+      // 外卖邦账号: rec.wmb_acct,
+      // 外卖邦密码: rec.wmb_pw,
       麦芽田账号: rec.myt_acct,
       麦芽田密码: rec.myt_pw,
+      闪送账号: rec.ss_acct,
+      闪送密码: rec.ss_pw,
+      UU账号: rec.uu_acct,
+      UU密码: rec.uu_pw,
     }))
 }
 
@@ -2018,8 +2125,21 @@ async function zps_add(form) {
       })
   }
 
-  const { shop_id, dd_acct, dd_pw, fn_acct, fn_pw, sf_acct, sf_pw,
-    sss_acct, sss_pw, wmb_acct, wmb_pw, myt_acct, myt_pw } = form
+  async function add_sf_info(rows, shop_id, acct, pw, sf_id) {
+    if (is_empty(acct) || is_empty(pw)) return null
+
+    return knx('deliver_account')
+      .insert({
+        shop_id,
+        platform: 'sf',
+        account: acct,
+        pw,
+        sf_id
+      })
+  }
+
+  const { shop_id, dd_acct, dd_pw, fn_acct, fn_pw, sf_acct, sf_pw, sf_id,
+    sss_acct, sss_pw, wmb_acct, wmb_pw, myt_acct, myt_pw, ss_acct, ss_pw, uu_acct, uu_pw } = form
 
   const rows = await knx('deliver_account').where({ shop_id }).select()
   if (rows.length > 0) throw new Error('门店已存在')
@@ -2028,10 +2148,13 @@ async function zps_add(form) {
 
   results.dd = await add_by_plat(rows, shop_id, 'dd', dd_acct, dd_pw)
   results.fn = await add_by_plat(rows, shop_id, 'fn', fn_acct, fn_pw)
-  results.sf = await add_by_plat(rows, shop_id, 'sf', sf_acct, sf_pw)
+  // results.sf = await add_by_plat(rows, shop_id, 'sf', sf_acct, sf_pw)
+  results.sf = await add_sf_info(rows, shop_id, sf_acct, sf_pw, sf_id)
   results.sss = await add_by_plat(rows, shop_id, 'sss', sss_acct, sss_pw)
-  results.wmb = await add_by_plat(rows, shop_id, 'wmb', wmb_acct, wmb_pw)
+  // results.wmb = await add_by_plat(rows, shop_id, 'wmb', wmb_acct, wmb_pw)
   results.myt = await add_by_plat(rows, shop_id, 'myt', myt_acct, myt_pw)
+  results.ss = await add_by_plat(rows, shop_id, 'ss', ss_acct, ss_pw)
+  results.uu = await add_by_plat(rows, shop_id, 'uu', uu_acct, uu_pw)
 
   return results
 }
@@ -2058,10 +2181,14 @@ async function zps_edit(form) {
   }
 
   async function update_by_plat(rows, shop_id, plat, acct, pw) {
-    if (is_empty(acct) || is_empty(pw)) return null
+    // if (is_empty(acct) || is_empty(pw)) return null
 
     const row = rows.find(r => r.platform == plat)
     if (row) {
+      if (is_empty(acct) || is_empty(pw)) {
+        return knx('deliver_account').where({ id: row.id }).delete()
+      }
+
       return knx('deliver_account')
         .where({ id: row.id })
         .update({
@@ -2069,6 +2196,8 @@ async function zps_edit(form) {
           pw
         })
     } else {
+      if (is_empty(acct) || is_empty(pw)) return null
+
       return knx('deliver_account')
         .insert({
           shop_id,
@@ -2079,8 +2208,40 @@ async function zps_edit(form) {
     }
   }
 
-  const { shop_id, dd_acct, dd_pw, fn_acct, fn_pw, sf_acct, sf_pw,
-    sss_acct, sss_pw, wmb_acct, wmb_pw, myt_acct, myt_pw } = form
+  async function update_sf_info(rows, shop_id, acct, pw, sf_id) {
+    // if (is_empty(acct) || is_empty(pw)) return null
+
+    const row = rows.find(r => r.platform == 'sf')
+
+    if (row) {
+      if (is_empty(acct) || is_empty(pw)) {
+        return knx('deliver_account').where({ id: row.id }).delete()
+      }
+
+      return knx('deliver_account')
+        .where({ id: row.id })
+        .update({
+          account: acct,
+          pw,
+          sf_id
+        })
+    } else {
+      if (is_empty(acct) || is_empty(pw)) return null
+
+      return knx('deliver_account')
+        .insert({
+          shop_id,
+          platform: 'sf',
+          account: acct,
+          pw,
+          sf_id
+        })
+    }
+  }
+
+
+  const { shop_id, dd_acct, dd_pw, fn_acct, fn_pw, sf_acct, sf_pw, sf_id,
+    sss_acct, sss_pw, wmb_acct, wmb_pw, myt_acct, myt_pw, ss_acct, ss_pw, uu_acct, uu_pw } = form
 
   const rows = await knx('deliver_account').where({ shop_id }).select()
 
@@ -2088,10 +2249,12 @@ async function zps_edit(form) {
 
   results.dd = await update_by_plat(rows, shop_id, 'dd', dd_acct, dd_pw)
   results.fn = await update_by_plat(rows, shop_id, 'fn', fn_acct, fn_pw)
-  results.sf = await update_by_plat(rows, shop_id, 'sf', sf_acct, sf_pw)
+  results.sf = await update_sf_info(rows, shop_id, sf_acct, sf_pw, sf_id)
   results.sss = await update_by_plat(rows, shop_id, 'sss', sss_acct, sss_pw)
-  results.wmb = await update_by_plat(rows, shop_id, 'wmb', wmb_acct, wmb_pw)
+  // results.wmb = await update_by_plat(rows, shop_id, 'wmb', wmb_acct, wmb_pw)
   results.myt = await update_by_plat(rows, shop_id, 'myt', myt_acct, myt_pw)
+  results.ss = await update_by_plat(rows, shop_id, 'ss', ss_acct, ss_pw)
+  results.uu = await update_by_plat(rows, shop_id, 'uu', uu_acct, uu_pw)
 
   return results
 }
@@ -5267,18 +5430,27 @@ const 推广费余额 = d => `-- 饿了么推广费
 
 const 合作方案到期 = `WITH
     a AS (
-      SELECT * FROM ele_packs_contract_service WHERE insert_date > CURRENT_DATE AND invalidTime < DATE_ADD(CURRENT_DATE, INTERVAL 3 DAY)
+    SELECT shop_id, invalidTime FROM ele_packs_contract_service WHERE insert_date > CURRENT_DATE
     ),
     b AS (
-        -- 门店信息
-      SELECT * FROM test_shop_
+    -- 门店信息
+    SELECT * FROM test_shop_ WHERE platform = 2
     )
-    SELECT b.shop_id 店铺id, b.shop_name 店铺名称, 
-    b.person 责任人, b.leader 组长, b.new_person 新店责任人, b.real_shop_name 物理店, 
-    IF(b.platform IS NULL, NULL, IF(b.platform = 1, '美团', '饿了么')) 平台, 
+    SELECT
+    b.shop_id 店铺id,
+    b.shop_name 店铺名称,
+    b.person 责任人,
+    b.real_shop_name 物理店,
+    IFNULL(IF( b.platform = 1, '美团', '饿了么' ),NULL) 平台,
+    CASE
+    WHEN invalidTime IS NULL THEN '没有生效的方案'
+    WHEN invalidTime < DATE_ADD( CURRENT_DATE, INTERVAL 7 DAY ) THEN '方案七天内到期'
+    ELSE '无问题' END 问题 ,
     a.invalidTime 到期时间 
-    FROM a JOIN b ON a.shop_id = b.shop_id
-    ORDER BY 物理店`
+    FROM
+    a RIGHT JOIN b ON a.shop_id = b.shop_id
+    HAVING 问题 <> '无问题'
+    ORDER BY 责任人`
 
 const 起送价变化 = `WITH
     a AS (
@@ -5324,23 +5496,32 @@ const 起送价变化 = `WITH
 
 const 百亿补贴没有报名 = `WITH
     a AS (
-      SELECT * FROM ele_bybt WHERE insert_date > CURRENT_DATE AND can_apply = 1
+    SELECT * FROM ele_bybt WHERE insert_date > CURRENT_DATE AND can_apply = 1
     ),
     b AS (
-      SELECT
-        shop_id, descs, date
-      FROM
-        ele_activity_full_reduction 
-      WHERE
-        title = '百亿补贴' AND insert_date > CURDATE()
+    SELECT
+      shop_id
+    FROM
+      ele_activity_full_reduction 
+    WHERE
+      insert_date > CURRENT_DATE AND
+      title = '百亿补贴' AND
+      descs NOT IN ('已结束', '已作废') AND
+      ISNULL( conflict_message )
     ),
     c AS (
-      SELECT shop_id, shop_name, city, IF(platform = 1, '美团', '饿了么') platform, real_shop_name, person, leader  FROM test_shop_
+    -- 门店信息
+    SELECT * FROM test_shop_
     )
-    SELECT c.*, a.by_name, b.descs, b.date FROM a 
-    LEFT JOIN b ON a.shop_id = b.shop_id 
-    JOIN c ON a.shop_id = c.shop_id 
-    ORDER BY real_shop_name
+    SELECT 
+    c.shop_id,
+    c.shop_name,
+    c.person,
+    c.real_shop_name,
+    a.by_name 可报名活动
+    FROM a LEFT JOIN b ON a.shop_id = b.shop_id JOIN c ON a.shop_id = c.shop_id 
+    WHERE b.shop_id IS NULL 
+    ORDER BY c.shop_id
 `
 
 const 单产品满减问题 = `-- 单商品满减查询
