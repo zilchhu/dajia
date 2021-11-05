@@ -11,6 +11,7 @@ import axios from 'axios'
 import md5 from 'md5'
 import uuid from 'uuid'
 import qs from 'qs'
+import pLimit from 'p-limit'
 import CryptoJS from 'crypto-js'
 import { parseAsync } from 'json2csv'
 
@@ -743,54 +744,6 @@ router.post('/delMyt', async ctx => {
   }
 })
 
-// router.get('/prob/cost/mt/:shopId/:date', async ctx => {
-//   try {
-//     let { shopId, date } = ctx.params
-//     if (!shopId) {
-//       ctx.body = { e: 'invalid params' }
-//       return
-//     }
-//     let [data, _] = await knx.raw(美团成本问题(shopId, date))
-//     data = data[2]
-//     data = data.map((v, i) => ({
-//       key: i,
-//       ...v,
-//       收入: fixed2(v.收入),
-//       单量占比: percent(v.单量占比),
-//       成本比例: percent(v.成本比例)
-//     }))
-//     ctx.body = { res: data }
-//   } catch (e) {
-//     console.log(e)
-//     ctx.body = { e }
-//   }
-// })
-
-// router.get('/prob/cost/elm/:shopId/:date', async ctx => {
-//   try {
-//     let { shopId, date } = ctx.params
-//     if (!shopId) {
-//       ctx.body = { e: 'invalid params' }
-//       return
-//     }
-//     let [data, _] = await knx.raw(饿了么成本问题(shopId, date))
-//     data = data[2]
-//     console.log(饿了么成本问题(shopId, date))
-//     data = data.map((v, i) => ({
-//       key: i,
-//       ...v,
-//       收入: fixed2(v.收入),
-//       单量占比: percent(v.单量占比),
-//       成本比例: percent(v.成本比例),
-//       单均配送: fixed2(v.单均配送)
-//     }))
-//     ctx.body = { res: data }
-//   } catch (e) {
-//     console.log(e)
-//     ctx.body = { e }
-//   }
-// })
-
 router.get('/cost/:shopId/:date', async ctx => {
   try {
     let { shopId, date } = ctx.params
@@ -884,51 +837,6 @@ router.get('/offsell/elm/:shopId/:day', async ctx => {
     ctx.body = { e }
   }
 })
-
-// router.get('/order/mt/:shopId/:date', async ctx => {
-//   try {
-//     let { shopId, date } = ctx.params
-//     let { activi, counts } = ctx.query
-//     if (!shopId || !activi || !counts) {
-//       ctx.body = { e: 'invalid params' }
-//       return
-//     }
-//     let [data, _] = await knx.raw(美团单维度订单(shopId, activi, counts, date))
-//     data = data[2]
-//     data = data.map((v, i) => ({
-//       ...v,
-//       成本比例: percent(v.成本比例),
-//       订单信息: v.订单信息.replace(/(\*\d+),/gm, '$1\n')
-//     }))
-//     ctx.body = { res: data }
-//   } catch (e) {
-//     console.log(e)
-//     ctx.body = { e }
-//   }
-// })
-
-// router.get('/order/elm/:shopId/:date', async ctx => {
-//   try {
-//     let { shopId, date } = ctx.params
-//     let { activi, counts } = ctx.query
-//     if (!shopId || !counts) {
-//       ctx.body = { e: 'invalid params' }
-//       return
-//     }
-//     let [data, _] = await knx.raw(饿了么维度订单(shopId, activi, counts, date))
-//     data = data[2]
-//     data = data.map((v, i) => ({
-//       ...v,
-//       成本比例: percent(v.成本比例),
-//       单均配送: fixed2(v.单均配送),
-//       订单信息: v.订单信息.replace(/(\*\d+)\|/gm, '$1\n')
-//     }))
-//     ctx.body = { res: data }
-//   } catch (e) {
-//     console.log(e)
-//     ctx.body = { e }
-//   }
-// })
 
 router.get('/order/:shopId/:date', async ctx => {
   try {
@@ -1896,9 +1804,14 @@ router.get('/probs/_shs', async ctx => {
   }
 })
 
+let sss_caches = {
+  data: [],
+  expired_at: dayjs().unix()
+}
+
 router.get('/probs/_sss', async ctx => {
   try {
-    let data = await sss()
+    let data = await sss_remote()
     ctx.body = {
       res: data.map((v, i) => ({
         ...v,
@@ -1925,6 +1838,110 @@ async function sss() {
     平台: r.shop_plat,
     闪时送名称: r.relation_shop
   }))
+}
+
+async function sss_remote() {
+  const token = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE2MzYwODUzMjYsInVzZXJuYW1lIjoiMTM5Mjc0MjkzOTEifQ.ahvs8ahSX2TvopPI7C_l_srB6eNuLhfni7V9Den_-hc'
+
+  async function login() {
+    const { data } = await axios({
+      method: 'POST',
+      url: 'https://ag.zhuopaikeji.com/system-api/sys/login',
+      headers: {
+        accept: 'application/json, text/plain, */*',
+        'accept-encoding': 'gzip, deflate, br',
+        'accept-language': 'zh-TW,zh;q=0.9,en-US;q=0.8,en;q=0.7',
+        'content-type': 'application/json;charset=UTF-8',
+        dnt: 1,
+        origin: 'https://ag.zhuopaikeji.com',
+        referer: 'https://ag.zhuopaikeji.com/user/login?redirect=%2FuserManagement%2FshopManagement',
+        tenant_id: 0,
+        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.54 Safari/537.36'
+      },
+      data: {
+        password: "ystp8888",
+        remember_me: true,
+        username: "13927429391"
+      }
+    })
+    if (data.message != '登录成功') throw new Error(data.message)
+    return data.result.token
+  }
+
+  async function storeList(token, pageNum = 1, pageSize = 10) {
+    const { data } = await axios({
+      method: 'POST',
+      url: 'https://ag.zhuopaikeji.com/system-api/customer/store/list',
+      headers: {
+        accept: 'application/json, text/plain, */*',
+        'accept-encoding': 'gzip, deflate, br',
+        'accept-language': 'zh-TW,zh;q=0.9,en-US;q=0.8,en;q=0.7',
+        'content-type': 'application/json;charset=UTF-8',
+        dnt: 1,
+        origin: 'https://ag.zhuopaikeji.com',
+        referer: 'https://ag.zhuopaikeji.com/userManagement/shopManagement',
+        tenant_id: 0,
+        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.54 Safari/537.36',
+        'x-access-token': token
+      },
+      data: {
+        pageNo: pageNum,
+        pageSize
+      }
+    })
+    if (data.success != true) throw new Error(data.message)
+    return data.result
+  }
+
+  async function tryLogin() {
+    try {
+      const token = await login()
+      return { result: token }
+    } catch (err) {
+      console.error(err.message)
+      return { error: err.message }
+    }
+  }
+
+  async function fetchAllStoreList(token) {
+    try {
+      let limit = pLimit(3)
+      let { pages, records } = await storeList(token)
+      pages = Array.from(Array(pages).keys()).map(i => i + 1)
+      let list = await Promise.all(pages.map(p => limit(() => storeList(token, p))))
+      return list.flatMap(it => it.records)
+    } catch (err) {
+      console.error(err.message)
+      let { result, error } = tryLogin()
+      if (error) throw new Error(error)
+      return await fetchAllStoreList(result)
+    }
+  }
+
+  let stores = []
+  if (dayjs().unix() < sss_caches.expired_at) {
+    stores = sss_caches.data
+  } else {
+    stores = await fetchAllStoreList(token)
+    sss_caches = { data: stores, expired_at: dayjs().unix() + 10 * 60 * 1000 }
+  }
+
+  const sql = `SELECT d.shop_id, d.relation_shop, s.shop_name, IF(s.platform = 1, '美团', '饿了么') AS shop_plat
+    FROM deliver_account d
+    LEFT JOIN test_shop_ s USING(shop_id)
+    WHERE d.platform = 'sss'`
+
+  const [sss_ds] = await knx.raw(sql)
+
+  return stores.map(store => {
+    let shop = sss_ds.find(d => d.relation_shop == store.storeName)
+    return {
+      闪时送名称: store.storeName,
+      店铺ID: shop?.shop_id,
+      店铺名称: shop?.shop_name,
+      平台: shop?.shop_plat,
+    }
+  })
 }
 
 router.post('/probs/_sss/add', async ctx => {
@@ -1981,8 +1998,16 @@ async function sss_edit(form) {
     return knx('deliver_account')
       .where({ id: row.id })
       .update({ relation_shop: sss_name })
+  } else {
+    return knx('deliver_account')
+      .insert({
+        shop_id,
+        platform: 'sss',
+        account: '13927429391',
+        pw: 'ystp8888',
+        relation_shop: sss_name
+      })
   }
-  throw new Error('门店不存在')
 }
 
 router.get('/probs/_zps', async ctx => {
