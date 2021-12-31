@@ -8,3 +8,7 @@ uploads/*.zip
 uploads/*.rar
 uploads/*.json
 log
+results
+*.json
+*.txt
+*.xlsx

@@ -2,6 +2,15 @@ import axios from 'axios'
 import qs from 'qs'
 import urls_ from './url.js'
 
+function jsonify(obj) {
+  return Object.entries(obj).reduce((p, [k, v]) => {
+    return {
+      ...p,
+      [k]: v != null && typeof v == "object" ? JSON.stringify(v) : v,
+    }
+  }, {})
+}
+
 export class MTRequest {
   constructor(cookie) {
     this.cookie = cookie
@@ -44,7 +53,7 @@ export class MTRequest {
         config[namespace].data = config.data
         config[namespace].retryCount = config[namespace].retryCount || 0
 
-        config.data = qs.stringify(config.data)
+        config.data = new URLSearchParams(jsonify(config.data)).toString()
         return config
       },
       err => Promise.reject(err)
@@ -98,7 +107,7 @@ export class MTRequest {
         if (shouldRetry) {
           config[namespace].retryCount += 1
 
-          console.log('err retry...', config[namespace].retryCount)
+          console.log('err retry...', config.url, config[namespace].retryCount)
           return new Promise(resolve =>
             setTimeout(() => resolve(this.instance({ ...config, data: config[namespace].data })), 600)
           )

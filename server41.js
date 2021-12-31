@@ -1,27 +1,27 @@
-import Koa from 'koa'
-import Router from 'koa-router'
-import bodyParser from 'koa-bodyparser'
-import cors from 'koa2-cors'
-import multer from '@koa/multer'
-import serve from 'koa-static'
-import flatten from 'flatten'
-import fs from 'fs'
-import path from 'path'
-import axios from 'axios'
-import md5 from 'md5'
-import uuid from 'uuid'
-import qs from 'qs'
-import pLimit from 'p-limit'
-import CryptoJS from 'crypto-js'
-import { parseAsync } from 'json2csv'
+import Koa from "koa"
+import Router from "koa-router"
+import bodyParser from "koa-bodyparser"
+import cors from "koa2-cors"
+import multer from "@koa/multer"
+import serve from "koa-static"
+import flatten from "flatten"
+import fs from "fs"
+import path from "path"
+import axios from "axios"
+import md5 from "md5"
+import uuid from "uuid"
+import qs from "qs"
+import pLimit from "p-limit"
+import CryptoJS from "crypto-js"
+import { parseAsync } from "json2csv"
 
 // import { getAllElmShops } from './tools/all.js'
-import { readXls, readJson } from './fallback/fallback_app.js'
-import { getAllElmShops } from './tools/all.js'
+import { readXls, readJson } from "./fallback/fallback_app.js"
+import { getAllElmShops } from "./tools/all.js"
 
-import dayjs from 'dayjs'
+import dayjs from "dayjs"
 
-import { mt_shops } from '../21/mt_poi.js'
+import { mt_shops } from "../21/mt_poi.js"
 
 // import localeData from 'dayjs/plugin/localeData'
 // import weekday from 'dayjs/plugin/weekday'
@@ -39,7 +39,7 @@ import { mt_shops } from '../21/mt_poi.js'
 //   weekdays: ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
 // })
 
-Array.prototype.groupBy = function (key) {
+Array.prototype.groupBy = function(key) {
   let values = Array.from(new Set(this.map(v => v[key])))
   return values.map(v => ({
     group: v,
@@ -55,7 +55,7 @@ function omit(obj, ks) {
   return newObj
 }
 
-import knx from '../50/index.js'
+import knx from "../50/index.js"
 
 async function t() {
   try {
@@ -91,17 +91,16 @@ async function t() {
     //   i += 1
     // }
 
-    let c = await readXls('plan/test_analyse_t_.xlsx', 'test_analyse_t_')
+    let c = await readXls("plan/test_analyse_t_.xlsx", "test_analyse_t_")
     console.log(c.length)
     for (let row of c) {
       // console.log(row.date)
       console.log(
-        await knx('test_analyse_t_')
+        await knx("test_analyse_t_")
           .where({ shop_id: row.shop_id, date: row.date })
           .update({ a: row.a })
       )
     }
-
 
     // let c = await readXls('plan/门店各项成本-5月统计表.xlsx', 'Sheet1')
     // for (let row of c) {
@@ -133,7 +132,6 @@ async function t() {
     //     has_tp: g.members.find(v => v.shop_name.includes('甜品'))
     //   }))
     // console.log(real_shop_groups)
-
   } catch (e) {
     console.error(e)
   }
@@ -155,68 +153,68 @@ const koa = new Koa()
 const router = new Router()
 const upload = multer({
   storage: multer.diskStorage({
-    destination: function (req, file, cb) {
-      cb(null, './uploads')
+    destination: function(req, file, cb) {
+      cb(null, "./uploads")
     },
-    filename: function (req, file, cb) {
-      cb(null, file.originalname + '-' + Date.now() + path.extname(file.originalname))
-    }
-  })
+    filename: function(req, file, cb) {
+      cb(null, file.originalname + "-" + Date.now() + path.extname(file.originalname))
+    },
+  }),
 })
 
 koa.use(cors())
 
 koa.use(
   bodyParser({
-    onerror: function (err, ctx) {
-      ctx.throw('body parse error', 422)
-    }
+    onerror: function(err, ctx) {
+      ctx.throw("body parse error", 422)
+    },
   })
 )
 
-koa.use(serve('./uploads/'))
+koa.use(serve("./uploads/"))
 
-router.post('/upload', async (ctx, next) => {
+router.post("/upload", async (ctx, next) => {
   let err = await upload
-    .single('file')(ctx, next)
+    .single("file")(ctx, next)
     .then(res => res)
     .catch(err => err)
   if (err) {
     console.log(err)
     ctx.body = {
       code: 0,
-      e: err.message
+      e: err.message,
     }
   } else {
-    fs.appendFileSync('upload.txt', `${ctx?.request?.ip} ${ctx?.file?.filename} \n`)
+    fs.appendFileSync("upload.txt", `${ctx?.request?.ip} ${ctx?.file?.filename} \n`)
     ctx.body = {
       code: 1,
-      res: ctx.file
+      res: ctx.file,
     }
   }
 })
 
-router.get('/ip', ctx => {
+router.get("/ip", ctx => {
   console.log(ctx.request.ip)
   ctx.body = ctx.request.ip
 })
 
-router.get('/plugin', ctx => {
-  let app = fs.readFileSync('./uploads/app(1).js', 'utf-8')
-  let plugin = fs.readFileSync('./uploads/plugin2.js', 'utf-8')
+router.get("/plugin", ctx => {
+  let app = fs.readFileSync("./uploads/app(1).js", "utf-8")
+  let plugin = fs.readFileSync("./uploads/plugin2.js", "utf-8")
   ctx.body = app + plugin
 })
 
-router.get('/date/:date', async ctx => { })
+router.get("/date/:date", async ctx => {})
 
 // multiple dates
-router.get('/sum/:date', async ctx => {
+router.get("/sum/:date", async ctx => {
   try {
     let { date } = ctx.params
     let { raw } = ctx.query
 
     if (!date) {
-      ctx.body = { e: 'invalid params' }
+      ctx.body = { e: "invalid params" }
       return
     }
     const res = await sum(date, raw)
@@ -227,7 +225,7 @@ router.get('/sum/:date', async ctx => {
   }
 })
 
-router.get('/sum2', async ctx => {
+router.get("/sum2", async ctx => {
   try {
     const res = await sum2()
     ctx.body = { res }
@@ -237,7 +235,7 @@ router.get('/sum2', async ctx => {
   }
 })
 
-router.get('/fresh', async ctx => {
+router.get("/fresh", async ctx => {
   try {
     const res = await fresh()
     ctx.body = { res }
@@ -247,13 +245,13 @@ router.get('/fresh', async ctx => {
   }
 })
 
-router.get('/perf/:date', async ctx => {
+router.get("/perf/:date", async ctx => {
   try {
     let { date } = ctx.params
     let { djh } = ctx.query
 
     if (!date) {
-      ctx.body = { e: 'invalid params' }
+      ctx.body = { e: "invalid params" }
       return
     }
 
@@ -265,7 +263,7 @@ router.get('/perf/:date', async ctx => {
   }
 })
 
-router.get('/perf2', async ctx => {
+router.get("/perf2", async ctx => {
   try {
     const res = await commision()
     ctx.body = { res }
@@ -275,7 +273,7 @@ router.get('/perf2', async ctx => {
   }
 })
 
-router.get('/export/perf', async ctx => {
+router.get("/export/perf", async ctx => {
   try {
     const [res, _] = await knx.raw(perf_sql(100))
     ctx.body = res.map(v => ({ ...v, date: `${v.date}` })).reverse()
@@ -285,7 +283,7 @@ router.get('/export/perf', async ctx => {
   }
 })
 
-router.get('/export/op', async ctx => {
+router.get("/export/op", async ctx => {
   try {
     const [res, _] = await knx.raw(op_sql(60))
     ctx.body = res.map(v => ({ ...v, shop_id: `${v.shop_id}`, date: `${v.date}` }))
@@ -295,7 +293,7 @@ router.get('/export/op', async ctx => {
   }
 })
 
-router.get('/export/op2', async ctx => {
+router.get("/export/op2", async ctx => {
   try {
     let [res, _] = await knx.raw(sum_sql2)
     res = res[2]
@@ -306,13 +304,13 @@ router.get('/export/op2', async ctx => {
   }
 })
 
-router.get('/export/op3', async ctx => {
+router.get("/export/op3", async ctx => {
   try {
     let [res, _] = await knx.raw(sum_sql(60))
     res = res[2]
     ctx.body = res.map(v => ({
       ...v,
-      date: `${v.date}`
+      date: `${v.date}`,
     }))
   } catch (e) {
     console.log(e)
@@ -320,11 +318,11 @@ router.get('/export/op3', async ctx => {
   }
 })
 
-router.get('/export/fresh.csv', async ctx => {
+router.get("/export/fresh.csv", async ctx => {
   try {
     const [res, _] = await knx.raw(export_fresh_sql_csv)
 
-    ctx.set('Content-Type', 'application/excel')
+    ctx.set("Content-Type", "application/excel")
     ctx.body = await parseAsync(res)
   } catch (e) {
     console.log(e)
@@ -332,7 +330,7 @@ router.get('/export/fresh.csv', async ctx => {
   }
 })
 
-router.get('/export/fresh', async ctx => {
+router.get("/export/fresh", async ctx => {
   try {
     const [res, _] = await knx.raw(export_fresh_sql)
     ctx.body = res.map(v => ({
@@ -346,8 +344,8 @@ router.get('/export/fresh', async ctx => {
       overview: parseFloat_null(v.overview),
       Entryrate: parseFloat_null(v.Entryrate),
       Orderrate: parseFloat_null(v.Orderrate),
-      kangaroo_name: v.kangaroo_name || '',
-      a2: v.a2 || ''
+      kangaroo_name: v.kangaroo_name || "",
+      a2: v.a2 || "",
     }))
   } catch (e) {
     console.log(e)
@@ -356,12 +354,12 @@ router.get('/export/fresh', async ctx => {
 })
 
 // all days
-router.get('/shop/:shopid', async ctx => {
+router.get("/shop/:shopid", async ctx => {
   try {
     let { shopid } = ctx.params
 
     if (!shopid) {
-      ctx.body = { e: 'invalid params' }
+      ctx.body = { e: "invalid params" }
       return
     }
     const res = await shop(shopid)
@@ -372,12 +370,12 @@ router.get('/shop/:shopid', async ctx => {
   }
 })
 
-router.get('/shop_history/:shopid', async ctx => {
+router.get("/shop_history/:shopid", async ctx => {
   try {
     let { shopid } = ctx.params
     let { oneday } = ctx.query
     if (!shopid) {
-      ctx.body = { e: 'invalid params' }
+      ctx.body = { e: "invalid params" }
       return
     }
     const res = await shop_history(shopid, oneday)
@@ -388,11 +386,11 @@ router.get('/shop_history/:shopid', async ctx => {
   }
 })
 // 1 day
-router.get('/user/:username/:date', async ctx => {
+router.get("/user/:username/:date", async ctx => {
   try {
     let { username, date } = ctx.params
-    if (username == '' || !date) {
-      ctx.body = { e: 'invalid params' }
+    if (username == "" || !date) {
+      ctx.body = { e: "invalid params" }
       return
     }
     const res = await user(username, date)
@@ -403,11 +401,11 @@ router.get('/user/:username/:date', async ctx => {
   }
 })
 
-router.get('/user_acts/:username/:date', async ctx => {
+router.get("/user_acts/:username/:date", async ctx => {
   try {
     let { username, date } = ctx.params
-    if (username == '' || !date) {
-      ctx.body = { e: 'invalid params' }
+    if (username == "" || !date) {
+      ctx.body = { e: "invalid params" }
       return
     }
     const res = await user_acts(username, date)
@@ -418,11 +416,11 @@ router.get('/user_acts/:username/:date', async ctx => {
   }
 })
 
-router.get('/record/indices/:d0/:d1', async ctx => {
+router.get("/record/indices/:d0/:d1", async ctx => {
   try {
     let { d0, d1 } = ctx.params
     if (d0 == null || d1 == null) {
-      ctx.body = { e: 'invalid params' }
+      ctx.body = { e: "invalid params" }
       return
     }
     let [data, _] = await knx.raw(工单优化指标(d0, d1))
@@ -432,8 +430,8 @@ router.get('/record/indices/:d0/:d1', async ctx => {
         ...v,
         key: i,
         优化率: percent(v.优化率),
-        解决率: percent(v.解决率)
-      }))
+        解决率: percent(v.解决率),
+      })),
     }
   } catch (e) {
     console.error(e)
@@ -441,11 +439,11 @@ router.get('/record/indices/:d0/:d1', async ctx => {
   }
 })
 
-router.post('/plans', async ctx => {
+router.post("/plans", async ctx => {
   try {
     let { ids, a } = ctx.request.body
     if (!ids || !a) {
-      ctx.body = { e: 'invalid params' }
+      ctx.body = { e: "invalid params" }
       return
     }
     const res = await plans(ids, a)
@@ -456,11 +454,11 @@ router.post('/plans', async ctx => {
   }
 })
 
-router.post('/comments', async ctx => {
+router.post("/comments", async ctx => {
   try {
     let { id, c } = ctx.request.body
     if (!id || !c) {
-      ctx.body = { e: 'invalid params' }
+      ctx.body = { e: "invalid params" }
       return
     }
     const res = await comments(id, c)
@@ -471,7 +469,7 @@ router.post('/comments', async ctx => {
   }
 })
 
-router.get('/shops/mt', async ctx => {
+router.get("/shops/mt", async ctx => {
   try {
     const res = await mt_shops()
     // const res2 = await new PoiD().list()
@@ -482,7 +480,7 @@ router.get('/shops/mt', async ctx => {
   }
 })
 
-router.get('/shops/elm', async ctx => {
+router.get("/shops/elm", async ctx => {
   try {
     const res = await getAllElmShops()
     ctx.body = { res }
@@ -492,16 +490,23 @@ router.get('/shops/elm', async ctx => {
   }
 })
 
-router.get('/shops/auths', async ctx => {
+router.get("/shops/auths", async ctx => {
   try {
-    const mt_auths = await knx('foxx_shop_reptile').select().where({ status: 0 })
-    const mt_third_auths = await knx('t_takeaway_shop_reptile').select()
-    const elm_auths = await knx('ele_info_manage').select().where({ status: 0 })
+    const mt_auths = await knx("foxx_shop_reptile")
+      .select()
+      .where({ status: 0 })
+    const mt_third_auths = await knx("t_takeaway_shop_reptile").select()
+    const elm_auths = await knx("ele_info_manage")
+      .select()
+      .where({ status: 0 })
     ctx.body = {
-      res: mt_auths.slice(0, 1)
+      res: mt_auths
+        .slice(0, 1)
         .concat(mt_third_auths)
         .map(v => ({ platform: 1, shopId: v.wmpoiid, shopName: v.reptile_type, auth: v.cookie }))
-        .concat(elm_auths.slice(0, 1).map(v => ({ platform: 2, shopId: v.shop_id, shopName: v.shop_name, auth: v.ks_id })))
+        .concat(
+          elm_auths.slice(0, 1).map(v => ({ platform: 2, shopId: v.shop_id, shopName: v.shop_name, auth: v.ks_id }))
+        ),
     }
   } catch (e) {
     console.log(e)
@@ -509,9 +514,9 @@ router.get('/shops/auths', async ctx => {
   }
 })
 
-router.get('/shops/real', async ctx => {
+router.get("/shops/real", async ctx => {
   try {
-    const res = await knx('foxx_real_shop_info').select()
+    const res = await knx("foxx_real_shop_info").select()
     ctx.body = { res }
   } catch (e) {
     console.log(e)
@@ -519,9 +524,9 @@ router.get('/shops/real', async ctx => {
   }
 })
 
-router.get('/shops/real2', async ctx => {
+router.get("/shops/real2", async ctx => {
   try {
-    const [res, _] = await knx.raw('select * from test_shop_ group by real_shop_name')
+    const [res, _] = await knx.raw("select * from test_shop_ group by real_shop_name")
     ctx.body = { res }
   } catch (e) {
     console.log(e)
@@ -529,9 +534,9 @@ router.get('/shops/real2', async ctx => {
   }
 })
 
-router.get('/shops/all', async ctx => {
+router.get("/shops/all", async ctx => {
   try {
-    const [res, _] = await knx.raw('select * from test_shop_')
+    const [res, _] = await knx.raw("select * from test_shop_")
     ctx.body = { res }
   } catch (e) {
     console.log(e)
@@ -539,9 +544,9 @@ router.get('/shops/all', async ctx => {
   }
 })
 
-router.get('/fengniao', async ctx => {
+router.get("/fengniao", async ctx => {
   try {
-    const res = await knx('ele_fengniao_info').select()
+    const res = await knx("ele_fengniao_info").select()
     ctx.body = { res }
   } catch (e) {
     console.log(e)
@@ -549,9 +554,9 @@ router.get('/fengniao', async ctx => {
   }
 })
 
-router.get('/dada', async ctx => {
+router.get("/dada", async ctx => {
   try {
-    const res = await knx('dd_login_info').select()
+    const res = await knx("dd_login_info").select()
     ctx.body = { res }
   } catch (e) {
     console.log(e)
@@ -559,9 +564,9 @@ router.get('/dada', async ctx => {
   }
 })
 
-router.get('/shunfeng', async ctx => {
+router.get("/shunfeng", async ctx => {
   try {
-    const res = await knx('sf_express_user_info').select()
+    const res = await knx("sf_express_user_info").select()
     ctx.body = { res }
   } catch (e) {
     console.log(e)
@@ -569,9 +574,9 @@ router.get('/shunfeng', async ctx => {
   }
 })
 
-router.get('/myt', async ctx => {
+router.get("/myt", async ctx => {
   try {
-    const res = await knx('myt_login_info').select()
+    const res = await knx("myt_login_info").select()
     ctx.body = { res }
   } catch (e) {
     console.log(e)
@@ -579,7 +584,7 @@ router.get('/myt', async ctx => {
   }
 })
 
-router.post('/addNewShop', async ctx => {
+router.post("/addNewShop", async ctx => {
   try {
     let {
       platform,
@@ -595,10 +600,10 @@ router.post('/addNewShop', async ctx => {
       isD,
       isM,
       rent,
-      project_id
+      project_id,
     } = ctx.request.body
     if (!platform || !shopId || !shopName || !roomId || !realName) {
-      ctx.body = { e: 'invalid params' }
+      ctx.body = { e: "invalid params" }
       return
     }
     const res = await addNewShop(
@@ -624,11 +629,11 @@ router.post('/addNewShop', async ctx => {
   }
 })
 
-router.post('/addFengniao', async ctx => {
+router.post("/addFengniao", async ctx => {
   try {
     let { shopId, shopName, loginName, password } = ctx.request.body
     if (!shopId || !loginName || !password) {
-      ctx.body = { e: 'invalid params' }
+      ctx.body = { e: "invalid params" }
       return
     }
     const res = await addFengniao(shopId, shopName, loginName, password)
@@ -639,11 +644,11 @@ router.post('/addFengniao', async ctx => {
   }
 })
 
-router.post('/addDada', async ctx => {
+router.post("/addDada", async ctx => {
   try {
     let { shopId, shopName, username, password } = ctx.request.body
     if (!shopId || !username || !password) {
-      ctx.body = { e: 'invalid params' }
+      ctx.body = { e: "invalid params" }
       return
     }
     const res = await addDada(shopId, shopName, username, password)
@@ -654,11 +659,11 @@ router.post('/addDada', async ctx => {
   }
 })
 
-router.post('/addShunfeng', async ctx => {
+router.post("/addShunfeng", async ctx => {
   try {
     let { shopId, shopName, username, password } = ctx.request.body
     if (!shopId || !username || !password) {
-      ctx.body = { e: 'invalid params' }
+      ctx.body = { e: "invalid params" }
       return
     }
     const res = await addShunfeng(shopId, shopName, username, password)
@@ -669,11 +674,11 @@ router.post('/addShunfeng', async ctx => {
   }
 })
 
-router.post('/addMyt', async ctx => {
+router.post("/addMyt", async ctx => {
   try {
     let { shopId, loginName, password } = ctx.request.body
     if (!shopId || !loginName || !password) {
-      ctx.body = { e: 'invalid params' }
+      ctx.body = { e: "invalid params" }
       return
     }
     const res = await addMyt(shopId, loginName, password)
@@ -684,11 +689,11 @@ router.post('/addMyt', async ctx => {
   }
 })
 
-router.post('/delFengniao', async ctx => {
+router.post("/delFengniao", async ctx => {
   try {
     let { shopId, loginName } = ctx.request.body
     if (!shopId || !loginName) {
-      ctx.body = { e: 'invalid params' }
+      ctx.body = { e: "invalid params" }
       return
     }
     const res = await delFengniao(shopId, loginName)
@@ -699,11 +704,11 @@ router.post('/delFengniao', async ctx => {
   }
 })
 
-router.post('/delDada', async ctx => {
+router.post("/delDada", async ctx => {
   try {
     let { shopId, username } = ctx.request.body
     if (!shopId || !username) {
-      ctx.body = { e: 'invalid params' }
+      ctx.body = { e: "invalid params" }
       return
     }
     const res = await delDada(shopId, username)
@@ -714,11 +719,11 @@ router.post('/delDada', async ctx => {
   }
 })
 
-router.post('/delShunfeng', async ctx => {
+router.post("/delShunfeng", async ctx => {
   try {
     let { shopId, username } = ctx.request.body
     if (!shopId || !username) {
-      ctx.body = { e: 'invalid params' }
+      ctx.body = { e: "invalid params" }
       return
     }
     const res = await delShunfeng(shopId, username)
@@ -729,11 +734,11 @@ router.post('/delShunfeng', async ctx => {
   }
 })
 
-router.post('/delMyt', async ctx => {
+router.post("/delMyt", async ctx => {
   try {
     let { shopId, loginName } = ctx.request.body
     if (!shopId || !loginName) {
-      ctx.body = { e: 'invalid params' }
+      ctx.body = { e: "invalid params" }
       return
     }
     const res = await delMyt(shopId, loginName)
@@ -744,11 +749,11 @@ router.post('/delMyt', async ctx => {
   }
 })
 
-router.get('/cost/:shopId/:date', async ctx => {
+router.get("/cost/:shopId/:date", async ctx => {
   try {
     let { shopId, date } = ctx.params
     if (!shopId) {
-      ctx.body = { e: 'invalid params' }
+      ctx.body = { e: "invalid params" }
       return
     }
     let [data, _] = await knx.raw(维度订单(shopId, date))
@@ -765,16 +770,16 @@ router.get('/cost/:shopId/:date', async ctx => {
   }
 })
 
-router.get('/indices/mt/:shopId/:day', async ctx => {
+router.get("/indices/mt/:shopId/:day", async ctx => {
   try {
     let { shopId, day } = ctx.params
     if (!shopId) {
-      ctx.body = { e: 'invalid params' }
+      ctx.body = { e: "invalid params" }
       return
     }
-    let data = await indices('美团', shopId, day)
+    let data = await indices("美团", shopId, day)
 
-    ctx.set('Cache-Control', 'max-age=28800')
+    ctx.set("Cache-Control", "max-age=28800")
     ctx.body = { res: data }
   } catch (e) {
     console.log(e)
@@ -782,16 +787,16 @@ router.get('/indices/mt/:shopId/:day', async ctx => {
   }
 })
 
-router.get('/indices/elm/:shopId/:day', async ctx => {
+router.get("/indices/elm/:shopId/:day", async ctx => {
   try {
     let { shopId, day } = ctx.params
     if (!shopId) {
-      ctx.body = { e: 'invalid params' }
+      ctx.body = { e: "invalid params" }
       return
     }
-    let data = await indices('饿了么', shopId, day)
+    let data = await indices("饿了么", shopId, day)
 
-    ctx.set('Cache-Control', 'max-age=28800')
+    ctx.set("Cache-Control", "max-age=28800")
     ctx.body = { res: data }
   } catch (e) {
     console.log(e)
@@ -799,17 +804,17 @@ router.get('/indices/elm/:shopId/:day', async ctx => {
   }
 })
 
-router.get('/offsell/mt/:shopId/:day', async ctx => {
+router.get("/offsell/mt/:shopId/:day", async ctx => {
   try {
     let { shopId, day } = ctx.params
     if (!shopId) {
-      ctx.body = { e: 'invalid params' }
+      ctx.body = { e: "invalid params" }
       return
     }
     let [data, _] = await knx.raw(
       `SELECT *, tagName AS category_name, boxPrice AS package_fee FROM foxx_food_manage WHERE date = ${day} AND wmpoiid = ${shopId} AND sellStatus = 1`
     )
-    ctx.set('Cache-Control', 'max-age=28800')
+    ctx.set("Cache-Control", "max-age=28800")
     ctx.body = { res: data }
   } catch (e) {
     console.log(e)
@@ -817,11 +822,11 @@ router.get('/offsell/mt/:shopId/:day', async ctx => {
   }
 })
 
-router.get('/offsell/elm/:shopId/:day', async ctx => {
+router.get("/offsell/elm/:shopId/:day", async ctx => {
   try {
     let { shopId, day } = ctx.params
     if (!shopId) {
-      ctx.body = { e: 'invalid params' }
+      ctx.body = { e: "invalid params" }
       return
     }
     let [data, _] = await knx.raw(
@@ -830,7 +835,7 @@ router.get('/offsell/elm/:shopId/:day', async ctx => {
         SELECT id FROM ele_food_manage WHERE bach_date = DATE_FORMAT(DATE_ADD(${day}, INTERVAL 1 DAY), '%Y%m%d') AND shop_id = ${shopId} AND on_shelf = '下架' 
       ) t ON m.id = t.id`
     )
-    ctx.set('Cache-Control', 'max-age=28800')
+    ctx.set("Cache-Control", "max-age=28800")
     ctx.body = { res: data }
   } catch (e) {
     console.log(e)
@@ -838,19 +843,19 @@ router.get('/offsell/elm/:shopId/:day', async ctx => {
   }
 })
 
-router.get('/order/:shopId/:date', async ctx => {
+router.get("/order/:shopId/:date", async ctx => {
   try {
     let { shopId, date } = ctx.params
     let { activi, counts } = ctx.query
     if (!shopId) {
-      ctx.body = { e: 'invalid params' }
+      ctx.body = { e: "invalid params" }
       return
     }
     let [data, _] = await knx.raw(维度订单详情(shopId, activi, counts, date))
     data = data[2]
     data = data.map((v, i) => ({
       ...v,
-      订单信息: v.订单信息?.replace(/(\*\d+)[\|,]/gm, '$1\n')?.replace(/^,/, '')
+      订单信息: v.订单信息?.replace(/(\*\d+)[\|,]/gm, "$1\n")?.replace(/^,/, ""),
     }))
     ctx.body = { res: data }
   } catch (e) {
@@ -859,15 +864,15 @@ router.get('/order/:shopId/:date', async ctx => {
   }
 })
 
-router.get('/whitelist/mt/ad/smarts', async ctx => {
+router.get("/whitelist/mt/ad/smarts", async ctx => {
   try {
-    let data = await knx('foxx_platform_sys')
+    let data = await knx("foxx_platform_sys")
       .first()
-      .where({ p_key: 'mt_smart_ad_whitelist' })
+      .where({ p_key: "mt_smart_ad_whitelist" })
     let shops = await mt_shops()
-    data = Array.from(new Set(data.p_values.split(','))).map(v => ({
+    data = Array.from(new Set(data.p_values.split(","))).map(v => ({
       shopId: v,
-      shopName: shops.find(s => s.id == v)?.poiName
+      shopName: shops.find(s => s.id == v)?.poiName,
     }))
     ctx.body = { res: data }
   } catch (e) {
@@ -876,20 +881,20 @@ router.get('/whitelist/mt/ad/smarts', async ctx => {
   }
 })
 
-router.post('/whitelist/mt/ad/smarts', async ctx => {
+router.post("/whitelist/mt/ad/smarts", async ctx => {
   try {
     let { shopId } = ctx.request.body
-    let data = await knx('foxx_platform_sys')
+    let data = await knx("foxx_platform_sys")
       .first()
-      .where({ p_key: 'mt_smart_ad_whitelist' })
-    data = Array.from(new Set(data.p_values.split(',')))
+      .where({ p_key: "mt_smart_ad_whitelist" })
+    data = Array.from(new Set(data.p_values.split(",")))
     if (data.includes(shopId)) {
-      ctx.body = { e: 'has been added' }
+      ctx.body = { e: "has been added" }
       return
     }
-    let res = await knx('foxx_platform_sys')
-      .where({ p_key: 'mt_smart_ad_whitelist' })
-      .update({ p_values: [...data, shopId].join(',') })
+    let res = await knx("foxx_platform_sys")
+      .where({ p_key: "mt_smart_ad_whitelist" })
+      .update({ p_values: [...data, shopId].join(",") })
     ctx.body = { res }
   } catch (e) {
     console.log(e)
@@ -897,25 +902,25 @@ router.post('/whitelist/mt/ad/smarts', async ctx => {
   }
 })
 
-router.delete('/whitelist/mt/ad/smarts', async ctx => {
+router.delete("/whitelist/mt/ad/smarts", async ctx => {
   try {
     let { shopId } = ctx.request.query
 
-    let data = await knx('foxx_platform_sys')
+    let data = await knx("foxx_platform_sys")
       .first()
-      .where({ p_key: 'mt_smart_ad_whitelist' })
-    data = Array.from(new Set(data.p_values.split(',')))
+      .where({ p_key: "mt_smart_ad_whitelist" })
+    data = Array.from(new Set(data.p_values.split(",")))
     if (!data.includes(shopId)) {
-      ctx.body = { e: 'not found' }
+      ctx.body = { e: "not found" }
       return
     }
     data.splice(
       data.findIndex(v => v == shopId),
       1
     )
-    let res = await knx('foxx_platform_sys')
-      .where({ p_key: 'mt_smart_ad_whitelist' })
-      .update({ p_values: data.join(',') })
+    let res = await knx("foxx_platform_sys")
+      .where({ p_key: "mt_smart_ad_whitelist" })
+      .update({ p_values: data.join(",") })
     ctx.body = { res }
   } catch (e) {
     console.log(e)
@@ -923,15 +928,15 @@ router.delete('/whitelist/mt/ad/smarts', async ctx => {
   }
 })
 
-router.get('/whitelist/mt/ad/cpcs', async ctx => {
+router.get("/whitelist/mt/ad/cpcs", async ctx => {
   try {
-    let data = await knx('foxx_platform_sys')
+    let data = await knx("foxx_platform_sys")
       .first()
-      .where({ p_key: 'mt_ad_cpc_whitelist' })
+      .where({ p_key: "mt_ad_cpc_whitelist" })
     let shops = await mt_shops()
-    data = Array.from(new Set(data.p_values.split(','))).map(v => ({
+    data = Array.from(new Set(data.p_values.split(","))).map(v => ({
       shopId: v,
-      shopName: shops.find(s => s.id == v)?.poiName
+      shopName: shops.find(s => s.id == v)?.poiName,
     }))
     ctx.body = { res: data }
   } catch (e) {
@@ -940,20 +945,20 @@ router.get('/whitelist/mt/ad/cpcs', async ctx => {
   }
 })
 
-router.post('/whitelist/mt/ad/cpcs', async ctx => {
+router.post("/whitelist/mt/ad/cpcs", async ctx => {
   try {
     let { shopId } = ctx.request.body
-    let data = await knx('foxx_platform_sys')
+    let data = await knx("foxx_platform_sys")
       .first()
-      .where({ p_key: 'mt_ad_cpc_whitelist' })
-    data = Array.from(new Set(data.p_values.split(',')))
+      .where({ p_key: "mt_ad_cpc_whitelist" })
+    data = Array.from(new Set(data.p_values.split(",")))
     if (data.includes(shopId)) {
-      ctx.body = { e: 'has been added' }
+      ctx.body = { e: "has been added" }
       return
     }
-    let res = await knx('foxx_platform_sys')
-      .where({ p_key: 'mt_ad_cpc_whitelist' })
-      .update({ p_values: [...data, shopId].join(',') })
+    let res = await knx("foxx_platform_sys")
+      .where({ p_key: "mt_ad_cpc_whitelist" })
+      .update({ p_values: [...data, shopId].join(",") })
     ctx.body = { res }
   } catch (e) {
     console.log(e)
@@ -961,25 +966,25 @@ router.post('/whitelist/mt/ad/cpcs', async ctx => {
   }
 })
 
-router.delete('/whitelist/mt/ad/cpcs', async ctx => {
+router.delete("/whitelist/mt/ad/cpcs", async ctx => {
   try {
     let { shopId } = ctx.request.query
 
-    let data = await knx('foxx_platform_sys')
+    let data = await knx("foxx_platform_sys")
       .first()
-      .where({ p_key: 'mt_ad_cpc_whitelist' })
-    data = Array.from(new Set(data.p_values.split(',')))
+      .where({ p_key: "mt_ad_cpc_whitelist" })
+    data = Array.from(new Set(data.p_values.split(",")))
     if (!data.includes(shopId)) {
-      ctx.body = { e: 'not found' }
+      ctx.body = { e: "not found" }
       return
     }
     data.splice(
       data.findIndex(v => v == shopId),
       1
     )
-    let res = await knx('foxx_platform_sys')
-      .where({ p_key: 'mt_ad_cpc_whitelist' })
-      .update({ p_values: data.join(',') })
+    let res = await knx("foxx_platform_sys")
+      .where({ p_key: "mt_ad_cpc_whitelist" })
+      .update({ p_values: data.join(",") })
     ctx.body = { res }
   } catch (e) {
     console.log(e)
@@ -987,15 +992,15 @@ router.delete('/whitelist/mt/ad/cpcs', async ctx => {
   }
 })
 
-router.get('/whitelist/elm/ad/smarts', async ctx => {
+router.get("/whitelist/elm/ad/smarts", async ctx => {
   try {
-    let data = await knx('foxx_platform_sys')
+    let data = await knx("foxx_platform_sys")
       .first()
-      .where({ p_key: 'ele_smart_ad_whitelist' })
+      .where({ p_key: "ele_smart_ad_whitelist" })
     let shops = await getAllElmShops()
-    data = Array.from(new Set(data.p_values.split(','))).map(v => ({
+    data = Array.from(new Set(data.p_values.split(","))).map(v => ({
       shopId: v,
-      shopName: shops.find(s => s.id == v)?.name
+      shopName: shops.find(s => s.id == v)?.name,
     }))
     ctx.body = { res: data }
   } catch (e) {
@@ -1004,20 +1009,20 @@ router.get('/whitelist/elm/ad/smarts', async ctx => {
   }
 })
 
-router.post('/whitelist/elm/ad/smarts', async ctx => {
+router.post("/whitelist/elm/ad/smarts", async ctx => {
   try {
     let { shopId } = ctx.request.body
-    let data = await knx('foxx_platform_sys')
+    let data = await knx("foxx_platform_sys")
       .first()
-      .where({ p_key: 'ele_smart_ad_whitelist' })
-    data = Array.from(new Set(data.p_values.split(',')))
+      .where({ p_key: "ele_smart_ad_whitelist" })
+    data = Array.from(new Set(data.p_values.split(",")))
     if (data.includes(shopId)) {
-      ctx.body = { e: 'has been added' }
+      ctx.body = { e: "has been added" }
       return
     }
-    let res = await knx('foxx_platform_sys')
-      .where({ p_key: 'ele_smart_ad_whitelist' })
-      .update({ p_values: [...data, shopId].join(',') })
+    let res = await knx("foxx_platform_sys")
+      .where({ p_key: "ele_smart_ad_whitelist" })
+      .update({ p_values: [...data, shopId].join(",") })
     ctx.body = { res }
   } catch (e) {
     console.log(e)
@@ -1025,25 +1030,25 @@ router.post('/whitelist/elm/ad/smarts', async ctx => {
   }
 })
 
-router.delete('/whitelist/elm/ad/smarts', async ctx => {
+router.delete("/whitelist/elm/ad/smarts", async ctx => {
   try {
     let { shopId } = ctx.request.query
 
-    let data = await knx('foxx_platform_sys')
+    let data = await knx("foxx_platform_sys")
       .first()
-      .where({ p_key: 'ele_smart_ad_whitelist' })
-    data = Array.from(new Set(data.p_values.split(',')))
+      .where({ p_key: "ele_smart_ad_whitelist" })
+    data = Array.from(new Set(data.p_values.split(",")))
     if (!data.includes(shopId)) {
-      ctx.body = { e: 'not found' }
+      ctx.body = { e: "not found" }
       return
     }
     data.splice(
       data.findIndex(v => v == shopId),
       1
     )
-    let res = await knx('foxx_platform_sys')
-      .where({ p_key: 'ele_smart_ad_whitelist' })
-      .update({ p_values: data.join(',') })
+    let res = await knx("foxx_platform_sys")
+      .where({ p_key: "ele_smart_ad_whitelist" })
+      .update({ p_values: data.join(",") })
     ctx.body = { res }
   } catch (e) {
     console.log(e)
@@ -1051,18 +1056,18 @@ router.delete('/whitelist/elm/ad/smarts', async ctx => {
   }
 })
 
-router.get('/probs/a', async ctx => {
+router.get("/probs/a", async ctx => {
   try {
     let [data, _] = await knx.raw(原价扣点城市折扣与原价差距大于2)
-    let handles = await knx('test_prob_t_')
+    let handles = await knx("test_prob_t_")
       .select()
-      .where({ type: 'a' })
+      .where({ type: "a" })
     ctx.body = {
       res: data.map((v, i) => ({
         ...v,
         key: `${v.门店id}:${v.品名}`,
-        handle: handles.find(h => h.key == `${v.门店id}:${v.品名}`)?.handle
-      }))
+        handle: handles.find(h => h.key == `${v.门店id}:${v.品名}`)?.handle,
+      })),
     }
   } catch (e) {
     console.log(e)
@@ -1070,19 +1075,19 @@ router.get('/probs/a', async ctx => {
   }
 })
 
-router.get('/probs/b', async ctx => {
+router.get("/probs/b", async ctx => {
   try {
     let [data, _] = await knx.raw(商品无餐盒费)
-    let handles = await knx('test_prob_t_')
+    let handles = await knx("test_prob_t_")
       .select()
-      .where({ type: 'b' })
+      .where({ type: "b" })
     ctx.body = {
       res: data.map((v, i) => ({
         ...v,
         key: `${v.shop_id}:${v.分类}:${v.品名}`,
         原价: fixed2(v.原价),
-        handle: handles.find(h => h.key == `${v.shop_id}:${v.分类}:${v.品名}`)?.handle
-      }))
+        handle: handles.find(h => h.key == `${v.shop_id}:${v.分类}:${v.品名}`)?.handle,
+      })),
     }
   } catch (e) {
     console.log(e)
@@ -1090,7 +1095,7 @@ router.get('/probs/b', async ctx => {
   }
 })
 
-router.get('/probs/c', async ctx => {
+router.get("/probs/c", async ctx => {
   try {
     let [data, _] = await knx.raw(美团薯饼虾饼鸡柳设置两份起购)
     ctx.body = { res: data.map((v, i) => ({ ...v, key: i })) }
@@ -1100,7 +1105,7 @@ router.get('/probs/c', async ctx => {
   }
 })
 
-router.get('/probs/d', async ctx => {
+router.get("/probs/d", async ctx => {
   try {
     let [data, _] = await knx.raw(餐盒费为0常规餐品设置餐盒费1)
     ctx.body = { res: data.map((v, i) => ({ ...v, key: i })) }
@@ -1110,7 +1115,7 @@ router.get('/probs/d', async ctx => {
   }
 })
 
-router.get('/probs/e', async ctx => {
+router.get("/probs/e", async ctx => {
   try {
     let [data, _] = await knx.raw(_0_01两份起购餐盒费调整为1_5)
     ctx.body = { res: data.map((v, i) => ({ ...v, key: i })) }
@@ -1120,7 +1125,7 @@ router.get('/probs/e', async ctx => {
   }
 })
 
-router.get('/probs/f', async ctx => {
+router.get("/probs/f", async ctx => {
   try {
     let [data, _] = await knx.raw(折扣餐品原价_餐盒费会起送)
     ctx.body = { res: data.map((v, i) => ({ ...v, key: i })) }
@@ -1130,7 +1135,7 @@ router.get('/probs/f', async ctx => {
   }
 })
 
-router.get('/probs/g', async ctx => {
+router.get("/probs/g", async ctx => {
   try {
     let [data, _] = await knx.raw(原价扣点城市产品原价与折扣价差距超过1_1)
     ctx.body = { res: data.map((v, i) => ({ ...v, key: i })) }
@@ -1140,7 +1145,7 @@ router.get('/probs/g', async ctx => {
   }
 })
 
-router.get('/probs/h', async ctx => {
+router.get("/probs/h", async ctx => {
   try {
     let [data, _] = await knx.raw(_0元购有餐盒费)
     ctx.body = { res: data.map((v, i) => ({ ...v, key: i })) }
@@ -1150,7 +1155,7 @@ router.get('/probs/h', async ctx => {
   }
 })
 
-router.get('/probs/i', async ctx => {
+router.get("/probs/i", async ctx => {
   try {
     let [data, _] = await knx.raw(加料门店)
     ctx.body = { res: data.map((v, i) => ({ ...v, key: i })) }
@@ -1160,18 +1165,18 @@ router.get('/probs/i', async ctx => {
   }
 })
 
-router.get('/probs/j', async ctx => {
+router.get("/probs/j", async ctx => {
   try {
     let [data, _] = await knx.raw(零元商品有餐盒费)
-    let handles = await knx('test_prob_t_')
+    let handles = await knx("test_prob_t_")
       .select()
-      .where({ type: 'j' })
+      .where({ type: "j" })
     ctx.body = {
       res: data.map((v, i) => ({
         ...v,
         key: `${v.shop_id}:${v.分类}:${v.品名}`,
-        handle: handles.find(h => h.key == `${v.shop_id}:${v.分类}:${v.品名}`)?.handle
-      }))
+        handle: handles.find(h => h.key == `${v.shop_id}:${v.分类}:${v.品名}`)?.handle,
+      })),
     }
   } catch (e) {
     console.log(e)
@@ -1179,20 +1184,20 @@ router.get('/probs/j', async ctx => {
   }
 })
 
-router.get('/probs/k', async ctx => {
+router.get("/probs/k", async ctx => {
   try {
     let [data, _] = await knx.raw(两份起购餐品价格错误)
-    let handles = await knx('test_prob_t_')
+    let handles = await knx("test_prob_t_")
       .select()
-      .where({ type: 'k' })
+      .where({ type: "k" })
     ctx.body = {
       res: data[2].map((v, i) => ({
         ...v,
         key: `${v.shop_id}:${v.category_name}:${v.name}`,
         商品原价: fixed2(v.商品原价),
-        '凑满减/起送价格': fixed2(v['凑满减/起送价格']),
-        handle: handles.find(h => h.key == `${v.shop_id}:${v.category_name}:${v.name}`)?.handle
-      }))
+        "凑满减/起送价格": fixed2(v["凑满减/起送价格"]),
+        handle: handles.find(h => h.key == `${v.shop_id}:${v.category_name}:${v.name}`)?.handle,
+      })),
     }
   } catch (e) {
     console.log(e)
@@ -1200,19 +1205,19 @@ router.get('/probs/k', async ctx => {
   }
 })
 
-router.get('/probs/l', async ctx => {
+router.get("/probs/l", async ctx => {
   try {
     let [data, _] = await knx.raw(津贴联盟)
-    let handles = await knx('test_prob_t_')
+    let handles = await knx("test_prob_t_")
       .select()
-      .where({ type: 'l' })
+      .where({ type: "l" })
     ctx.body = {
       res: data.map((v, i) => ({
         ...v,
-        key: `${v.shop_id}:${dayjs().format('YYYYMMDD')}`,
+        key: `${v.shop_id}:${dayjs().format("YYYYMMDD")}`,
         实收: fixed2(v.实收),
-        handle: handles.find(h => h.key == `${v.shop_id}:${dayjs().format('YYYYMMDD')}`)?.handle
-      }))
+        handle: handles.find(h => h.key == `${v.shop_id}:${dayjs().format("YYYYMMDD")}`)?.handle,
+      })),
     }
   } catch (e) {
     console.log(e)
@@ -1220,7 +1225,7 @@ router.get('/probs/l', async ctx => {
   }
 })
 
-router.get('/probs/m', async ctx => {
+router.get("/probs/m", async ctx => {
   try {
     let [data, _] = await knx.raw(饿了么所有门店配送费批量检查)
     ctx.body = { res: data.map((v, i) => ({ ...v, key: i })) }
@@ -1230,7 +1235,7 @@ router.get('/probs/m', async ctx => {
   }
 })
 
-router.get('/probs/n', async ctx => {
+router.get("/probs/n", async ctx => {
   try {
     let [data, _] = await knx.raw(原价扣点城市折扣与原价差距大1)
     ctx.body = { res: data.map((v, i) => ({ ...v, key: i })) }
@@ -1240,7 +1245,7 @@ router.get('/probs/n', async ctx => {
   }
 })
 
-router.get('/probs/o', async ctx => {
+router.get("/probs/o", async ctx => {
   try {
     let [data, _] = await knx.raw(饿了么无餐盒费_1)
     ctx.body = { res: data.map((v, i) => ({ ...v, key: i })) }
@@ -1250,7 +1255,7 @@ router.get('/probs/o', async ctx => {
   }
 })
 
-router.get('/probs/p', async ctx => {
+router.get("/probs/p", async ctx => {
   try {
     let [data, _] = await knx.raw(饿了么两份起购无餐盒费_0_5)
     ctx.body = { res: data.map((v, i) => ({ ...v, key: i })) }
@@ -1260,7 +1265,7 @@ router.get('/probs/p', async ctx => {
   }
 })
 
-router.get('/probs/q', async ctx => {
+router.get("/probs/q", async ctx => {
   try {
     let [data, _] = await knx.raw(饿了么_0_01两份起购餐盒费调整为1_5)
     ctx.body = { res: data.map((v, i) => ({ ...v, key: i })) }
@@ -1270,7 +1275,7 @@ router.get('/probs/q', async ctx => {
   }
 })
 
-router.get('/probs/r', async ctx => {
+router.get("/probs/r", async ctx => {
   try {
     let [data, _] = await knx.raw(饿了么贡茶粉面套餐价格错误)
     ctx.body = { res: data.map((v, i) => ({ ...v, key: i })) }
@@ -1280,7 +1285,7 @@ router.get('/probs/r', async ctx => {
   }
 })
 
-router.get('/probs/s', async ctx => {
+router.get("/probs/s", async ctx => {
   try {
     let [data, _] = await knx.raw(饿了么甜品粉面套餐价格错误)
     ctx.body = { res: data.map((v, i) => ({ ...v, key: i })) }
@@ -1290,7 +1295,7 @@ router.get('/probs/s', async ctx => {
   }
 })
 
-router.get('/probs/t', async ctx => {
+router.get("/probs/t", async ctx => {
   try {
     let [data, _] = await knx.raw(饿了么折扣餐品原价_餐盒费会起送)
     ctx.body = { res: data.map((v, i) => ({ ...v, key: i })) }
@@ -1300,7 +1305,7 @@ router.get('/probs/t', async ctx => {
   }
 })
 
-router.get('/probs/u', async ctx => {
+router.get("/probs/u", async ctx => {
   try {
     let [data, _] = await knx.raw(零元购有餐盒费)
     ctx.body = { res: data.map((v, i) => ({ ...v, key: i })) }
@@ -1310,7 +1315,7 @@ router.get('/probs/u', async ctx => {
   }
 })
 
-router.get('/probs/v', async ctx => {
+router.get("/probs/v", async ctx => {
   try {
     let [data, _] = await knx.raw(饿了么两份起购餐品价格错误)
     ctx.body = { res: data.map((v, i) => ({ ...v, key: i })) }
@@ -1320,19 +1325,19 @@ router.get('/probs/v', async ctx => {
   }
 })
 
-router.get('/probs/w', async ctx => {
+router.get("/probs/w", async ctx => {
   try {
     let [data, _] = await knx.raw(单折扣起送)
-    let handles = await knx('test_prob_t_')
+    let handles = await knx("test_prob_t_")
       .select()
-      .where({ type: 'w' })
+      .where({ type: "w" })
     ctx.body = {
       res: data.map((v, i) => ({
         ...v,
         key: `${v.shop_id}:${v.category_name}:${v.name}`,
         originalPrice: fixed2(v.originalPrice),
-        handle: handles.find(h => h.key == `${v.shop_id}:${v.category_name}:${v.name}`)?.handle
-      }))
+        handle: handles.find(h => h.key == `${v.shop_id}:${v.category_name}:${v.name}`)?.handle,
+      })),
     }
   } catch (e) {
     console.log(e)
@@ -1340,31 +1345,18 @@ router.get('/probs/w', async ctx => {
   }
 })
 
-router.get('/probs/x', async ctx => {
+router.get("/probs/x", async ctx => {
   try {
     let [data, _] = await knx.raw(成本表查漏)
-    let handles = await knx('test_prob_t_')
+    let handles = await knx("test_prob_t_")
       .select()
-      .where({ type: 'x' })
-    ctx.body = { res: data.map((v, i) => ({ ...v, key: `${v.商品名称}`, handle: handles.find(h => h.key == `${v.商品名称}`)?.handle })) }
-  } catch (e) {
-    console.log(e)
-    ctx.body = { e }
-  }
-})
-
-router.get('/probs/y', async ctx => {
-  try {
-    let [data, _] = await knx.raw(查询点金0曝光的时间)
-    let handles = await knx('test_prob_t_')
-      .select()
-      .where({ type: 'y' })
+      .where({ type: "x" })
     ctx.body = {
       res: data.map((v, i) => ({
         ...v,
-        key: `${v.shop_id}:${dayjs().format('YYYYMMDD')}`,
-        handle: handles.find(h => h.key == `${v.shop_id}:${dayjs().format('YYYYMMDD')}`)?.handle
-      }))
+        key: `${v.商品名称}`,
+        handle: handles.find(h => h.key == `${v.商品名称}`)?.handle,
+      })),
     }
   } catch (e) {
     console.log(e)
@@ -1372,7 +1364,26 @@ router.get('/probs/y', async ctx => {
   }
 })
 
-router.get('/probs/z', async ctx => {
+router.get("/probs/y", async ctx => {
+  try {
+    let [data, _] = await knx.raw(查询点金0曝光的时间)
+    let handles = await knx("test_prob_t_")
+      .select()
+      .where({ type: "y" })
+    ctx.body = {
+      res: data.map((v, i) => ({
+        ...v,
+        key: `${v.shop_id}:${dayjs().format("YYYYMMDD")}`,
+        handle: handles.find(h => h.key == `${v.shop_id}:${dayjs().format("YYYYMMDD")}`)?.handle,
+      })),
+    }
+  } catch (e) {
+    console.log(e)
+    ctx.body = { e }
+  }
+})
+
+router.get("/probs/z", async ctx => {
   try {
     let [data, _] = await knx.raw(美团配送范围对比昨日)
     ctx.body = { res: data.map((v, i) => ({ ...v, key: i })) }
@@ -1382,19 +1393,19 @@ router.get('/probs/z', async ctx => {
   }
 })
 
-router.get('/probs/aa', async ctx => {
+router.get("/probs/aa", async ctx => {
   try {
     let [data, _] = await knx.raw(检查折扣遗漏的商品)
-    let handles = await knx('test_prob_t_')
+    let handles = await knx("test_prob_t_")
       .select()
-      .where({ type: 'aa' })
+      .where({ type: "aa" })
     ctx.body = {
       res: data.map((v, i) => ({
         ...v,
         key: `${v.shop_id}:${v.category_name}:${v.name}`,
         price: fixed2(v.price),
-        handle: handles.find(h => h.key == `${v.shop_id}:${v.category_name}:${v.name}`)?.handle
-      }))
+        handle: handles.find(h => h.key == `${v.shop_id}:${v.category_name}:${v.name}`)?.handle,
+      })),
     }
   } catch (e) {
     console.log(e)
@@ -1402,18 +1413,18 @@ router.get('/probs/aa', async ctx => {
   }
 })
 
-router.get('/probs/ab', async ctx => {
+router.get("/probs/ab", async ctx => {
   try {
     let [data, _] = await knx.raw(折扣到期商品检查)
-    let handles = await knx('test_prob_t_')
+    let handles = await knx("test_prob_t_")
       .select()
-      .where({ type: 'ab' })
+      .where({ type: "ab" })
     ctx.body = {
       res: data.map((v, i) => ({
         ...v,
         key: `${v.shop_id}:${v.food_name}`,
-        handle: handles.find(h => h.key == `${v.shop_id}:${v.food_name}`)?.handle
-      }))
+        handle: handles.find(h => h.key == `${v.shop_id}:${v.food_name}`)?.handle,
+      })),
     }
   } catch (e) {
     console.log(e)
@@ -1421,19 +1432,19 @@ router.get('/probs/ab', async ctx => {
   }
 })
 
-router.get('/probs/ac', async ctx => {
+router.get("/probs/ac", async ctx => {
   try {
     let [data, _] = await knx.raw(减配活动检查)
     data = data[1]
-    let handles = await knx('test_prob_t_')
+    let handles = await knx("test_prob_t_")
       .select()
-      .where({ type: 'ac' })
+      .where({ type: "ac" })
     ctx.body = {
       res: data.map((v, i) => ({
         ...v,
         key: `${v.门店编号}:${v.到期时间}`,
-        handle: handles.find(h => h.key == `${v.门店编号}:${v.到期时间}`)?.handle
-      }))
+        handle: handles.find(h => h.key == `${v.门店编号}:${v.到期时间}`)?.handle,
+      })),
     }
   } catch (e) {
     console.log(e)
@@ -1441,7 +1452,7 @@ router.get('/probs/ac', async ctx => {
   }
 })
 
-router.get('/probs/ad', async ctx => {
+router.get("/probs/ad", async ctx => {
   try {
     let [data, _] = await knx.raw(假减配检查)
     ctx.body = { res: data.map((v, i) => ({ ...v, key: i })) }
@@ -1451,19 +1462,19 @@ router.get('/probs/ad', async ctx => {
   }
 })
 
-router.get('/probs/ae', async ctx => {
+router.get("/probs/ae", async ctx => {
   try {
     let [data, _] = await knx.raw(满减活动检查)
-    let handles = await knx('test_prob_t_')
+    let handles = await knx("test_prob_t_")
       .select()
-      .where({ type: 'ae' })
+      .where({ type: "ae" })
     ctx.body = {
       res: data.map((v, i) => ({
         ...v,
         key: `${v.店铺编号}:${v.活动类型}:${v.活动规则}`,
-        活动规则: v.活动规则 ? v.活动规则.split(/(?=满)/).join('\n') : v.活动规则,
-        handle: handles.find(h => h.key == `${v.店铺编号}:${v.活动类型}:${v.活动规则}`)?.handle
-      }))
+        活动规则: v.活动规则 ? v.活动规则.split(/(?=满)/).join("\n") : v.活动规则,
+        handle: handles.find(h => h.key == `${v.店铺编号}:${v.活动类型}:${v.活动规则}`)?.handle,
+      })),
     }
   } catch (e) {
     console.log(e)
@@ -1471,18 +1482,18 @@ router.get('/probs/ae', async ctx => {
   }
 })
 
-router.get('/probs/af', async ctx => {
+router.get("/probs/af", async ctx => {
   try {
     let [data, _] = await knx.raw(库存过少检查)
-    let handles = await knx('test_prob_t_')
+    let handles = await knx("test_prob_t_")
       .select()
-      .where({ type: 'af' })
+      .where({ type: "af" })
     ctx.body = {
       res: data.map((v, i) => ({
         ...v,
         key: `${v.店铺id}:${v.分类}:${v.商品}`,
-        handle: handles.find(h => h.key == `${v.店铺id}:${v.分类}:${v.商品}`)?.handle
-      }))
+        handle: handles.find(h => h.key == `${v.店铺id}:${v.分类}:${v.商品}`)?.handle,
+      })),
     }
   } catch (e) {
     console.log(e)
@@ -1490,18 +1501,18 @@ router.get('/probs/af', async ctx => {
   }
 })
 
-router.get('/probs/ag', async ctx => {
+router.get("/probs/ag", async ctx => {
   try {
     let [data, _] = await knx.raw(查询商品多规格)
-    let handles = await knx('test_prob_t_')
+    let handles = await knx("test_prob_t_")
       .select()
-      .where({ type: 'ag' })
+      .where({ type: "ag" })
     ctx.body = {
       res: data.map((v, i) => ({
         ...v,
         key: `${v.店铺id}:${v.分类名}:${v.商品名}`,
-        handle: handles.find(h => h.key == `${v.店铺id}:${v.分类名}:${v.商品名}`)?.handle
-      }))
+        handle: handles.find(h => h.key == `${v.店铺id}:${v.分类名}:${v.商品名}`)?.handle,
+      })),
     }
   } catch (e) {
     console.log(e)
@@ -1511,18 +1522,17 @@ router.get('/probs/ag', async ctx => {
 
 var cacheBadRates = { time: 1, data: [] }
 
-router.get('/probs/ai', async ctx => {
+router.get("/probs/ai", async ctx => {
   try {
-    let [shops, _] = await knx.raw(
-      `SELECT shop_id, real_shop_name, person FROM test_shop_`
-    )
+    let [shops, _] = await knx.raw(`SELECT shop_id, real_shop_name, person FROM test_shop_`)
 
-    let elm_shops = await knx('ele_info_manage').where({ status: 0 })
+    let elm_shops = await knx("ele_info_manage").where({ status: 0 })
 
     let badRates1 = await axios.get(
       `http://localhost:3000/elm/rates/bad?startTime=${dayjs()
-        .subtract(48, 'hour')
-        .format('YYYY-MM-DDTHH:mm:ss')}&endTime=${dayjs().format('YYYY-MM-DDT23:59:59')}&shopid=93089700&ksid=${elm_shops[0].ks_id
+        .subtract(48, "hour")
+        .format("YYYY-MM-DDTHH:mm:ss")}&endTime=${dayjs().format("YYYY-MM-DDT23:59:59")}&shopid=93089700&ksid=${
+        elm_shops[0].ks_id
       }&rateType=BAD_REVIEW`
     )
 
@@ -1536,8 +1546,9 @@ router.get('/probs/ai', async ctx => {
 
     let badRates3 = await axios.get(
       `http://localhost:3000/elm/rates/bad?startTime=${dayjs()
-        .subtract(48, 'hour')
-        .format('YYYY-MM-DDTHH:mm:ss')}&endTime=${dayjs().format('YYYY-MM-DDT23:59:59')}&shopid=93089700&ksid=${elm_shops[0].ks_id
+        .subtract(48, "hour")
+        .format("YYYY-MM-DDTHH:mm:ss")}&endTime=${dayjs().format("YYYY-MM-DDT23:59:59")}&shopid=93089700&ksid=${
+        elm_shops[0].ks_id
       }&rateType=MEDIUM_REVIEW`
     )
 
@@ -1559,7 +1570,7 @@ router.get('/probs/ai', async ctx => {
       data: arr(badRates1.data)
         .map(r => ({ ...r, ksid: elm_shops[0].ks_id }))
         // .concat(badRates2.data.map(r => ({ ...r, ksid: 'MWM2MWMTA1MjcyMDc0NjUxMDAxTmUyK0hFczJQ' })))
-        .concat(arr(badRates3.data).map(r => ({ ...r, ksid: elm_shops[0].ks_id })))
+        .concat(arr(badRates3.data).map(r => ({ ...r, ksid: elm_shops[0].ks_id }))),
       // .concat(badRates4.data.map(r => ({ ...r, ksid: 'MWM2MWMTA1MjcyMDc0NjUxMDAxTmUyK0hFczJQ' })))
     }
 
@@ -1571,13 +1582,13 @@ router.get('/probs/ai', async ctx => {
         return {
           ...rate,
           orderId: orderId.data,
-          platform: '饿了么',
+          platform: "饿了么",
           person: shops.find(s => s.shop_id == rate.shopId)?.person,
           real_shop_name: shops.find(s => s.shop_id == rate.shopId)?.real_shop_name,
-          ratingContents: rate.orderRateInfos.map(i => i.ratingContent).join('\n'),
+          ratingContents: rate.orderRateInfos.map(i => i.ratingContent).join("\n"),
           ratingAt: rate.orderRateInfos[0].ratingAt,
           serviceRating: rate.orderRateInfos[0].serviceRating,
-          rateId: rate.orderRateInfos[0].rateId
+          rateId: rate.orderRateInfos[0].rateId,
         }
       })
     )
@@ -1586,38 +1597,43 @@ router.get('/probs/ai', async ctx => {
 
     // console.log('data2', Object.entries(data2))
 
+    data2 =
+      data2.data?.map(rate => ({
+        ...rate,
+        rateId: rate.id,
+        shopId: rate.wm_poi_id,
+        shopName: rate.poiName,
+        platform: "美团",
+        person: shops.find(s => s.shop_id == rate.wm_poi_id)?.person,
+        real_shop_name: shops.find(s => s.shop_id == rate.wm_poi_id)?.real_shop_name,
+        ratingContents: rate.comment,
+        ratingAt: rate.createTime,
+        imageUrls: rate.picture_urls,
+        serviceRating: rate.order_comment_score,
+      })) ?? []
 
-    data2 = data2.data?.map(rate => ({
-      ...rate,
-      rateId: rate.id,
-      shopId: rate.wm_poi_id,
-      shopName: rate.poiName,
-      platform: '美团',
-      person: shops.find(s => s.shop_id == rate.wm_poi_id)?.person,
-      real_shop_name: shops.find(s => s.shop_id == rate.wm_poi_id)?.real_shop_name,
-      ratingContents: rate.comment,
-      ratingAt: rate.createTime,
-      imageUrls: rate.picture_urls,
-      serviceRating: rate.order_comment_score
-    })) ?? []
+    data = data
+      .filter(v => v.status == "fulfilled")
+      .map(v => v.value)
+      .concat(data2)
 
-    data = data.filter(v => v.status == 'fulfilled').map(v => v.value).concat(data2)
-
-    let handles = await knx('test_prob_t_')
+    let handles = await knx("test_prob_t_")
       .select()
-      .where({ type: 'ai' })
+      .where({ type: "ai" })
 
-    ctx.set('Cache-Control', 'max-age=600')
+    ctx.set("Cache-Control", "max-age=600")
 
     ctx.body = {
-      res: data.map((v, i) => ({
-        ...v,
-        key: `${v.shopId}:${v.rateId}`,
-        handle: handles.find(h => h.key == `${v.shopId}:${v.rateId}`)?.handle
-      })).sort((a, b) => a.real_shop_name?.localeCompare(b.real_shop_name))
+      res: data
+        .map((v, i) => ({
+          ...v,
+          key: `${v.shopId}:${v.rateId}`,
+          handle: handles.find(h => h.key == `${v.shopId}:${v.rateId}`)?.handle,
+        }))
+        .sort((a, b) => a.real_shop_name?.localeCompare(b.real_shop_name)),
     }
   } catch (e) {
-    console.error('ai error', e)
+    console.error("ai error", e)
     ctx.body = { e }
   }
 
@@ -1627,18 +1643,18 @@ router.get('/probs/ai', async ctx => {
   }
 })
 
-router.get('/probs/aj', async ctx => {
+router.get("/probs/aj", async ctx => {
   try {
     let [data, _] = await knx.raw(合作方案到期)
-    let handles = await knx('test_prob_t_')
+    let handles = await knx("test_prob_t_")
       .select()
-      .where({ type: 'aj' })
+      .where({ type: "aj" })
     ctx.body = {
       res: data.map((v, i) => ({
         ...v,
         key: `${v.店铺id}:${v.到期时间}`,
-        handle: handles.find(h => h.key == `${v.店铺id}:${v.到期时间}`)?.handle
-      }))
+        handle: handles.find(h => h.key == `${v.店铺id}:${v.到期时间}`)?.handle,
+      })),
     }
   } catch (e) {
     console.log(e)
@@ -1646,19 +1662,19 @@ router.get('/probs/aj', async ctx => {
   }
 })
 
-router.get('/probs/ah/:day', async ctx => {
+router.get("/probs/ah/:day", async ctx => {
   try {
     let { day } = ctx.request.params
-    let handles = await knx('test_prob_t_')
+    let handles = await knx("test_prob_t_")
       .select()
-      .where({ type: 'ah' })
+      .where({ type: "ah" })
     let [data, _] = await knx.raw(推广费余额(day))
     ctx.body = {
       res: data.map((v, i) => ({
         ...v,
-        key: `${v.shop_id}:${dayjs().format('YYYYMMDD')}`,
-        handle: handles.find(h => h.key == `${v.shop_id}:${dayjs().format('YYYYMMDD')}`)?.handle
-      }))
+        key: `${v.shop_id}:${dayjs().format("YYYYMMDD")}`,
+        handle: handles.find(h => h.key == `${v.shop_id}:${dayjs().format("YYYYMMDD")}`)?.handle,
+      })),
     }
   } catch (e) {
     console.log(e)
@@ -1666,18 +1682,18 @@ router.get('/probs/ah/:day', async ctx => {
   }
 })
 
-router.get('/probs/ak', async ctx => {
+router.get("/probs/ak", async ctx => {
   try {
     let [data, _] = await knx.raw(饿了么低折扣商品起购错误)
-    let handles = await knx('test_prob_t_')
+    let handles = await knx("test_prob_t_")
       .select()
-      .where({ type: 'ak' })
+      .where({ type: "ak" })
     ctx.body = {
       res: data.map((v, i) => ({
         ...v,
         key: `${v.店铺id}:${v.分类}:${v.商品}`,
-        handle: handles.find(h => h.key == `${v.店铺id}:${v.分类}:${v.商品}`)?.handle
-      }))
+        handle: handles.find(h => h.key == `${v.店铺id}:${v.分类}:${v.商品}`)?.handle,
+      })),
     }
   } catch (e) {
     console.log(e)
@@ -1685,19 +1701,19 @@ router.get('/probs/ak', async ctx => {
   }
 })
 
-router.get('/probs/al', async ctx => {
+router.get("/probs/al", async ctx => {
   try {
     let [data, _] = await knx.raw(饿了么低折扣商品限购数量错误)
-    let handles = await knx('test_prob_t_')
+    let handles = await knx("test_prob_t_")
       .select()
-      .where({ type: 'al' })
+      .where({ type: "al" })
     // data = data[1]
     ctx.body = {
       res: data.map((v, i) => ({
         ...v,
         key: `${v.shop_id}:${v.itemName}`,
-        handle: handles.find(h => h.key == `${v.shop_id}:${v.itemName}`)?.handle
-      }))
+        handle: handles.find(h => h.key == `${v.shop_id}:${v.itemName}`)?.handle,
+      })),
     }
   } catch (e) {
     console.log(e)
@@ -1705,19 +1721,19 @@ router.get('/probs/al', async ctx => {
   }
 })
 
-router.get('/probs/am', async ctx => {
+router.get("/probs/am", async ctx => {
   try {
     let [data, _] = await knx.raw(起送价变化)
-    let handles = await knx('test_prob_t_')
+    let handles = await knx("test_prob_t_")
       .select()
-      .where({ type: 'am' })
+      .where({ type: "am" })
     // data = data[1]
     ctx.body = {
       res: data.map((v, i) => ({
         ...v,
         key: `${v.shop_id}:${v.起送价}:${v.前一天起送价}`,
-        handle: handles.find(h => h.key == `${v.shop_id}:${v.起送价}:${v.前一天起送价}`)?.handle
-      }))
+        handle: handles.find(h => h.key == `${v.shop_id}:${v.起送价}:${v.前一天起送价}`)?.handle,
+      })),
     }
   } catch (e) {
     console.log(e)
@@ -1725,14 +1741,14 @@ router.get('/probs/am', async ctx => {
   }
 })
 
-router.get('/probs/an', async ctx => {
+router.get("/probs/an", async ctx => {
   try {
-    let [data, _] = await knx.raw('select * from test_shop_prob_')
+    let [data, _] = await knx.raw("select * from test_shop_prob_")
     ctx.body = {
       res: data.map((v, i) => ({
         ...v,
-        key: v.id
-      }))
+        key: v.id,
+      })),
     }
   } catch (e) {
     console.log(e)
@@ -1740,22 +1756,22 @@ router.get('/probs/an', async ctx => {
   }
 })
 
-router.post('/probs/an/add', async ctx => {
+router.post("/probs/an/add", async ctx => {
   try {
     let { a, b, c, d, e, f, g } = ctx.request.body
     console.log(ctx.request.body)
-    if ([a, b, c, d, e, f].some(v => v == null || v == '')) {
-      ctx.body = { e: '表单不合法' }
+    if ([a, b, c, d, e, f].some(v => v == null || v == "")) {
+      ctx.body = { e: "表单不合法" }
       return
     }
-    const res = await knx('test_shop_prob_').insert({
+    const res = await knx("test_shop_prob_").insert({
       物理店名: a,
       组员: b,
       组长: c,
       门店人数: parseInt(d),
       老板是否好沟通: e,
       老板的诉求: f,
-      门店的问题: g
+      门店的问题: g,
     })
     ctx.body = { res }
   } catch (e) {
@@ -1764,14 +1780,14 @@ router.post('/probs/an/add', async ctx => {
   }
 })
 
-router.post('/probs/an/edit', async ctx => {
+router.post("/probs/an/edit", async ctx => {
   try {
     let { id, a, b, c, d, e, f, g } = ctx.request.body
-    if ([id, a, b, c, d, e, f].some(v => v == null || v == '')) {
-      ctx.body = { e: '表单不合法' }
+    if ([id, a, b, c, d, e, f].some(v => v == null || v == "")) {
+      ctx.body = { e: "表单不合法" }
       return
     }
-    const res = await knx('test_shop_prob_')
+    const res = await knx("test_shop_prob_")
       .where({ id })
       .update({
         物理店名: a,
@@ -1780,7 +1796,7 @@ router.post('/probs/an/edit', async ctx => {
         门店人数: d,
         老板是否好沟通: e,
         老板的诉求: f,
-        门店的问题: g
+        门店的问题: g,
       })
     ctx.body = { res }
   } catch (e) {
@@ -1789,14 +1805,14 @@ router.post('/probs/an/edit', async ctx => {
   }
 })
 
-router.get('/probs/_shs', async ctx => {
+router.get("/probs/_shs", async ctx => {
   try {
-    let [data, _] = await knx.raw('select * from shs_shop_relation')
+    let [data, _] = await knx.raw("select * from shs_shop_relation")
     ctx.body = {
       res: data.map((v, i) => ({
         ...v,
-        key: i
-      }))
+        key: i,
+      })),
     }
   } catch (e) {
     console.log(e)
@@ -1806,17 +1822,17 @@ router.get('/probs/_shs', async ctx => {
 
 let sss_caches = {
   data: [],
-  expired_at: dayjs().unix()
+  expired_at: dayjs().unix(),
 }
 
-router.get('/probs/_sss', async ctx => {
+router.get("/probs/_sss", async ctx => {
   try {
     let data = await sss_remote()
     ctx.body = {
       res: data.map((v, i) => ({
         ...v,
-        key: i
-      }))
+        key: i,
+      })),
     }
   } catch (e) {
     console.log(e)
@@ -1836,58 +1852,61 @@ async function sss() {
     店铺ID: r.shop_id,
     店铺名称: r.shop_name,
     平台: r.shop_plat,
-    闪时送名称: r.relation_shop
+    闪时送名称: r.relation_shop,
   }))
 }
 
 async function sss_remote() {
-  const token = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE2MzYwODUzMjYsInVzZXJuYW1lIjoiMTM5Mjc0MjkzOTEifQ.ahvs8ahSX2TvopPI7C_l_srB6eNuLhfni7V9Den_-hc'
+  const token =
+    "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE2MzYwODUzMjYsInVzZXJuYW1lIjoiMTM5Mjc0MjkzOTEifQ.ahvs8ahSX2TvopPI7C_l_srB6eNuLhfni7V9Den_-hc"
 
   async function login() {
     const { data } = await axios({
-      method: 'POST',
-      url: 'https://ag.zhuopaikeji.com/system-api/sys/login',
+      method: "POST",
+      url: "https://ag.zhuopaikeji.com/system-api/sys/login",
       headers: {
-        accept: 'application/json, text/plain, */*',
-        'accept-encoding': 'gzip, deflate, br',
-        'accept-language': 'zh-TW,zh;q=0.9,en-US;q=0.8,en;q=0.7',
-        'content-type': 'application/json;charset=UTF-8',
+        accept: "application/json, text/plain, */*",
+        "accept-encoding": "gzip, deflate, br",
+        "accept-language": "zh-TW,zh;q=0.9,en-US;q=0.8,en;q=0.7",
+        "content-type": "application/json;charset=UTF-8",
         dnt: 1,
-        origin: 'https://ag.zhuopaikeji.com',
-        referer: 'https://ag.zhuopaikeji.com/user/login?redirect=%2FuserManagement%2FshopManagement',
+        origin: "https://ag.zhuopaikeji.com",
+        referer: "https://ag.zhuopaikeji.com/user/login?redirect=%2FuserManagement%2FshopManagement",
         tenant_id: 0,
-        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.54 Safari/537.36'
+        "user-agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.54 Safari/537.36",
       },
       data: {
         password: "ystp8888",
         remember_me: true,
-        username: "13927429391"
-      }
+        username: "13927429391",
+      },
     })
-    if (data.message != '登录成功') throw new Error(data.message)
+    if (data.message != "登录成功") throw new Error(data.message)
     return data.result.token
   }
 
   async function storeList(token, pageNum = 1, pageSize = 10) {
     const { data } = await axios({
-      method: 'POST',
-      url: 'https://ag.zhuopaikeji.com/system-api/customer/store/list',
+      method: "POST",
+      url: "https://ag.zhuopaikeji.com/system-api/customer/store/list",
       headers: {
-        accept: 'application/json, text/plain, */*',
-        'accept-encoding': 'gzip, deflate, br',
-        'accept-language': 'zh-TW,zh;q=0.9,en-US;q=0.8,en;q=0.7',
-        'content-type': 'application/json;charset=UTF-8',
+        accept: "application/json, text/plain, */*",
+        "accept-encoding": "gzip, deflate, br",
+        "accept-language": "zh-TW,zh;q=0.9,en-US;q=0.8,en;q=0.7",
+        "content-type": "application/json;charset=UTF-8",
         dnt: 1,
-        origin: 'https://ag.zhuopaikeji.com',
-        referer: 'https://ag.zhuopaikeji.com/userManagement/shopManagement',
+        origin: "https://ag.zhuopaikeji.com",
+        referer: "https://ag.zhuopaikeji.com/userManagement/shopManagement",
         tenant_id: 0,
-        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.54 Safari/537.36',
-        'x-access-token': token
+        "user-agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.54 Safari/537.36",
+        "x-access-token": token,
       },
       data: {
         pageNo: pageNum,
-        pageSize
-      }
+        pageSize,
+      },
     })
     if (data.success != true) throw new Error(data.message)
     return data.result
@@ -1944,11 +1963,11 @@ async function sss_remote() {
   })
 }
 
-router.post('/probs/_sss/add', async ctx => {
+router.post("/probs/_sss/add", async ctx => {
   try {
     const { shop_id, sss_name } = ctx.request.body
-    if ([shop_id, sss_name].some(v => v == null || v == '')) {
-      ctx.body = { e: '表单不合法' }
+    if ([shop_id, sss_name].some(v => v == null || v == "")) {
+      ctx.body = { e: "表单不合法" }
       return
     }
     const res = await sss_add(ctx.request.body)
@@ -1961,24 +1980,25 @@ router.post('/probs/_sss/add', async ctx => {
 
 async function sss_add(form) {
   const { shop_id, sss_name } = form
-  const row = await knx('deliver_account').where({ shop_id, platform: 'sss' }).first()
-  if (row) throw new Error('门店已存在')
+  const row = await knx("deliver_account")
+    .where({ shop_id, platform: "sss" })
+    .first()
+  if (row) throw new Error("门店已存在")
 
-  return knx('deliver_account')
-    .insert({
-      shop_id,
-      platform: 'sss',
-      account: '13927429391',
-      pw: 'ystp8888',
-      relation_shop: sss_name
-    })
+  return knx("deliver_account").insert({
+    shop_id,
+    platform: "sss",
+    account: "13927429391",
+    pw: "ystp8888",
+    relation_shop: sss_name,
+  })
 }
 
-router.post('/probs/_sss/edit', async ctx => {
+router.post("/probs/_sss/edit", async ctx => {
   try {
     let { shop_id } = ctx.request.body
-    if ([shop_id].some(v => v == null || v == '')) {
-      ctx.body = { e: '表单不合法' }
+    if ([shop_id].some(v => v == null || v == "")) {
+      ctx.body = { e: "表单不合法" }
       return
     }
 
@@ -1992,32 +2012,33 @@ router.post('/probs/_sss/edit', async ctx => {
 
 async function sss_edit(form) {
   const { shop_id, sss_name } = form
-  const row = await knx('deliver_account').where({ shop_id, platform: 'sss' }).first()
+  const row = await knx("deliver_account")
+    .where({ shop_id, platform: "sss" })
+    .first()
 
   if (row) {
-    return knx('deliver_account')
+    return knx("deliver_account")
       .where({ id: row.id })
       .update({ relation_shop: sss_name })
   } else {
-    return knx('deliver_account')
-      .insert({
-        shop_id,
-        platform: 'sss',
-        account: '13927429391',
-        pw: 'ystp8888',
-        relation_shop: sss_name
-      })
+    return knx("deliver_account").insert({
+      shop_id,
+      platform: "sss",
+      account: "13927429391",
+      pw: "ystp8888",
+      relation_shop: sss_name,
+    })
   }
 }
 
-router.get('/probs/_zps', async ctx => {
+router.get("/probs/_zps", async ctx => {
   try {
     let data = await zps()
     ctx.body = {
       res: data.map((v, i) => ({
         ...v,
-        key: i
-      }))
+        key: i,
+      })),
     }
   } catch (e) {
     console.log(e)
@@ -2026,7 +2047,6 @@ router.get('/probs/_zps', async ctx => {
 })
 
 async function zps() {
-
   const sql = `WITH d_info AS (-- 配送信息
       SELECT shop_id, shop_product_desc
       FROM ele_delivery_fee
@@ -2051,45 +2071,46 @@ async function zps() {
 
   const [data] = await knx.raw(sql)
   // shop_id	shop_name	城市	物理店	person	配送方式	platform	dd账号	dd密码	fn账号	fn密码	sf账号	sf密码	闪时送账号	闪时送密码	外卖邦账号	外卖邦密码	麦芽田账号	麦芽田密码
-  const shop_groups = data.groupBy('shop_id')
-  return shop_groups.map(g => {
-    let shop_id = g.group
-    let dd = g.members.find(s => s.platform == 'dd')
-    let fn = g.members.find(s => s.platform == 'fn')
-    let sf = g.members.find(s => s.platform == 'sf')
-    let sss = g.members.find(s => s.platform == 'sss')
-    let wmb = g.members.find(s => s.platform == 'wmb')
-    let myt = g.members.find(s => s.platform == 'myt')
-    let ss = g.members.find(s => s.platform == 'ss')
-    let uu = g.members.find(s => s.platform == 'uu')
+  const shop_groups = data.groupBy("shop_id")
+  return shop_groups
+    .map(g => {
+      let shop_id = g.group
+      let dd = g.members.find(s => s.platform == "dd")
+      let fn = g.members.find(s => s.platform == "fn")
+      let sf = g.members.find(s => s.platform == "sf")
+      let sss = g.members.find(s => s.platform == "sss")
+      let wmb = g.members.find(s => s.platform == "wmb")
+      let myt = g.members.find(s => s.platform == "myt")
+      let ss = g.members.find(s => s.platform == "ss")
+      let uu = g.members.find(s => s.platform == "uu")
 
-    return {
-      shop_id,
-      shop_name: g.members[0].shop_name,
-      city: g.members[0].city,
-      real_shop_name: g.members[0].real_shop_name,
-      person: g.members[0].person,
-      shop_plat: g.members[0].shop_plat,
-      d_way: g.members[0].way,
-      dd_acct: dd?.account,
-      dd_pw: dd?.pw,
-      fn_acct: fn?.account,
-      fn_pw: fn?.pw,
-      sf_acct: sf?.account,
-      sf_pw: sf?.pw,
-      sf_id: sf?.sf_id,
-      sss_acct: sss?.account,
-      sss_pw: sss?.pw,
-      wmb_acct: wmb?.account,
-      wmb_pw: wmb?.pw,
-      myt_acct: myt?.account,
-      myt_pw: myt?.pw,
-      ss_acct: ss?.account,
-      ss_pw: ss?.pw,
-      uu_acct: uu?.account,
-      uu_pw: uu?.pw,
-    }
-  })
+      return {
+        shop_id,
+        shop_name: g.members[0].shop_name,
+        city: g.members[0].city,
+        real_shop_name: g.members[0].real_shop_name,
+        person: g.members[0].person,
+        shop_plat: g.members[0].shop_plat,
+        d_way: g.members[0].way,
+        dd_acct: dd?.account,
+        dd_pw: dd?.pw,
+        fn_acct: fn?.account,
+        fn_pw: fn?.pw,
+        sf_acct: sf?.account,
+        sf_pw: sf?.pw,
+        sf_id: sf?.sf_id,
+        sss_acct: sss?.account,
+        sss_pw: sss?.pw,
+        wmb_acct: wmb?.account,
+        wmb_pw: wmb?.pw,
+        myt_acct: myt?.account,
+        myt_pw: myt?.pw,
+        ss_acct: ss?.account,
+        ss_pw: ss?.pw,
+        uu_acct: uu?.account,
+        uu_pw: uu?.pw,
+      }
+    })
     .map(rec => ({
       店铺ID: rec.shop_id,
       店铺名称: rec.shop_name,
@@ -2118,11 +2139,11 @@ async function zps() {
     }))
 }
 
-router.post('/probs/_zps/add', async ctx => {
+router.post("/probs/_zps/add", async ctx => {
   try {
     const { shop_id } = ctx.request.body
-    if ([shop_id].some(v => v == null || v == '')) {
-      ctx.body = { e: '表单不合法' }
+    if ([shop_id].some(v => v == null || v == "")) {
+      ctx.body = { e: "表单不合法" }
       return
     }
     const res = await zps_add(ctx.request.body)
@@ -2135,60 +2156,78 @@ router.post('/probs/_zps/add', async ctx => {
 
 async function zps_add(form) {
   function is_empty(v) {
-    return v == null || v == '' || /^\s+$/.test(v)
+    return v == null || v == "" || /^\s+$/.test(v)
   }
 
   async function add_by_plat(rows, shop_id, plat, acct, pw) {
     if (is_empty(acct) || is_empty(pw)) return null
 
-    return knx('deliver_account')
-      .insert({
-        shop_id,
-        platform: plat,
-        account: acct,
-        pw
-      })
+    return knx("deliver_account").insert({
+      shop_id,
+      platform: plat,
+      account: acct,
+      pw,
+    })
   }
 
   async function add_sf_info(rows, shop_id, acct, pw, sf_id) {
     if (is_empty(acct) || is_empty(pw)) return null
 
-    return knx('deliver_account')
-      .insert({
-        shop_id,
-        platform: 'sf',
-        account: acct,
-        pw,
-        sf_id
-      })
+    return knx("deliver_account").insert({
+      shop_id,
+      platform: "sf",
+      account: acct,
+      pw,
+      sf_id,
+    })
   }
 
-  const { shop_id, dd_acct, dd_pw, fn_acct, fn_pw, sf_acct, sf_pw, sf_id,
-    sss_acct, sss_pw, wmb_acct, wmb_pw, myt_acct, myt_pw, ss_acct, ss_pw, uu_acct, uu_pw } = form
+  const {
+    shop_id,
+    dd_acct,
+    dd_pw,
+    fn_acct,
+    fn_pw,
+    sf_acct,
+    sf_pw,
+    sf_id,
+    sss_acct,
+    sss_pw,
+    wmb_acct,
+    wmb_pw,
+    myt_acct,
+    myt_pw,
+    ss_acct,
+    ss_pw,
+    uu_acct,
+    uu_pw,
+  } = form
 
-  const rows = await knx('deliver_account').where({ shop_id }).select()
-  if (rows.length > 0) throw new Error('门店已存在')
+  const rows = await knx("deliver_account")
+    .where({ shop_id })
+    .select()
+  if (rows.length > 0) throw new Error("门店已存在")
 
   let results = {}
 
-  results.dd = await add_by_plat(rows, shop_id, 'dd', dd_acct, dd_pw)
-  results.fn = await add_by_plat(rows, shop_id, 'fn', fn_acct, fn_pw)
+  results.dd = await add_by_plat(rows, shop_id, "dd", dd_acct, dd_pw)
+  results.fn = await add_by_plat(rows, shop_id, "fn", fn_acct, fn_pw)
   // results.sf = await add_by_plat(rows, shop_id, 'sf', sf_acct, sf_pw)
   results.sf = await add_sf_info(rows, shop_id, sf_acct, sf_pw, sf_id)
-  results.sss = await add_by_plat(rows, shop_id, 'sss', sss_acct, sss_pw)
+  results.sss = await add_by_plat(rows, shop_id, "sss", sss_acct, sss_pw)
   // results.wmb = await add_by_plat(rows, shop_id, 'wmb', wmb_acct, wmb_pw)
-  results.myt = await add_by_plat(rows, shop_id, 'myt', myt_acct, myt_pw)
-  results.ss = await add_by_plat(rows, shop_id, 'ss', ss_acct, ss_pw)
-  results.uu = await add_by_plat(rows, shop_id, 'uu', uu_acct, uu_pw)
+  results.myt = await add_by_plat(rows, shop_id, "myt", myt_acct, myt_pw)
+  results.ss = await add_by_plat(rows, shop_id, "ss", ss_acct, ss_pw)
+  results.uu = await add_by_plat(rows, shop_id, "uu", uu_acct, uu_pw)
 
   return results
 }
 
-router.post('/probs/_zps/edit', async ctx => {
+router.post("/probs/_zps/edit", async ctx => {
   try {
     let { shop_id } = ctx.request.body
-    if ([shop_id].some(v => v == null || v == '')) {
-      ctx.body = { e: '表单不合法' }
+    if ([shop_id].some(v => v == null || v == "")) {
+      ctx.body = { e: "表单不合法" }
       return
     }
 
@@ -2202,7 +2241,7 @@ router.post('/probs/_zps/edit', async ctx => {
 
 async function zps_edit(form) {
   function is_empty(v) {
-    return v == null || v == '' || /^\s+$/.test(v)
+    return v == null || v == "" || /^\s+$/.test(v)
   }
 
   async function update_by_plat(rows, shop_id, plat, acct, pw) {
@@ -2211,88 +2250,109 @@ async function zps_edit(form) {
     const row = rows.find(r => r.platform == plat)
     if (row) {
       if (is_empty(acct) || is_empty(pw)) {
-        return knx('deliver_account').where({ id: row.id }).delete()
+        return knx("deliver_account")
+          .where({ id: row.id })
+          .delete()
       }
 
-      return knx('deliver_account')
+      return knx("deliver_account")
         .where({ id: row.id })
         .update({
           account: acct,
-          pw
+          pw,
         })
     } else {
       if (is_empty(acct) || is_empty(pw)) return null
 
-      return knx('deliver_account')
-        .insert({
-          shop_id,
-          platform: plat,
-          account: acct,
-          pw
-        })
+      return knx("deliver_account").insert({
+        shop_id,
+        platform: plat,
+        account: acct,
+        pw,
+      })
     }
   }
 
   async function update_sf_info(rows, shop_id, acct, pw, sf_id) {
     // if (is_empty(acct) || is_empty(pw)) return null
 
-    const row = rows.find(r => r.platform == 'sf')
+    const row = rows.find(r => r.platform == "sf")
 
     if (row) {
       if (is_empty(acct) || is_empty(pw)) {
-        return knx('deliver_account').where({ id: row.id }).delete()
+        return knx("deliver_account")
+          .where({ id: row.id })
+          .delete()
       }
 
-      return knx('deliver_account')
+      return knx("deliver_account")
         .where({ id: row.id })
         .update({
           account: acct,
           pw,
-          sf_id
+          sf_id,
         })
     } else {
       if (is_empty(acct) || is_empty(pw)) return null
 
-      return knx('deliver_account')
-        .insert({
-          shop_id,
-          platform: 'sf',
-          account: acct,
-          pw,
-          sf_id
-        })
+      return knx("deliver_account").insert({
+        shop_id,
+        platform: "sf",
+        account: acct,
+        pw,
+        sf_id,
+      })
     }
   }
 
+  const {
+    shop_id,
+    dd_acct,
+    dd_pw,
+    fn_acct,
+    fn_pw,
+    sf_acct,
+    sf_pw,
+    sf_id,
+    sss_acct,
+    sss_pw,
+    wmb_acct,
+    wmb_pw,
+    myt_acct,
+    myt_pw,
+    ss_acct,
+    ss_pw,
+    uu_acct,
+    uu_pw,
+  } = form
 
-  const { shop_id, dd_acct, dd_pw, fn_acct, fn_pw, sf_acct, sf_pw, sf_id,
-    sss_acct, sss_pw, wmb_acct, wmb_pw, myt_acct, myt_pw, ss_acct, ss_pw, uu_acct, uu_pw } = form
-
-  const rows = await knx('deliver_account').where({ shop_id }).select()
+  const rows = await knx("deliver_account")
+    .where({ shop_id })
+    .select()
 
   let results = {}
 
-  results.dd = await update_by_plat(rows, shop_id, 'dd', dd_acct, dd_pw)
-  results.fn = await update_by_plat(rows, shop_id, 'fn', fn_acct, fn_pw)
+  results.dd = await update_by_plat(rows, shop_id, "dd", dd_acct, dd_pw)
+  results.fn = await update_by_plat(rows, shop_id, "fn", fn_acct, fn_pw)
   results.sf = await update_sf_info(rows, shop_id, sf_acct, sf_pw, sf_id)
-  results.sss = await update_by_plat(rows, shop_id, 'sss', sss_acct, sss_pw)
+  results.sss = await update_by_plat(rows, shop_id, "sss", sss_acct, sss_pw)
   // results.wmb = await update_by_plat(rows, shop_id, 'wmb', wmb_acct, wmb_pw)
-  results.myt = await update_by_plat(rows, shop_id, 'myt', myt_acct, myt_pw)
-  results.ss = await update_by_plat(rows, shop_id, 'ss', ss_acct, ss_pw)
-  results.uu = await update_by_plat(rows, shop_id, 'uu', uu_acct, uu_pw)
+  results.myt = await update_by_plat(rows, shop_id, "myt", myt_acct, myt_pw)
+  results.ss = await update_by_plat(rows, shop_id, "ss", ss_acct, ss_pw)
+  results.uu = await update_by_plat(rows, shop_id, "uu", uu_acct, uu_pw)
 
   return results
 }
 
-router.post('/probs/_shs/add', async ctx => {
+router.post("/probs/_shs/add", async ctx => {
   try {
     let { a, b, c, d } = ctx.request.body
     console.log(ctx.request.body)
-    if ([b, c].some(v => v == null || v == '')) {
-      ctx.body = { e: '表单不合法' }
+    if ([b, c].some(v => v == null || v == "")) {
+      ctx.body = { e: "表单不合法" }
       return
     }
-    const res = await knx('shs_shop_relation').insert({
+    const res = await knx("shs_shop_relation").insert({
       shs_id: a,
       shs_name: b,
       shop_id: c,
@@ -2305,14 +2365,14 @@ router.post('/probs/_shs/add', async ctx => {
   }
 })
 
-router.post('/probs/_shs/edit', async ctx => {
+router.post("/probs/_shs/edit", async ctx => {
   try {
     let { id, a, b, c, d } = ctx.request.body
-    if ([id, b, c].some(v => v == null || v == '')) {
-      ctx.body = { e: '表单不合法' }
+    if ([id, b, c].some(v => v == null || v == "")) {
+      ctx.body = { e: "表单不合法" }
       return
     }
-    const res = await knx('shs_shop_relation')
+    const res = await knx("shs_shop_relation")
       .where({ id })
       .update({
         shs_id: a,
@@ -2327,14 +2387,14 @@ router.post('/probs/_shs/edit', async ctx => {
   }
 })
 
-router.post('/probs/_shs/del', async ctx => {
+router.post("/probs/_shs/del", async ctx => {
   try {
     let { id } = ctx.request.body
-    if ([id].some(v => v == null || v == '')) {
-      ctx.body = { e: '表单不合法' }
+    if ([id].some(v => v == null || v == "")) {
+      ctx.body = { e: "表单不合法" }
       return
     }
-    const res = await knx('shs_shop_relation')
+    const res = await knx("shs_shop_relation")
       .where({ id })
       .delete()
     ctx.body = { res }
@@ -2344,18 +2404,18 @@ router.post('/probs/_shs/del', async ctx => {
   }
 })
 
-router.get('/probs/ao', async ctx => {
+router.get("/probs/ao", async ctx => {
   try {
     let [data, _] = await knx.raw(百亿补贴没有报名)
-    let handles = await knx('test_prob_t_')
+    let handles = await knx("test_prob_t_")
       .select()
-      .where({ type: 'ao' })
+      .where({ type: "ao" })
     ctx.body = {
       res: data.map((v, i) => ({
         ...v,
         key: `${v.shop_id}:${v.by_name}`,
-        handle: handles.find(h => h.key == `${v.shop_id}:${v.by_name}`)?.handle
-      }))
+        handle: handles.find(h => h.key == `${v.shop_id}:${v.by_name}`)?.handle,
+      })),
     }
   } catch (e) {
     console.log(e)
@@ -2363,18 +2423,18 @@ router.get('/probs/ao', async ctx => {
   }
 })
 
-router.get('/probs/ap', async ctx => {
+router.get("/probs/ap", async ctx => {
   try {
     let [data, _] = await knx.raw(单产品满减问题)
-    let handles = await knx('test_prob_t_')
+    let handles = await knx("test_prob_t_")
       .select()
-      .where({ type: 'ap' })
+      .where({ type: "ap" })
     ctx.body = {
       res: data.map((v, i) => ({
         ...v,
         key: `${v.shop_id}:${v.tagName}:${v.name}`,
-        handle: handles.find(h => h.key == `${v.shop_id}:${v.tagName}:${v.name}`)?.handle
-      }))
+        handle: handles.find(h => h.key == `${v.shop_id}:${v.tagName}:${v.name}`)?.handle,
+      })),
     }
   } catch (e) {
     console.log(e)
@@ -2382,18 +2442,18 @@ router.get('/probs/ap', async ctx => {
   }
 })
 
-router.get('/probs/aq', async ctx => {
+router.get("/probs/aq", async ctx => {
   try {
     let [data, _] = await knx.raw(饿了么其它活动检查)
-    let handles = await knx('test_prob_t_')
+    let handles = await knx("test_prob_t_")
       .select()
-      .where({ type: 'aq' })
+      .where({ type: "aq" })
     ctx.body = {
       res: data.map((v, i) => ({
         ...v,
         key: `${v.shop_id}:${v.超级吃货红包}:${v.下单返红包}`,
-        handle: handles.find(h => h.key == `${v.shop_id}:${v.超级吃货红包}:${v.下单返红包}`)?.handle
-      }))
+        handle: handles.find(h => h.key == `${v.shop_id}:${v.超级吃货红包}:${v.下单返红包}`)?.handle,
+      })),
     }
   } catch (e) {
     console.log(e)
@@ -2401,18 +2461,18 @@ router.get('/probs/aq', async ctx => {
   }
 })
 
-router.get('/probs/ar', async ctx => {
+router.get("/probs/ar", async ctx => {
   try {
     let [data, _] = await knx.raw(美团其它活动检查)
-    let handles = await knx('test_prob_t_')
+    let handles = await knx("test_prob_t_")
       .select()
-      .where({ type: 'ar' })
+      .where({ type: "ar" })
     ctx.body = {
       res: data.map((v, i) => ({
         ...v,
         key: `${v.shop_id}:${v.收藏有礼}:${v.店内领券}`,
-        handle: handles.find(h => h.key == `${v.shop_id}:${v.收藏有礼}:${v.店内领券}`)?.handle
-      }))
+        handle: handles.find(h => h.key == `${v.shop_id}:${v.收藏有礼}:${v.店内领券}`)?.handle,
+      })),
     }
   } catch (e) {
     console.log(e)
@@ -2420,18 +2480,18 @@ router.get('/probs/ar', async ctx => {
   }
 })
 
-router.get('/shopActsDiff', async ctx => {
+router.get("/shopActsDiff", async ctx => {
   try {
-    let data = await knx('test_change_t_')
+    let data = await knx("test_change_t_")
       .select()
-      .whereBetween('change_date', [
+      .whereBetween("change_date", [
         dayjs()
-          .subtract(15, 'day')
-          .format('YYYYMMDD'),
-        dayjs().format('YYYYMMDD')
+          .subtract(15, "day")
+          .format("YYYYMMDD"),
+        dayjs().format("YYYYMMDD"),
       ])
     data = data.map(v => ({ ...v, after_rule: JSON.parse(v.after_rule), before_rule: JSON.parse(v.before_rule) }))
-    if (!data.find(v => dayjs(v.change_date, 'YYYYMMDD').isSame(dayjs(), 'day'))) {
+    if (!data.find(v => dayjs(v.change_date, "YYYYMMDD").isSame(dayjs(), "day"))) {
       data = await shopActsDiff()
     }
     ctx.body = { res: data }
@@ -2441,11 +2501,11 @@ router.get('/shopActsDiff', async ctx => {
   }
 })
 
-router.post('/saveShopActsDiff', async ctx => {
+router.post("/saveShopActsDiff", async ctx => {
   try {
     let { key, handle } = ctx.request.body
     if (!key) {
-      ctx.body = { e: 'invalid params' }
+      ctx.body = { e: "invalid params" }
       return
     }
     const res = await saveShopActsDiff(key, handle)
@@ -2456,11 +2516,11 @@ router.post('/saveShopActsDiff', async ctx => {
   }
 })
 
-router.post('/saveProbs', async ctx => {
+router.post("/saveProbs", async ctx => {
   try {
     let { type, key, handle } = ctx.request.body
     if (!type || key == null) {
-      ctx.body = { e: 'invalid params' }
+      ctx.body = { e: "invalid params" }
       return
     }
     const res = await saveProbs(type, key, handle)
@@ -2471,11 +2531,11 @@ router.post('/saveProbs', async ctx => {
   }
 })
 
-router.post('/saveFreshA', async ctx => {
+router.post("/saveFreshA", async ctx => {
   try {
     let { wmPoiId, a2, updated_at } = ctx.request.body
     if (!wmPoiId || !updated_at) {
-      ctx.body = { e: 'invalid params' }
+      ctx.body = { e: "invalid params" }
       return
     }
     const res = await saveFreshA(wmPoiId, a2, updated_at)
@@ -2486,11 +2546,11 @@ router.post('/saveFreshA', async ctx => {
   }
 })
 
-router.get('/notes', async ctx => {
+router.get("/notes", async ctx => {
   try {
-    let data = await knx('test_notes_t_')
+    let data = await knx("test_notes_t_")
       .select()
-      .orderBy('updated_at', 'desc')
+      .orderBy("updated_at", "desc")
     ctx.body = { res: data }
   } catch (e) {
     console.log(e)
@@ -2498,11 +2558,11 @@ router.get('/notes', async ctx => {
   }
 })
 
-router.post('/saveNote', async ctx => {
+router.post("/saveNote", async ctx => {
   try {
     let { key, title, description, content, images } = ctx.request.body
     if (!content) {
-      ctx.body = { e: 'invalid params' }
+      ctx.body = { e: "invalid params" }
       return
     }
     const res = await saveNote(key, title, description, content, images)
@@ -2513,11 +2573,11 @@ router.post('/saveNote', async ctx => {
   }
 })
 
-router.post('/likeNote', async ctx => {
+router.post("/likeNote", async ctx => {
   try {
     let { key } = ctx.request.body
     if (!key) {
-      ctx.body = { e: 'invalid params' }
+      ctx.body = { e: "invalid params" }
       return
     }
     const res = await likeNote(key, ctx.request.ip)
@@ -2527,11 +2587,11 @@ router.post('/likeNote', async ctx => {
   }
 })
 
-router.post('/commentNote', async ctx => {
+router.post("/commentNote", async ctx => {
   try {
     let { key, comment } = ctx.request.body
     if (!key || !comment) {
-      ctx.body = { e: 'invalid params' }
+      ctx.body = { e: "invalid params" }
       return
     }
     const res = await commentNote(key, ctx.request.ip, comment)
@@ -2541,11 +2601,11 @@ router.post('/commentNote', async ctx => {
   }
 })
 
-router.post('/delNote', async ctx => {
+router.post("/delNote", async ctx => {
   try {
     let { key } = ctx.request.body
     if (!key) {
-      ctx.body = { e: 'invalid params' }
+      ctx.body = { e: "invalid params" }
       return
     }
     const res = await delNote(key)
@@ -2556,9 +2616,9 @@ router.post('/delNote', async ctx => {
   }
 })
 
-router.get('/freshas', async ctx => {
+router.get("/freshas", async ctx => {
   try {
-    let data = await knx('new_shop_track_copy1').select()
+    let data = await knx("new_shop_track_copy1").select()
     ctx.body = { res: data }
   } catch (e) {
     console.log(e)
@@ -2568,7 +2628,7 @@ router.get('/freshas', async ctx => {
 
 koa.use(router.routes())
 
-koa.listen(9005, () => console.log('running at 9005'))
+koa.listen(9005, () => console.log("running at 9005"))
 
 const date_sql = d =>
   `SELECT * FROM test_analyse_t_ WHERE date = DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL ${d} DAY),'%Y%m%d')`
@@ -2661,12 +2721,177 @@ const sum_sql0 = `
     WINDOW w AS (PARTITION BY real_shop, ym)
   )`
 
-const sum_sql = d =>
-  `${sum_sql0}  
-  SELECT *, consume_sum_sum / income_sum_sum AS consume_sum_sum_ratio, cost_sum_sum / income_sum_sum AS cost_sum_sum_ratio
-  FROM e
-  WHERE date >= DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL ${d} DAY),'%Y%m%d')
-  ORDER BY date DESC, income_sum DESC`
+const sum_sql = d => `
+    DROP TABLE IF EXISTS test_shop_temp_;
+    CREATE TABLE test_shop_temp_ AS (
+      WITH shop_info AS (
+        SELECT shop_id, shop_name  FROM ele_info_manage WHERE status = 0 UNION ALL
+        SELECT wmpoiid, reptile_type FROM foxx_shop_reptile WHERE status = 0
+      ),
+      real_shop_info1 AS (
+        SELECT
+          x.shop_id,
+          x1.shop_name,
+          x.platform,
+          y.shop_address city,
+          y.real_shop_name,
+          u.nick_name person,
+          u2.nick_name leader,
+          new_shop,
+          y.room_rentals AS rent,
+          y.staff_accom,
+          y.water_electr,
+          4500 AS estimate_employee_wage,
+          IF(new_shop = 1, '雷朝宇', null) new_person
+        FROM
+          platform_shops x
+          JOIN base_physical_shops y ON x.physical_id = y.id
+          JOIN shop_info x1 ON x1.shop_id = x.shop_id
+          LEFT JOIN sys_user u ON u.user_id = y.user_id
+          LEFT JOIN sys_user u2 ON u2.user_id = y.leader_id
+      ),
+      real_shop_info2 AS (
+        SELECT *, GROUP_CONCAT(shop_name) AS full_shop_name
+        FROM real_shop_info1 
+        GROUP BY real_shop_name
+      )
+      SELECT r1.*, r2.full_shop_name, IF(LOCATE('贡茶', r2.full_shop_name) > 0 AND LOCATE('甜品', r2.full_shop_name) > 0, 5, 3) AS estimate_staff_cnt
+      FROM real_shop_info1 r1
+      LEFT JOIN real_shop_info2 r2 USING(real_shop_name)
+    );
+    WITH 
+    test_analyse AS (-- 营推
+      SELECT
+        DISTINCT
+        city,
+        person,
+        leader,
+        real_shop,
+        income_sum,
+        consume_sum,
+        consume_sum_ratio,
+        cost_sum,
+        cost_sum_ratio,
+        date
+      FROM test_analyse_t_
+      WHERE date >= DATE_FORMAT( DATE_SUB( CURDATE(), INTERVAL 37 DAY ), '%Y%m%d' )
+    ),
+    test_shop_temp AS (
+      SELECT
+        real_shop_name,
+        estimate_staff_cnt,
+        estimate_employee_wage,
+        staff_accom,
+        water_electr,
+        rent 
+      FROM test_shop_temp_ 
+      GROUP BY real_shop_name
+    ),
+    a AS(
+      SELECT
+        t.city,
+        t.person,
+        t.leader,
+        t.real_shop,
+        t.income_sum,
+        t.consume_sum,
+        t.consume_sum_ratio,
+        t.cost_sum,
+        t.cost_sum_ratio,
+        t.date,
+        IFNULL( rent / DAY ( LAST_DAY( date )), 0 ) AS rent_cost,
+        r.estimate_staff_cnt,
+        r.estimate_employee_wage,
+        r.staff_accom,
+        r.water_electr,
+        r.rent 
+      FROM
+        test_analyse t
+        LEFT JOIN test_shop_temp r ON t.real_shop = r.real_shop_name
+    ),
+    b AS (
+        SELECT *, 
+          SUM(income_sum) OVER w AS income_sum_sum, 
+          SUM(consume_sum) OVER w AS consume_sum_sum, 
+          SUM(cost_sum) OVER w AS cost_sum_sum,
+          SUM(income_sum) OVER (w2 ROWS BETWEEN  CURRENT ROW AND 14 FOLLOWING) AS income_sum_15,
+          SUM(income_sum) OVER (w2 ROWS BETWEEN CURRENT ROW AND 2 FOLLOWING) AS income_sum_3
+        FROM a
+        WINDOW w AS (PARTITION BY date),
+          w2 AS (PARTITION BY real_shop ORDER BY date DESC)
+    ),
+    c AS (
+      SELECT
+        *,
+    -- 		(IF(
+    -- 			staff_cnt = 0 OR employee_wage = 0,
+    -- 			GREATEST(ROUND(income_sum_15 * 2 / 30000), 4) * 4500 ,
+    -- 			staff_cnt * employee_wage) + staff_accom
+    -- 		) / DAY(LAST_DAY(date)) AS labor_cost,
+        ( GREATEST( ROUND( income_sum_15 * 2 / 30000 ), estimate_staff_cnt ) * estimate_employee_wage + staff_accom ) / DAY (
+        LAST_DAY( date )) AS labor_cost,
+        IF(
+          water_electr = 0,
+          income_sum * 0.05,
+          water_electr / DAY (LAST_DAY( date ))
+        ) AS water_electr_cost,
+        income_sum * 0.015 AS cashback_cost,
+        income_sum * 0.06 AS oper_cost 
+      FROM b
+    ),
+    d AS (
+      SELECT
+        *,
+        EXTRACT( YEAR_MONTH FROM date ) AS ym,
+        income_sum - consume_sum - cost_sum - rent_cost - labor_cost - water_electr_cost - cashback_cost - oper_cost AS profit 
+      FROM c
+    ),
+    e AS (
+      SELECT
+        *,
+        SUM( income_sum ) OVER w AS income_sum_month,
+        SUM( consume_sum ) OVER w AS consume_sum_month,
+        SUM( consume_sum ) OVER w / SUM( income_sum ) OVER w AS consume_sum_ratio_month,
+        SUM( cost_sum ) OVER w AS cost_sum_month,
+        SUM( cost_sum ) OVER w / SUM( income_sum ) OVER w AS cost_sum_ratio_month,
+        IF( 
+          ym = EXTRACT( YEAR_MONTH FROM CURRENT_DATE ) OR rent = 0, 
+          SUM( rent_cost ) OVER w, 
+          rent
+        ) AS rent_cost_month,
+        IF(
+          ym = EXTRACT( YEAR_MONTH FROM CURRENT_DATE ),
+          SUM( labor_cost ) OVER w,
+          ( GREATEST( ROUND( income_sum_15 * 2 / 30000 ), estimate_staff_cnt ) * estimate_employee_wage + staff_accom )
+        ) AS labor_cost_month,
+        IF( 
+          ym = EXTRACT( YEAR_MONTH FROM CURRENT_DATE ) OR water_electr = 0,
+          SUM( water_electr_cost ) OVER w,
+          water_electr
+        ) AS water_electr_cost_month,
+        SUM( cashback_cost ) OVER w AS cashback_cost_month,
+        SUM( oper_cost ) OVER w AS oper_cost_month,
+        SUM( profit ) OVER w AS profit_month 
+      FROM d 
+      WINDOW w AS (PARTITION BY real_shop,ym)
+    ),
+    f AS (
+      SELECT
+        *,
+        consume_sum_sum / income_sum_sum AS consume_sum_sum_ratio,
+        cost_sum_sum / income_sum_sum AS cost_sum_sum_ratio,
+        IFNULL(AVG(profit) OVER(PARTITION BY real_shop ORDER BY date DESC ROWS BETWEEN CURRENT ROW AND 30 FOLLOWING ), 0) 30_days_before_profit
+      FROM e 
+      WHERE date >= DATE_FORMAT( DATE_SUB( CURDATE(), INTERVAL 37 DAY ), '%Y%m%d' ) 
+      ORDER BY
+        date DESC,
+        income_sum DESC
+    )
+    SELECT
+      *,
+      ( profit - 30_days_before_profit ) / 30_days_before_profit month_on_month_ratio_profit 
+    FROM f 
+    WHERE date >= DATE_FORMAT( DATE_SUB( CURDATE(), INTERVAL ${d} DAY ), '%Y%m%d' )`
 
 const sum_sql2 = `
   ${sum_sql0}
@@ -2760,7 +2985,7 @@ const export_fresh_sql = `
 
 const perf_sql = (d, djh = 1) => `WITH a AS (
     SELECT city, person, leader, real_shop, income_sum, income_avg, income_score, cost_sum, cost_avg, cost_sum_ratio, cost_score, consume_sum, consume_avg, consume_sum_ratio, consume_score, score, date
-    FROM test_analyse_t_ ${djh == 0 ? "WHERE shop_name NOT LIKE '%大计划%'" : ''}
+    FROM test_analyse_t_ ${djh == 0 ? "WHERE shop_name NOT LIKE '%大计划%'" : ""}
     GROUP BY real_shop, date ORDER BY date DESC
   ),
   b AS (
@@ -3118,7 +3343,12 @@ const 美团单维度订单 = (id, activi, counts, date) => `SET @date = ${date}
       商品数 = ${counts}
     ORDER BY 成本 / 收入 DESC`
 
-const 饿了么维度订单 = (id, activi, counts, date) => `SET @date = DATE_FORMAT(DATE_ADD(${date}, INTERVAL 1 DAY), '%Y%m%d');
+const 饿了么维度订单 = (
+  id,
+  activi,
+  counts,
+  date
+) => `SET @date = DATE_FORMAT(DATE_ADD(${date}, INTERVAL 1 DAY), '%Y%m%d');
       SET @shop_id = ${id};
 
       WITH a AS (
@@ -3192,7 +3422,7 @@ const 饿了么维度订单 = (id, activi, counts, date) => `SET @date = DATE_FO
         JOIN c 
           ON a.shop_id = c.shop_id
       WHERE 
-        ${activi == null ? 'act IS NULL' : `act = '${activi}'`}
+        ${activi == null ? "act IS NULL" : `act = '${activi}'`}
         AND goods_cnt = ${counts}
       ORDER BY 成本比例 DESC`
 
@@ -3282,7 +3512,7 @@ const 维度订单详情 = (id, activi, counts, date) => `SET @date = ${date};
     FROM
       a JOIN b 
       ON a.shop_id = b.shop_id
-      AND ${counts == null ? 'goods_count IS NULL' : 'ROUND( goods_count, 1 ) = ' + counts}
+      AND ${counts == null ? "goods_count IS NULL" : "ROUND( goods_count, 1 ) = " + counts}
       AND rule = '${activi}'
     ORDER BY cost_ratio DESC`
 
@@ -5853,7 +6083,7 @@ const 美团其它活动检查 = `WITH
       售卖代金券
     FROM a JOIN b ON a.shop_id = b.shop_id`
 
-async function date(d) { }
+async function date(d) {}
 
 async function addNewShop(
   platform,
@@ -5874,8 +6104,8 @@ async function addNewShop(
   try {
     roomId = roomId.trim()
     let results = {},
-      real_shop_id = ''
-    const realShops = await knx('foxx_real_shop_info').select()
+      real_shop_id = ""
+    const realShops = await knx("foxx_real_shop_info").select()
     realShops.find(v => v.real_shop_name == realName)
       ? (real_shop_id = realShops.find(v => v.real_shop_name == realName).real_shop_id)
       : (real_shop_id = Math.max(...realShops.map(v => v.real_shop_id)) + 1)
@@ -5893,10 +6123,10 @@ async function addNewShop(
       // .andWhere({ shop_id: shopId })
       // .first()
 
-      const { ks_id } = await knx(`ele_info_manage`).first('ks_id')
+      const { ks_id } = await knx(`ele_info_manage`).first("ks_id")
       const res1 = await knx(`ele_info_manage`)
         .insert({ shop_id: shopId, shop_name: shopName, ks_id, status: 0 })
-        .onConflict('shop_id')
+        .onConflict("shop_id")
         .merge()
       results.res1 = res1
     } else if (platform == 1) {
@@ -5907,13 +6137,13 @@ async function addNewShop(
 
       const res1 = await knx(`foxx_shop_reptile`)
         .insert({ wmpoiid: shopId, reptile_type: shopName, project_id })
-        .onConflict('wmpoiid')
+        .onConflict("wmpoiid")
         .merge()
       results.res1 = res1
     }
     const res2 = await knx(`foxx_message_room`)
       .insert({ wmpoiid: shopId, roomName: shopName, roomId })
-      .onConflict('wmpoiid')
+      .onConflict("wmpoiid")
       .merge()
     results.res2 = res2
 
@@ -5932,9 +6162,9 @@ async function addNewShop(
         is_original_price_deduction_point: isD,
         is_merit_based_activity: isM,
         rent,
-        is_delete: 0
+        is_delete: 0,
       })
-      .onConflict('shop_id')
+      .onConflict("shop_id")
       .merge()
     results.res3 = res3
     return Promise.resolve(results)
@@ -5950,9 +6180,9 @@ async function addFengniao(shopId, shopName, loginName, password) {
         shop_id: shopId,
         shop_name: shopName,
         loginName,
-        password
+        password,
       })
-      .onConflict('shop_id')
+      .onConflict("shop_id")
       .merge()
     return Promise.resolve(res)
   } catch (e) {
@@ -5963,7 +6193,7 @@ async function addFengniao(shopId, shopName, loginName, password) {
 async function addDada(shopId, shopName, username, password) {
   try {
     const { status, content } = await loginDada(username, password)
-    if (status != 'ok') return Promise.reject('达达登录失败')
+    if (status != "ok") return Promise.reject("达达登录失败")
     const { supplierId, accessToken } = content
     const res = await knx(`dd_login_info`)
       .insert({
@@ -5973,9 +6203,9 @@ async function addDada(shopId, shopName, username, password) {
         pw: password,
         user_id: supplierId,
         token: accessToken,
-        status: 0
+        status: 0,
       })
-      .onConflict('shop_id')
+      .onConflict("shop_id")
       .merge()
     return Promise.resolve(res)
   } catch (e) {
@@ -5988,42 +6218,42 @@ async function loginDada(username, password) {
     var data = `{"accountType":2,"code":"","loginType":"password","password":"${password}","token":"","username":"${username}"}`
 
     var config = {
-      method: 'post',
-      url: 'https://supplier-api.imdada.cn/v1/login',
+      method: "post",
+      url: "https://supplier-api.imdada.cn/v1/login",
       headers: {
-        'Enable-Gps': '1',
-        Accuracy: '550.0',
-        Model: 'Android-MI_9',
-        'City-Id': '0',
-        'User-Token': '1',
-        'City-Code': '010',
-        'Client-MacAddress': '02:00:00:00:00:02',
-        'Rate-Limit-Hash': '2e6e6a654a88fcc8289c162e2c5db0e1',
-        'Location-Provider': 'lbs',
-        'Channel-ID': 'CPA006',
-        Lng: '116.410344',
-        'User-Id': '0',
-        'App-Version': '8.2.0',
-        Operator: 'ChinaMobile',
-        'OS-Version': '7.1.2',
-        Lat: '39.916295',
-        UUID: 'ffffffff-fd1b-7a8d-e826-db5b00000000',
-        'Client-Time': '1606389139648',
-        'Request-Id': '62f8bfc5-b35f-449c-a6a6-c6724f625a7e',
-        Platform: 'Android',
-        'App-Name': 'a-shop',
-        'Ad-Code': '110101',
-        'Sdcard-Id': '219bb10e76f64599b3b10ab8f52f3018',
-        'Client-Imei': '865166027515306',
-        Network: 'WIFI',
-        'Client-Imsi': '460000409278205',
-        'Location-Time': '1606389042484',
-        'Verification-Hash': md5(data + 'Athens'),
-        'Content-Type': 'application/json; charset=UTF-8',
-        Host: 'supplier-api.imdada.cn',
-        'User-Agent': 'okhttp/3.10.0'
+        "Enable-Gps": "1",
+        Accuracy: "550.0",
+        Model: "Android-MI_9",
+        "City-Id": "0",
+        "User-Token": "1",
+        "City-Code": "010",
+        "Client-MacAddress": "02:00:00:00:00:02",
+        "Rate-Limit-Hash": "2e6e6a654a88fcc8289c162e2c5db0e1",
+        "Location-Provider": "lbs",
+        "Channel-ID": "CPA006",
+        Lng: "116.410344",
+        "User-Id": "0",
+        "App-Version": "8.2.0",
+        Operator: "ChinaMobile",
+        "OS-Version": "7.1.2",
+        Lat: "39.916295",
+        UUID: "ffffffff-fd1b-7a8d-e826-db5b00000000",
+        "Client-Time": "1606389139648",
+        "Request-Id": "62f8bfc5-b35f-449c-a6a6-c6724f625a7e",
+        Platform: "Android",
+        "App-Name": "a-shop",
+        "Ad-Code": "110101",
+        "Sdcard-Id": "219bb10e76f64599b3b10ab8f52f3018",
+        "Client-Imei": "865166027515306",
+        Network: "WIFI",
+        "Client-Imsi": "460000409278205",
+        "Location-Time": "1606389042484",
+        "Verification-Hash": md5(data + "Athens"),
+        "Content-Type": "application/json; charset=UTF-8",
+        Host: "supplier-api.imdada.cn",
+        "User-Agent": "okhttp/3.10.0",
       },
-      data: data
+      data: data,
     }
 
     const res = await axios(config)
@@ -6036,7 +6266,7 @@ async function loginDada(username, password) {
 async function addShunfeng(shopId, shopName, username, password) {
   try {
     let l = await loginShunfeng(username, password)
-    if (l.data.errno != 0) return Promise.reject('顺丰登录失败')
+    if (l.data.errno != 0) return Promise.reject("顺丰登录失败")
 
     const res = await knx(`sf_express_user_info`)
       .insert({
@@ -6045,9 +6275,9 @@ async function addShunfeng(shopId, shopName, username, password) {
         user_name: username,
         user_pass: password,
         is_status: 0,
-        is_delete: 0
+        is_delete: 0,
       })
-      .onConflict('shop_id')
+      .onConflict("shop_id")
       .merge()
     return Promise.resolve(res)
   } catch (e) {
@@ -6056,29 +6286,29 @@ async function addShunfeng(shopId, shopName, username, password) {
 }
 
 async function loginShunfeng(username, password) {
-  let key = 'BJFCMLCCBJFCMLCC'
+  let key = "BJFCMLCCBJFCMLCC"
   try {
     var data = qs.stringify({
-      platform: 'crm',
-      cuid: '6437BC95DFB8B8DCAE54C83D049165CE|0',
-      appid: '87634392',
-      channel: 'android',
-      ENV_LANG: 'zh',
-      app_version: '4.0.1',
+      platform: "crm",
+      cuid: "6437BC95DFB8B8DCAE54C83D049165CE|0",
+      appid: "87634392",
+      channel: "android",
+      ENV_LANG: "zh",
+      app_version: "4.0.1",
       uname: `${username}`,
-      upass: `${encrypt(password)}`
+      upass: `${encrypt(password)}`,
     })
     var config = {
-      method: 'post',
-      url: 'https://passtc.sf-express.com/api/loginv2',
+      method: "post",
+      url: "https://passtc.sf-express.com/api/loginv2",
       headers: {
-        COOKIE: '',
-        ENV_LANG: 'zh',
-        'User-Agent': 'Dalvik/2.1.0 (Linux; U; Android 7.1.2; MI 9 Build/N2G48C)',
-        Host: 'passtc.sf-express.com',
-        'Content-Type': 'application/x-www-form-urlencoded'
+        COOKIE: "",
+        ENV_LANG: "zh",
+        "User-Agent": "Dalvik/2.1.0 (Linux; U; Android 7.1.2; MI 9 Build/N2G48C)",
+        Host: "passtc.sf-express.com",
+        "Content-Type": "application/x-www-form-urlencoded",
       },
-      data: data
+      data: data,
     }
 
     const res = await axios(config)
@@ -6090,14 +6320,14 @@ async function loginShunfeng(username, password) {
   function encrypt(password) {
     return CryptoJS.AES.encrypt(
       Buffer.from(password)
-        .toString('base64')
-        .split('')
+        .toString("base64")
+        .split("")
         .reverse()
-        .join(''),
+        .join(""),
       CryptoJS.enc.Utf8.parse(key),
       {
         mode: CryptoJS.mode.ECB,
-        padding: CryptoJS.pad.Pkcs7
+        padding: CryptoJS.pad.Pkcs7,
       }
     ).toString()
   }
@@ -6106,16 +6336,16 @@ async function loginShunfeng(username, password) {
 async function addMyt(shopId, loginName, password) {
   try {
     const { message, data } = await loginMyt(loginName, password)
-    if (message != '') return Promise.reject(message)
+    if (message != "") return Promise.reject(message)
     const { token } = data
     const res = await knx(`myt_login_info`)
       .insert({
         shop_id: shopId,
         login_name: loginName,
         pw: password,
-        token
+        token,
       })
-      .onConflict('shop_id')
+      .onConflict("shop_id")
       .merge()
     return Promise.resolve(res)
   } catch (e) {
@@ -6128,20 +6358,20 @@ async function loginMyt(username, password) {
     var data = `username=${username}&password=${password}&cid=&token=&v=3.4.0`
 
     var config = {
-      method: 'post',
-      url: 'https://app.saas.maiyatian.com/login/in/',
+      method: "post",
+      url: "https://app.saas.maiyatian.com/login/in/",
       headers: {
-        Host: 'app.saas.maiyatian.com',
-        Cookie: 'PHPSESSID=288581lk05ptplk0704m3bld54',
-        origin: 'file://',
-        'user-agent':
-          'Mozilla/5.0 (Linux; Android 7.1.2; TAS-AN00 Build/N2G48C; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/68.0.3440.70 Mobile Safari/537.36 Html5Plus/1.0 (Immersed/24.0)',
-        'content-type': 'application/x-www-form-urlencoded',
-        accept: '*/*',
-        'accept-language': 'zh-CN,en-US;q=0.9',
-        'x-requested-with': 'io.dcloud.maiyatian'
+        Host: "app.saas.maiyatian.com",
+        Cookie: "PHPSESSID=288581lk05ptplk0704m3bld54",
+        origin: "file://",
+        "user-agent":
+          "Mozilla/5.0 (Linux; Android 7.1.2; TAS-AN00 Build/N2G48C; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/68.0.3440.70 Mobile Safari/537.36 Html5Plus/1.0 (Immersed/24.0)",
+        "content-type": "application/x-www-form-urlencoded",
+        accept: "*/*",
+        "accept-language": "zh-CN,en-US;q=0.9",
+        "x-requested-with": "io.dcloud.maiyatian",
       },
-      data: data
+      data: data,
     }
 
     const res = await axios(config)
@@ -6206,7 +6436,7 @@ async function shopActsDiff() {
       // knx.raw(elm_foods_diff),
       // knx.raw(mt_foods_diff),
       // knx.raw(mt_discounts_diff),
-      knx.raw(mt_shop_cate_diff)
+      knx.raw(mt_shop_cate_diff),
     ])
     data = data.map(v => v[0])
     data = [
@@ -6214,11 +6444,11 @@ async function shopActsDiff() {
       ...data[1],
       ...data[2].map(v => ({
         ...v,
-        rule: `面积：${v.logisticsAreas}\n起送价：${v.minPrice}\n配送费：${v.shippingFee}`
+        rule: `面积：${v.logisticsAreas}\n起送价：${v.minPrice}\n配送费：${v.shippingFee}`,
       })),
       ...data[3].map(v => ({
         ...v,
-        rule: `${v.shop_product_desc}\n起送价：${v.price_items}\n配送费：${v.delivery_fee_items}`
+        rule: `${v.shop_product_desc}\n起送价：${v.price_items}\n配送费：${v.delivery_fee_items}`,
       })),
       // ...data[4].map(v => ({
       //   ...v,
@@ -6238,23 +6468,23 @@ async function shopActsDiff() {
       // })),
       ...data[4].map(v => ({
         ...v,
-        rule: `主营：${v.mainCategory}\n辅营：${v.supplementCategory}`
-      }))
+        rule: `主营：${v.mainCategory}\n辅营：${v.supplementCategory}`,
+      })),
     ].sort((a, b) => a.shop_id - b.shop_id)
     // console.log(data)
     let res = new M(data).bind(split)
 
-    let saveRes = await knx('test_change_t_')
+    let saveRes = await knx("test_change_t_")
       .insert(
         res.val.map(v => ({
           ...v,
           after_rule: JSON.stringify(v.after_rule),
-          before_rule: JSON.stringify(v.before_rule)
+          before_rule: JSON.stringify(v.before_rule),
         }))
       )
-      .onConflict('key')
+      .onConflict("key")
       .merge()
-    console.log('shopActsDiff', saveRes)
+    console.log("shopActsDiff", saveRes)
     return Promise.resolve(res.val)
   } catch (e) {
     return Promise.reject(e)
@@ -6263,24 +6493,24 @@ async function shopActsDiff() {
   function split(xs) {
     let distinct_shop_titles = Array.from(new Set(xs.map(v => `${v.shop_id}|${v.title}`)))
     let ys = distinct_shop_titles.map(shop_title => {
-      let shop_id = shop_title.split('|')[0]
-      let title = shop_title.split('|')[1]
+      let shop_id = shop_title.split("|")[0]
+      let title = shop_title.split("|")[1]
       let shop_name = xs.find(k => k.shop_id == shop_id)?.shop_name
       let person = xs.find(k => k.shop_id == shop_id)?.person
       let platform = xs.find(k => k.shop_id == shop_id)?.platform
       let real_shop_name = xs.find(k => k.shop_id == shop_id)?.real_shop_name
       let leader = xs.find(k => k.shop_id == shop_id)?.leader
       let after_rule = xs
-        .filter(k => k.shop_id == shop_id && k.title == title && dayjs(k.insert_date).isSame(dayjs(), 'day'))
-        .map(k => ({ rule: k.rule, date: k.date, insert_date: dayjs(k.insert_date).format('YYYY-MM-DD HH:mm:ss') }))
+        .filter(k => k.shop_id == shop_id && k.title == title && dayjs(k.insert_date).isSame(dayjs(), "day"))
+        .map(k => ({ rule: k.rule, date: k.date, insert_date: dayjs(k.insert_date).format("YYYY-MM-DD HH:mm:ss") }))
       let before_rule = xs
         .filter(
           k =>
-            k.shop_id == shop_id && k.title == title && dayjs(k.insert_date).isSame(dayjs().subtract(1, 'day'), 'day')
+            k.shop_id == shop_id && k.title == title && dayjs(k.insert_date).isSame(dayjs().subtract(1, "day"), "day")
         )
-        .map(k => ({ rule: k.rule, date: k.date, insert_date: dayjs(k.insert_date).format('YYYY-MM-DD HH:mm:ss') }))
+        .map(k => ({ rule: k.rule, date: k.date, insert_date: dayjs(k.insert_date).format("YYYY-MM-DD HH:mm:ss") }))
       return {
-        key: `${shop_id}-${title}-${dayjs().format('YYYYMMDD')}`,
+        key: `${shop_id}-${title}-${dayjs().format("YYYYMMDD")}`,
         shop_id,
         shop_name,
         platform,
@@ -6290,8 +6520,8 @@ async function shopActsDiff() {
         title,
         after_rule,
         before_rule,
-        change_date: dayjs().format('YYYYMMDD'),
-        handle: ''
+        change_date: dayjs().format("YYYYMMDD"),
+        handle: "",
       }
     })
     return new M(ys)
@@ -6300,7 +6530,7 @@ async function shopActsDiff() {
 
 async function saveShopActsDiff(key, handle) {
   try {
-    return knx('test_change_t_')
+    return knx("test_change_t_")
       .where({ key })
       .update({ handle })
   } catch (e) {
@@ -6310,9 +6540,9 @@ async function saveShopActsDiff(key, handle) {
 
 async function saveProbs(type, key, handle) {
   try {
-    return knx('test_prob_t_')
-      .insert({ type, key, handle, updated_at: dayjs().format('YYYY-MM-DD') })
-      .onConflict(['type', 'key', 'updated_at'])
+    return knx("test_prob_t_")
+      .insert({ type, key, handle, updated_at: dayjs().format("YYYY-MM-DD") })
+      .onConflict(["type", "key", "updated_at"])
       .merge()
   } catch (e) {
     return Promise.reject(e)
@@ -6321,13 +6551,13 @@ async function saveProbs(type, key, handle) {
 
 async function saveFreshA(wmpoiid, a2, updated_at) {
   try {
-    return knx('new_shop_track_copy1')
+    return knx("new_shop_track_copy1")
       .insert({
         wmpoiid,
         a2,
-        updated_at
+        updated_at,
       })
-      .onConflict(['wmpoiid', 'updated_at'])
+      .onConflict(["wmpoiid", "updated_at"])
       .merge()
   } catch (e) {
     return Promise.reject(e)
@@ -6336,16 +6566,16 @@ async function saveFreshA(wmpoiid, a2, updated_at) {
 
 async function saveNote(key, title, description, content, images) {
   try {
-    return knx('test_notes_t_')
+    return knx("test_notes_t_")
       .insert({
         key,
         title,
         description,
         content,
         images,
-        updated_at: dayjs().format('YYYY-MM-DD HH:mm:ss')
+        updated_at: dayjs().format("YYYY-MM-DD HH:mm:ss"),
       })
-      .onConflict('key')
+      .onConflict("key")
       .merge()
   } catch (e) {
     return Promise.reject(e)
@@ -6354,14 +6584,14 @@ async function saveNote(key, title, description, content, images) {
 
 async function likeNote(key, ip) {
   try {
-    const data = await knx('test_notes_t_')
+    const data = await knx("test_notes_t_")
       .where({ key })
       .first()
-    if (!data) return Promise.reject('no data')
-    if (data.likes.includes(ip)) return Promise.reject('liked')
-    return knx('test_notes_t_')
+    if (!data) return Promise.reject("no data")
+    if (data.likes.includes(ip)) return Promise.reject("liked")
+    return knx("test_notes_t_")
       .where({ key })
-      .update({ likes: data.likes != '' ? `${data.likes}|${ip}` : ip })
+      .update({ likes: data.likes != "" ? `${data.likes}|${ip}` : ip })
   } catch (e) {
     return Promise.reject(e)
   }
@@ -6369,17 +6599,17 @@ async function likeNote(key, ip) {
 
 async function commentNote(key, ip, comment) {
   try {
-    const data = await knx('test_notes_t_')
+    const data = await knx("test_notes_t_")
       .where({ key })
       .first()
-    if (!data) return Promise.reject('no data')
-    let com = { id: uuid.v4(), ip, comment, replies: [], inserted_at: dayjs().format('YYYY-MM-DD HH:mm:ss') }
+    if (!data) return Promise.reject("no data")
+    let com = { id: uuid.v4(), ip, comment, replies: [], inserted_at: dayjs().format("YYYY-MM-DD HH:mm:ss") }
     let coms = data.comments ? [...JSON.parse(data.comments), com] : [com]
 
-    const res = await knx('test_notes_t_')
+    const res = await knx("test_notes_t_")
       .where({ key })
       .update({ comments: JSON.stringify(coms) })
-    if (res != 1) return Promise.reject('error')
+    if (res != 1) return Promise.reject("error")
     return Promise.resolve(JSON.stringify(coms))
   } catch (e) {
     return Promise.reject(e)
@@ -6388,7 +6618,7 @@ async function commentNote(key, ip, comment) {
 
 async function delNote(key) {
   try {
-    return knx('test_notes_t_')
+    return knx("test_notes_t_")
       .where({ key })
       .del()
   } catch (e) {
@@ -6398,7 +6628,7 @@ async function delNote(key) {
 
 async function ts() {
   try {
-    let data = await readXls('plan/Book 1.xlsx', 'Sheet1')
+    let data = await readXls("plan/Book 1.xlsx", "Sheet1")
     let res = new M(data)
     return Promise.resolve(res.val)
   } catch (e) {
@@ -6428,7 +6658,7 @@ async function ts() {
       x.settlea_1,
       x.settlea_7,
       x.settlea_7_3,
-      x.date
+      x.date,
     ])
     return new M(ys)
   }
@@ -6440,7 +6670,7 @@ async function sum(date, raw) {
     let [data, _] = await knx.raw(sum_sql(date))
     data = data[2]
     // data2 = await sum2()
-    if (!data) return Promise.reject('no data')
+    if (!data) return Promise.reject("no data")
 
     if (raw) return data
 
@@ -6478,20 +6708,22 @@ async function sum(date, raw) {
       cashback_cost: fixed2(v.cashback_cost),
       oper_cost: fixed2(v.oper_cost),
       profit: fixed2(v.profit),
-      profit_month: fixed2(v.profit_month)
+      profit_month: fixed2(v.profit_month),
+      before_30_profit: fixed2(v.before_30_profit),
+      month_on_month_ratio_profit: percent(v.month_on_month_ratio_profit),
     }))
     return new M(ys)
   }
 
   function sum_(xs) {
-    let dates = distinct(xs, 'date')
+    let dates = distinct(xs, "date")
     for (let da of dates) {
       let data = xs.find(v => v.date == da)
       if (data)
         xs.push({
-          city: '总计',
-          person: '总计',
-          real_shop: '总计',
+          city: "总计",
+          person: "总计",
+          real_shop: "总计",
           income_sum: data.income_sum_sum,
           consume_sum: data.consume_sum_sum,
           cost_sum: data.cost_sum_sum,
@@ -6506,18 +6738,18 @@ async function sum(date, raw) {
           oper_cost: fixed2(xs.filter(x => x.date == da).reduce((s, v) => s + parseFloat_0(v.oper_cost), 0)),
           profit: fixed2(xs.filter(x => x.date == da).reduce((s, v) => s + parseFloat_0(v.profit), 0)),
           profit_month: fixed2(xs.filter(x => x.date == da).reduce((s, v) => s + parseFloat_0(v.profit_month), 0)),
-          date: da
+          date: da,
         })
     }
     return new M({
       xs,
-      dates
+      dates,
     })
   }
 
   function split_shop({ xs, dates }) {
     if (!xs) return []
-    let distinct_shops = distinct(xs, 'real_shop')
+    let distinct_shops = distinct(xs, "real_shop")
     let ys = distinct_shops.map(v => {
       let city = xs.find(k => k.real_shop == v).city
       let person = xs.find(k => k.real_shop == v).person
@@ -6570,6 +6802,14 @@ async function sum(date, raw) {
         .filter(k => k.real_shop == v)
         .sort((a, b) => b.date - a.date)
         .reduce((o, c) => ({ ...o, [`profit_month_${c.date}`]: c.profit_month }), {})
+      let before_30_profit = xs
+        .filter(k => k.real_shop == v)
+        .sort((a, b) => b.date - a.date)
+        .reduce((o, c) => ({ ...o, [`before_30_profit_${c.date}`]: c.before_30_profit }), {})
+      let month_on_month_ratio_profit = xs
+        .filter(k => k.real_shop == v)
+        .sort((a, b) => b.date - a.date)
+        .reduce((o, c) => ({ ...o, [`month_on_month_ratio_profit_${c.date}`]: c.month_on_month_ratio_profit }), {})
       return {
         city,
         person,
@@ -6585,13 +6825,15 @@ async function sum(date, raw) {
         ...water_electr_costs,
         ...cashback_costs,
         ...oper_costs,
-        ...profits
+        ...profits,
+        ...before_30_profit,
+        ...month_on_month_ratio_profit,
         // ...profit_months
       }
     })
     return new M({
       dates,
-      shops: ys
+      shops: ys,
     })
   }
 
@@ -6600,13 +6842,13 @@ async function sum(date, raw) {
       let d = data2.shops.find(v => v.real_shop == shop.real_shop)
       return {
         ...shop,
-        ...d
+        ...d,
       }
     })
     return new M({
       dates,
       months: data2.dates,
-      shops: y_shops
+      shops: y_shops,
     })
   }
 }
@@ -6615,7 +6857,7 @@ async function sum2() {
   try {
     let [data, _] = await knx.raw(sum_sql2)
     data = data[2]
-    if (!data) return Promise.reject('no data')
+    if (!data) return Promise.reject("no data")
 
     let res = new M(data)
       .bind(format)
@@ -6643,13 +6885,13 @@ async function sum2() {
       water_electr_cost_month: fixed2(v.water_electr_cost_month),
       cashback_cost_month: fixed2(v.cashback_cost_month),
       oper_cost_month: fixed2(v.oper_cost_month),
-      profit_month: fixed2(v.profit_month)
+      profit_month: fixed2(v.profit_month),
     }))
     return new M(ys)
   }
 
   function sum_(xs) {
-    let dates = distinct(xs, 'ym')
+    let dates = distinct(xs, "ym")
     for (let da of dates) {
       let data = xs.find(v => v.ym == da)
       if (data) {
@@ -6657,9 +6899,9 @@ async function sum2() {
         let consume = xs.filter(x => x.ym == da).reduce((s, v) => s + parseFloat_0(v.consume_sum_month), 0)
         let cost = xs.filter(x => x.ym == da).reduce((s, v) => s + parseFloat_0(v.cost_sum_month), 0)
         xs.push({
-          city: '总计',
-          person: '总计',
-          real_shop: '总计',
+          city: "总计",
+          person: "总计",
+          real_shop: "总计",
           income_sum_month: fixed2(income),
           consume_sum_month: fixed2(consume),
           cost_sum_month: fixed2(cost),
@@ -6677,7 +6919,7 @@ async function sum2() {
           ),
           oper_cost_month: fixed2(xs.filter(x => x.ym == da).reduce((s, v) => s + parseFloat_0(v.oper_cost_month), 0)),
           profit_month: fixed2(xs.filter(x => x.ym == da).reduce((s, v) => s + parseFloat_0(v.profit_month), 0)),
-          ym: da
+          ym: da,
         })
       }
     }
@@ -6685,13 +6927,13 @@ async function sum2() {
     // fs.writeFileSync('log/sum.json', JSON.stringify(xs))
     return new M({
       xs,
-      dates
+      dates,
     })
   }
 
   function split_shop({ xs, dates }) {
     if (!xs) return []
-    let distinct_shops = distinct(xs, 'real_shop')
+    let distinct_shops = distinct(xs, "real_shop")
     let ys = distinct_shops.map(v => {
       let city = xs.find(k => k.real_shop == v).city
       let person = xs.find(k => k.real_shop == v).person
@@ -6744,12 +6986,12 @@ async function sum2() {
         ...labor_cost_months,
         ...water_electr_cost_months,
         ...cashback_cost_months,
-        ...oper_cost_months
+        ...oper_cost_months,
       }
     })
     return new M({
       dates,
-      shops: ys
+      shops: ys,
     })
   }
 }
@@ -6760,7 +7002,7 @@ async function sum2() {
 async function fresh() {
   try {
     let [data, _] = await knx.raw(fresh_sql)
-    if (!data) return Promise.reject('no data')
+    if (!data) return Promise.reject("no data")
     let res = new M(data).bind(format).bind(split_all)
 
     return Promise.resolve(res.val)
@@ -6771,40 +7013,46 @@ async function fresh() {
   function format(xs) {
     let ys = xs.map(v => ({
       ...v,
-      name: v.platform == '美团' ? `${v.name}\t${v.platform}` : v.name,
+      name: v.platform == "美团" ? `${v.name}\t${v.platform}` : v.name,
       Entryrate: percent(v.Entryrate),
       Orderrate: percent(v.Orderrate),
       evaluate_over_order: percent(v.evaluate / v.order),
       cost_ratio: percent(v.cost_ratio),
-      a2: { a2: v.a2, date: v.date, isYesterday: dayjs().subtract(1, 'day').isSame(dayjs(v.date, 'YYYYMMDD'), 'date') }
+      a2: {
+        a2: v.a2,
+        date: v.date,
+        isYesterday: dayjs()
+          .subtract(1, "day")
+          .isSame(dayjs(v.date, "YYYYMMDD"), "date"),
+      },
     }))
     return new M(ys)
   }
 
   function split_all(xs) {
-    let names = distinct(xs, 'name')
+    let names = distinct(xs, "name")
     let fields = {
-      evaluate: '评论数',
-      bad_order: '差评数',
-      order: '单量',
-      evaluate_over_order: '评论/单量',
-      bizScore: '评分',
-      moment: '推广',
-      income: '营业额',
-      unitPrice: '客单价',
-      overview: '曝光量',
-      Entryrate: '进店率',
-      Orderrate: '下单率',
-      cost_ratio: '成本比例',
-      off_shelf: '下架产品量',
-      over_due_date: '特权有效期',
-      kangaroo_name: '袋鼠店长M',
-      red_packet_recharge: '高佣返现M',
-      ranknum: '商圈排名M',
-      extend: '延迟发单E',
-      a2: '优化'
+      evaluate: "评论数",
+      bad_order: "差评数",
+      order: "单量",
+      evaluate_over_order: "评论/单量",
+      bizScore: "评分",
+      moment: "推广",
+      income: "营业额",
+      unitPrice: "客单价",
+      overview: "曝光量",
+      Entryrate: "进店率",
+      Orderrate: "下单率",
+      cost_ratio: "成本比例",
+      off_shelf: "下架产品量",
+      over_due_date: "特权有效期",
+      kangaroo_name: "袋鼠店长M",
+      red_packet_recharge: "高佣返现M",
+      ranknum: "商圈排名M",
+      extend: "延迟发单E",
+      a2: "优化",
     }
-    let dates = distinct(xs, 'date').sort((a, b) => b - a)
+    let dates = distinct(xs, "date").sort((a, b) => b - a)
     let ys = names.map(name =>
       Object.keys(fields).map(field => {
         let values = dates.reduce((o, d) => {
@@ -6820,7 +7068,7 @@ async function fresh() {
           person: xs.find(x => name.includes(x.name))?.person,
           leader: xs.find(x => name.includes(x.name))?.leader,
           field: fields[field],
-          ...values
+          ...values,
         }
       })
     )
@@ -6833,7 +7081,7 @@ async function indices(platform, shopId, day) {
   try {
     day = parseInt(day)
 
-    if (platform == '美团') {
+    if (platform == "美团") {
       let data = await Promise.all([
         knx.raw(`${线下指标美团评分(shopId, day)}`),
         knx.raw(`${线下指标美团商责配送延迟率(shopId, day)}`),
@@ -6841,17 +7089,17 @@ async function indices(platform, shopId, day) {
         knx.raw(`${线下指标美团30天评价率(shopId)}`),
         knx.raw(`${线下指标美团30天商责配送延迟率(shopId, day)}`),
         knx.raw(`${线下指标美团商品数下架数(shopId, day)}`),
-        knx.raw(`${线下指标美团关店次数(shopId, day)}`)
+        knx.raw(`${线下指标美团关店次数(shopId, day)}`),
       ])
       data = data.map(v => v[0])
       let res = new M(data).bind(split)
       return Promise.resolve(res.val)
-    } else if (platform == '饿了么') {
+    } else if (platform == "饿了么") {
       let data = await Promise.all([
         knx.raw(`${线下指标饿了么评分(shopId, day)}`),
         knx.raw(`${线下指标饿了么评价率差评率(shopId, day)}`),
         knx.raw(`${线下指标饿了么30天评价率(shopId)}`),
-        knx.raw(`${线下指标饿了么商品数下架数(shopId, day)}`)
+        knx.raw(`${线下指标饿了么商品数下架数(shopId, day)}`),
       ])
       data = data.map(v => v[0])
       let res = new M(data).bind(split_elm)
@@ -6864,53 +7112,53 @@ async function indices(platform, shopId, day) {
   function split(xs) {
     let dateRange = [...Array(day)].map((_, i) =>
       dayjs()
-        .subtract(i + 1, 'day')
-        .format('YYYY-MM-DD')
+        .subtract(i + 1, "day")
+        .format("YYYY-MM-DD")
     )
 
     let ratings = dateRange.reduce((o, d) => {
       let v = xs[0].find(x => x.date == d)
-      return { ...o, [d]: v ? v.bizscore : null, field: '评分' }
+      return { ...o, [d]: v ? v.bizscore : null, field: "评分" }
     }, {})
     let nocs = dateRange.reduce((o, d) => {
       let v = xs[1].find(x => x.date == d)
-      return { ...o, [d]: v ? v.negotiable_order_cancellation : null, field: '商责取消数' }
+      return { ...o, [d]: v ? v.negotiable_order_cancellation : null, field: "商责取消数" }
     }, {})
     let ddrs = dateRange.reduce((o, d) => {
       let v = xs[1].find(x => x.date == d)
-      return { ...o, [d]: v ? percent(v.distribution_delay_rate) : null, field: '配送延迟率' }
+      return { ...o, [d]: v ? percent(v.distribution_delay_rate) : null, field: "配送延迟率" }
     }, {})
     let ers = dateRange.reduce((o, d) => {
       let v = xs[2].find(x => x.date == d)
-      return { ...o, [d]: v ? percent(v.evaluation_rate) : null, field: '评价率' }
+      return { ...o, [d]: v ? percent(v.evaluation_rate) : null, field: "评价率" }
     }, {})
     let bers = dateRange.reduce((o, d) => {
       let v = xs[2].find(x => x.date == d)
-      return { ...o, [d]: v ? percent(v.bad_evaluation_rate) : null, field: '一二星差评率' }
+      return { ...o, [d]: v ? percent(v.bad_evaluation_rate) : null, field: "一二星差评率" }
     }, {})
     let ers_30 = dateRange.reduce((o, d) => {
       let v = xs[3][0]
-      return { ...o, [d]: v ? percent(v.evaluation_rate) : null, field: '30天评价率' }
+      return { ...o, [d]: v ? percent(v.evaluation_rate) : null, field: "30天评价率" }
     }, {})
     let nocs_30 = dateRange.reduce((o, d) => {
       let v = xs[4].find(x => x.date == d)
-      return { ...o, [d]: v ? v.cancelOfPoiResCnt : null, field: '30天商责取消数' }
+      return { ...o, [d]: v ? v.cancelOfPoiResCnt : null, field: "30天商责取消数" }
     }, {})
     let ddrs_30 = dateRange.reduce((o, d) => {
       let v = xs[4].find(x => x.date == d)
-      return { ...o, [d]: v ? percent(v.delayRate) : null, field: '30天配送延迟率' }
+      return { ...o, [d]: v ? percent(v.delayRate) : null, field: "30天配送延迟率" }
     }, {})
     let fcs = dateRange.reduce((o, d) => {
       let v = xs[5].find(x => x.date == d)
-      return { ...o, [d]: v ? v.food_cnt : null, field: '商品数' }
+      return { ...o, [d]: v ? v.food_cnt : null, field: "商品数" }
     }, {})
     let ofcs = dateRange.reduce((o, d) => {
       let v = xs[5].find(x => x.date == d)
-      return { ...o, [d]: v ? v.off_shelf_cnt : null, field: '下架商品数' }
+      return { ...o, [d]: v ? v.off_shelf_cnt : null, field: "下架商品数" }
     }, {})
     let ocs = dateRange.reduce((o, d) => {
       let v = xs[6].find(x => x.date == d)
-      return { ...o, [d]: v ? v.off_count : null, field: '关店数' }
+      return { ...o, [d]: v ? v.off_count : null, field: "关店数" }
     }, {})
     return new M({ data: [ratings, nocs, ddrs, ers, bers, ers_30, nocs_30, ddrs_30, fcs, ofcs, ocs], dates: dateRange })
   }
@@ -6918,33 +7166,33 @@ async function indices(platform, shopId, day) {
   function split_elm(xs) {
     let dateRange = [...Array(day)].map((_, i) =>
       dayjs()
-        .subtract(i + 1, 'day')
-        .format('YYYY-MM-DD')
+        .subtract(i + 1, "day")
+        .format("YYYY-MM-DD")
     )
 
     let ratings = dateRange.reduce((o, d) => {
       let v = xs[0].find(x => x.date == d)
-      return { ...o, [d]: v ? v.rating : null, field: '评分' }
+      return { ...o, [d]: v ? v.rating : null, field: "评分" }
     }, {})
     let ers = dateRange.reduce((o, d) => {
       let v = xs[1].find(x => x.date == d)
-      return { ...o, [d]: v ? percent(v.evaluation_rate) : null, field: '评价率' }
+      return { ...o, [d]: v ? percent(v.evaluation_rate) : null, field: "评价率" }
     }, {})
     let bers = dateRange.reduce((o, d) => {
       let v = xs[1].find(x => x.date == d)
-      return { ...o, [d]: v ? percent(v.bad_evaluation_rate) : null, field: '一二星差评率' }
+      return { ...o, [d]: v ? percent(v.bad_evaluation_rate) : null, field: "一二星差评率" }
     }, {})
     let ers_30 = dateRange.reduce((o, d) => {
       let v = xs[2][0]
-      return { ...o, [d]: v ? percent(v.evaluation_rate) : null, field: '30天评价率' }
+      return { ...o, [d]: v ? percent(v.evaluation_rate) : null, field: "30天评价率" }
     }, {})
     let fcs = dateRange.reduce((o, d) => {
       let v = xs[3].find(x => x.date == d)
-      return { ...o, [d]: v ? v.food_cnt : null, field: '商品数' }
+      return { ...o, [d]: v ? v.food_cnt : null, field: "商品数" }
     }, {})
     let ofcs = dateRange.reduce((o, d) => {
       let v = xs[3].find(x => x.date == d)
-      return { ...o, [d]: v ? v.off_shelf_cnt : null, field: '下架商品数' }
+      return { ...o, [d]: v ? v.off_shelf_cnt : null, field: "下架商品数" }
     }, {})
     return new M({ data: [ratings, ers, bers, ers_30, fcs, ofcs], dates: dateRange })
   }
@@ -6956,7 +7204,7 @@ async function perf(date, djh) {
   try {
     let [data, _] = await knx.raw(perf_sql(date, djh))
 
-    if (!data) return Promise.reject('no data')
+    if (!data) return Promise.reject("no data")
 
     let res = new M(data).bind(sum_).bind(format)
     return Promise.resolve(res.val)
@@ -6994,24 +7242,24 @@ async function perf(date, djh) {
       cost_score_avg: fixed2(v.cost_score_avg),
       consume_score_avg: fixed2(v.consume_score_avg),
       score_avg: fixed2(v.score_avg),
-      score_avg_1: fixed2(v.score_avg_1)
+      score_avg_1: fixed2(v.score_avg_1),
     }))
     return new M(ys)
   }
 
   function sum_(xs) {
-    let dates = distinct(xs, 'date')
+    let dates = distinct(xs, "date")
     for (let da of dates) {
       let data = xs.filter(x => x.date == da)
       if (data.length > 0) {
-        let persons = distinct(data, 'person')
+        let persons = distinct(data, "person")
         for (let person of persons) {
           let v = data.find(x => x.person == person)
           xs.push({
             ...v,
-            city: '总计',
+            city: "总计",
             person: empty(v.person),
-            real_shop: '总计',
+            real_shop: "总计",
             income_sum: v.income_sum_sum,
             income_avg: v.income_avg_avg,
             income_score: v.income_score_avg,
@@ -7035,13 +7283,13 @@ async function perf(date, djh) {
             score_1: v.score_1_avg,
             score_avg: v.score_avg,
             score_avg_1: v.score_avg_1_avg,
-            date: da
+            date: da,
           })
         }
         xs.push({
-          city: '总计',
-          person: '总计',
-          real_shop: '总计',
+          city: "总计",
+          person: "总计",
+          real_shop: "总计",
           income_sum: data.reduce((s, v) => s + parseFloat_0(v.income_sum), 0),
           income_avg: data.reduce((s, v) => s + parseFloat_0(v.income_avg), 0) / data.length,
           income_score: data.reduce((s, v) => s + parseFloat_0(v.income_score), 0) / data.length,
@@ -7065,7 +7313,7 @@ async function perf(date, djh) {
           score_1: data.reduce((s, v) => s + parseFloat_0(v.score_1_avg), 0) / data.length,
           score_avg: data.reduce((s, v) => s + parseFloat_0(v.score_avg), 0) / data.length,
           score_avg_1: data.reduce((s, v) => s + parseFloat_0(v.score_avg_1), 0) / data.length,
-          date: da
+          date: da,
         })
       }
     }
@@ -7081,7 +7329,7 @@ async function commision() {
     let [data1] = await knx.raw(commision_sql)
     let [data2] = await knx.raw(commision_sql2)
 
-    if (!data1 || !data2) return Promise.reject('no data')
+    if (!data1 || !data2) return Promise.reject("no data")
 
     let data = data1.concat(data2)
 
@@ -7102,7 +7350,7 @@ async function commision() {
       成本比例: percent(v.成本比例),
       利润: fixed2(v.利润),
       提成: fixed2(v.提成),
-      月累计提成: fixed2(v.月累计提成)
+      月累计提成: fixed2(v.月累计提成),
     }))
     return new M(ys)
   }
@@ -7111,25 +7359,24 @@ async function commision() {
 /////////////////////
 //////////////////////////
 
-
 function ls_against(x) {
-  let is_low_income = x.income < (x.platform == '美团' ? 900 : 700)
+  let is_low_income = x.income < (x.platform == "美团" ? 900 : 700)
   let is_high_consume = x.consume_ratio > 0.06 && x.income > 300
   let is_high_cost = x.cost_ratio > 0.53 && x.income > 300
   let is_slump = x.settlea_30 < 0.8
   let ps = []
-  if (is_low_income) ps.push({ type: '低收入', value: x.income, threshold: x.platform == '美团' ? 900 : 700 })
-  if (is_high_consume) ps.push({ type: '高推广', value: x.consume_ratio, threshold: 0.06 })
-  if (is_high_cost) ps.push({ type: '高成本', value: x.cost_ratio, threshold: 0.53 })
-  if (is_slump) ps.push({ type: '严重超跌', value: x.settlea_30, threshold: 0.8 })
+  if (is_low_income) ps.push({ type: "低收入", value: x.income, threshold: x.platform == "美团" ? 900 : 700 })
+  if (is_high_consume) ps.push({ type: "高推广", value: x.consume_ratio, threshold: 0.06 })
+  if (is_high_cost) ps.push({ type: "高成本", value: x.cost_ratio, threshold: 0.53 })
+  if (is_slump) ps.push({ type: "严重超跌", value: x.settlea_30, threshold: 0.8 })
   return ps
 }
 
 async function shop(id) {
   try {
-    let data = await knx('test_analyse_t_')
+    let data = await knx("test_analyse_t_")
       .select()
-      .whereNotNull('a')
+      .whereNotNull("a")
       .andWhere({ shop_id: id })
 
     let res = new M(data)
@@ -7151,7 +7398,7 @@ async function shop(id) {
   function extend_qs(xs) {
     let ys = xs.map(x => ({
       ...x,
-      qs: ls_against(x)
+      qs: ls_against(x),
     }))
 
     return new M(ys)
@@ -7162,8 +7409,8 @@ async function shop(id) {
       ...x,
       a: x.a.map(a => ({
         ...a,
-        time_parsed: a.time.trim().length > 0 ? dayjs(a.time.trim(), 'YYYY/MM/DD HH:mm:ss') : ''
-      }))
+        time_parsed: a.time.trim().length > 0 ? dayjs(a.time.trim(), "YYYY/MM/DD HH:mm:ss") : "",
+      })),
     }))
 
     return new M(formatShop(ys))
@@ -7172,10 +7419,10 @@ async function shop(id) {
   function extract_a(xs) {
     function order(ps) {
       let as = flatten(
-        ps.map(x => x.a.filter(a => a.time.trim().length > 0).map(a => ({ ...a, as: x.a, ...omit(x, ['a']) })))
+        ps.map(x => x.a.filter(a => a.time.trim().length > 0).map(a => ({ ...a, as: x.a, ...omit(x, ["a"]) })))
       )
         .sort((a, b) => {
-          if (dayjs(a.time, 'YYYY/MM/DD HH:mm:ss').isBefore(dayjs(b.time, 'YYYY/MM/DD HH:mm:ss'))) {
+          if (dayjs(a.time, "YYYY/MM/DD HH:mm:ss").isBefore(dayjs(b.time, "YYYY/MM/DD HH:mm:ss"))) {
             return -1
           } else return 1
         })
@@ -7194,10 +7441,10 @@ async function shop(id) {
 
 async function shop_history(id, oneday = false) {
   try {
-    let data = await knx('test_analyse_t_')
+    let data = await knx("test_analyse_t_")
       .select()
       .where({ shop_id: id })
-      .orderBy('date', 'desc')
+      .orderBy("date", "desc")
 
     let res = new M(data)
       .bind(parse_a)
@@ -7218,7 +7465,7 @@ async function shop_history(id, oneday = false) {
   function extend_qs(xs) {
     let ys = xs.map(x => ({
       ...x,
-      qs: ls_against(x)
+      qs: ls_against(x),
     }))
 
     return new M(ys)
@@ -7229,8 +7476,8 @@ async function shop_history(id, oneday = false) {
       ...x,
       a: x.a.map(a => ({
         ...a,
-        time_parsed: a.time.trim().length > 0 ? dayjs(a.time.trim(), 'YYYY/MM/DD HH:mm:ss') : ''
-      }))
+        time_parsed: a.time.trim().length > 0 ? dayjs(a.time.trim(), "YYYY/MM/DD HH:mm:ss") : "",
+      })),
     }))
 
     return new M(formatShop(ys))
@@ -7253,12 +7500,12 @@ async function user(name, d) {
 
     let res = new M(data).bind(distinct_persons)
 
-    if (name == ':all_names') {
+    if (name == ":all_names") {
       return Promise.resolve(res.val.persons)
     }
 
     res = res.bind(split_person).bind(object_person)
-    if (name == ':all') {
+    if (name == ":all") {
       return Promise.resolve(res.val)
     }
 
@@ -7270,11 +7517,13 @@ async function user(name, d) {
 
   function distinct_persons(xs) {
     function ls_persons() {
-      let shops_persons = distinct(xs.shops, 'person')
-      let shops_leaders = distinct(xs.shops, 'leader')
-      let shop_improved_persons_a = flatten(xs.shop_failure.shop_improved.map(x => distinct(x.a, 'name')))
-      let shop_improving_persons_a = flatten(xs.shop_failure.shop_improving.map(x => distinct(x.a, 'name')))
-      return Array.from(new Set([...shops_persons, ...shops_leaders, ...shop_improved_persons_a, ...shop_improving_persons_a]))
+      let shops_persons = distinct(xs.shops, "person")
+      let shops_leaders = distinct(xs.shops, "leader")
+      let shop_improved_persons_a = flatten(xs.shop_failure.shop_improved.map(x => distinct(x.a, "name")))
+      let shop_improving_persons_a = flatten(xs.shop_failure.shop_improving.map(x => distinct(x.a, "name")))
+      return Array.from(
+        new Set([...shops_persons, ...shops_leaders, ...shop_improved_persons_a, ...shop_improving_persons_a])
+      )
     }
 
     let persons = ls_persons().filter(v => v != null)
@@ -7283,14 +7532,14 @@ async function user(name, d) {
 
     return new M({
       ...xs,
-      persons
+      persons,
     })
   }
 
   function split_person(xs) {
     function order(ps) {
       let as = flatten(
-        ps.map(x => x.a.filter(a => a.time.trim().length > 0).map(a => ({ ...a, as: x.a, ...omit(x, ['a']) })))
+        ps.map(x => x.a.filter(a => a.time.trim().length > 0).map(a => ({ ...a, as: x.a, ...omit(x, ["a"]) })))
       )
         .sort((a, b) => {
           if (dayjs(a.time_parsed).isBefore(dayjs(b.time_parsed))) {
@@ -7302,11 +7551,11 @@ async function user(name, d) {
     }
 
     function isLeaderResp(x, person) {
-      return x.leader == person && x.qs.find(q => q.type == '低收入')
+      return x.leader == person && x.qs.find(q => q.type == "低收入")
     }
 
     function isPersonResp(x, person) {
-      return x.person == person && !(x.qs.length == 1 && x.qs[0].type == '低收入')
+      return x.person == person && !(x.qs.length == 1 && x.qs[0].type == "低收入")
     }
 
     let ys = xs.persons
@@ -7321,12 +7570,12 @@ async function user(name, d) {
         },
         participated: [
           ...xs.shop_failure.shop_improved.filter(x => x.a.some(a => a.name == person)),
-          ...xs.shop_failure.shop_improving.filter(x => x.a.some(a => a.name == person))
-        ]
+          ...xs.shop_failure.shop_improving.filter(x => x.a.some(a => a.name == person)),
+        ],
       }))
       .map(person => ({
         ...person,
-        activities: order(person.participated)
+        activities: order(person.participated),
       }))
 
     return new M(ys)
@@ -7347,11 +7596,11 @@ async function user(name, d) {
             failure: {
               unimproved: count(per.failure.unimproved),
               improved: count(per.failure.improved),
-              improving: count(per.failure.improving)
+              improving: count(per.failure.improving),
             },
-            activities: count_activities(per.activities)
-          }
-        }
+            activities: count_activities(per.activities),
+          },
+        },
       }
     }, {})
 
@@ -7366,20 +7615,27 @@ async function user(name, d) {
       }, 0)
 
       let count_q_without_low_income = shops.reduce((sum, x) => {
-        return sum + x.qs.filter(v => v.type != '低收入').length
+        return sum + x.qs.filter(v => v.type != "低收入").length
       }, 0)
 
-      let [count_q_low_income, count_q_high_consume, count_q_high_cost, count_q_slump] =
-        ['低收入', '高推广', '高成本', '严重超跌'].map(type => shops.reduce((sum, x) =>
-          sum + x.qs.filter(v => v.type == type).length, 0))
+      let [count_q_low_income, count_q_high_consume, count_q_high_cost, count_q_slump] = [
+        "低收入",
+        "高推广",
+        "高成本",
+        "严重超跌",
+      ].map(type => shops.reduce((sum, x) => sum + x.qs.filter(v => v.type == type).length, 0))
 
       let count_a = shops.reduce((sum, x) => {
-        return sum + x.a.filter(a => a.a.trim().length > 0).length // 
+        return sum + x.a.filter(a => a.a.trim().length > 0).length //
       }, 0)
 
-      let [count_a_low_income, count_a_high_consume, count_a_high_cost, count_a_slump, count_a_custom] =
-        ['低收入', '高推广', '高成本', '严重超跌', '自定义'].map(q => shops.reduce((sum, x) =>
-          sum + x.a.filter(a => a.q == q && a.a.trim().length > 0).length, 0))
+      let [count_a_low_income, count_a_high_consume, count_a_high_cost, count_a_slump, count_a_custom] = [
+        "低收入",
+        "高推广",
+        "高成本",
+        "严重超跌",
+        "自定义",
+      ].map(q => shops.reduce((sum, x) => sum + x.a.filter(a => a.q == q && a.a.trim().length > 0).length, 0))
 
       return {
         count_a,
@@ -7395,13 +7651,13 @@ async function user(name, d) {
         count_q_high_cost,
         count_q_slump,
         count_shop,
-        count_shop_a
+        count_shop_a,
       }
     }
 
     function count_activities(activities) {
       let count_a = activities.length
-      let count_shop = distinct(activities, 'shop_id').length
+      let count_shop = distinct(activities, "shop_id").length
       return { count_a, count_shop }
     }
   }
@@ -7417,9 +7673,9 @@ async function user(name, d) {
 
 async function user_acts(name, d) {
   try {
-    let data = await knx('test_analyse_t_')
+    let data = await knx("test_analyse_t_")
       .select()
-      .whereNotNull('a')
+      .whereNotNull("a")
 
     let res = new M(data)
       .bind(parse_a)
@@ -7428,12 +7684,12 @@ async function user_acts(name, d) {
       .bind(distinct_persons)
       .bind(split_person)
       .bind(object_person)
-    if (name == ':all') {
+    if (name == ":all") {
       return Promise.resolve(res.val)
     }
 
     res = res.bind(filter_person)
-    if (d != ':all') {
+    if (d != ":all") {
       return Promise.resolve(res.val)
     }
 
@@ -7449,11 +7705,9 @@ async function user_acts(name, d) {
   }
 
   function extend_qs(xs) {
-
-
     let ys = xs.map(x => ({
       ...x,
-      qs: ls_against(x)
+      qs: ls_against(x),
     }))
 
     return new M(ys)
@@ -7461,28 +7715,28 @@ async function user_acts(name, d) {
 
   function format(xs) {
     function parse(a) {
-      let time = ''
+      let time = ""
       if (a.time.trim().length > 0) {
         // if(a.time.length < )
-        time = dayjs(a.time, 'YYYY/MM/DD HH:mm:ss')
+        time = dayjs(a.time, "YYYY/MM/DD HH:mm:ss")
       }
 
       return {
         ...a,
-        time_parsed: time
+        time_parsed: time,
       }
     }
 
     let ys = xs.map(x => ({ ...x, a: x.a.map(parse) }))
 
     return new M({
-      shops_a: formatShop(ys)
+      shops_a: formatShop(ys),
     })
   }
 
   function distinct_persons(xs) {
     function ls_persons() {
-      let persons = flatten(xs.shops_a.map(x => distinct(x.a, 'name')))
+      let persons = flatten(xs.shops_a.map(x => distinct(x.a, "name")))
       return Array.from(new Set(persons))
     }
 
@@ -7490,7 +7744,7 @@ async function user_acts(name, d) {
 
     return new M({
       ...xs,
-      persons
+      persons,
     })
   }
 
@@ -7499,13 +7753,13 @@ async function user_acts(name, d) {
       let as = flatten(
         ps.map(x =>
           x.a
-            .filter(a => a.time.trim().length > 0 && (d != ':all' ? same(a.time_parsed, d) : true))
+            .filter(a => a.time.trim().length > 0 && (d != ":all" ? same(a.time_parsed, d) : true))
             .filter(a => a.name == p)
-            .map(a => ({ ...a, as: x.a, ...omit(x, ['a']) }))
+            .map(a => ({ ...a, as: x.a, ...omit(x, ["a"]) }))
         )
       )
         .sort((a, b) => {
-          if (dayjs(a.time, 'YYYY/MM/DD HH:mm:ss').isBefore(dayjs(b.time, 'YYYY/MM/DD HH:mm:ss'))) {
+          if (dayjs(a.time, "YYYY/MM/DD HH:mm:ss").isBefore(dayjs(b.time, "YYYY/MM/DD HH:mm:ss"))) {
             return -1
           } else return 1
         })
@@ -7514,16 +7768,16 @@ async function user_acts(name, d) {
 
       function same(time_parsed, d) {
         return dayjs()
-          .startOf('day')
-          .subtract(d, 'day')
-          .isSame(dayjs(time_parsed).startOf('day'), 'day')
+          .startOf("day")
+          .subtract(d, "day")
+          .isSame(dayjs(time_parsed).startOf("day"), "day")
       }
 
       function after(time_parsed, d) {
         return dayjs(time_parsed).isAfter(
           dayjs()
-            .startOf('day')
-            .subtract(d, 'day')
+            .startOf("day")
+            .subtract(d, "day")
         )
       }
     }
@@ -7531,11 +7785,11 @@ async function user_acts(name, d) {
     let ys = xs.persons
       .map(per => ({
         person: per,
-        participated: xs.shops_a.filter(x => x.a.some(a => a.name == per))
+        participated: xs.shops_a.filter(x => x.a.some(a => a.name == per)),
       }))
       .map(per => ({
         person: per.person,
-        activities: order(per.participated, per.person)
+        activities: order(per.participated, per.person),
       }))
 
     return new M(ys)
@@ -7548,9 +7802,9 @@ async function user_acts(name, d) {
         [per.person]: {
           activities: per.activities,
           counts: {
-            activities: count_activities(per.activities)
-          }
-        }
+            activities: count_activities(per.activities),
+          },
+        },
       }
     }, {})
 
@@ -7558,7 +7812,7 @@ async function user_acts(name, d) {
 
     function count_activities(activities) {
       let count_a = activities.length
-      let count_shop = distinct(activities, 'shop_id').length
+      let count_shop = distinct(activities, "shop_id").length
       return { count_a, count_shop }
     }
   }
@@ -7569,14 +7823,14 @@ async function user_acts(name, d) {
 
   function filter_time(xs) {
     function ls_times() {
-      return Array.from(new Set(xs.activities.map(act => dayjs(act.time_parsed).format('YYYY-MM-DD'))))
+      return Array.from(new Set(xs.activities.map(act => dayjs(act.time_parsed).format("YYYY-MM-DD"))))
     }
     function split_times(times) {
       return times.reduce((o, t) => {
         return {
           ...o,
           [t]: xs.activities
-            .filter(act => dayjs(act.time_parsed).format('YYYY-MM-DD') == t)
+            .filter(act => dayjs(act.time_parsed).format("YYYY-MM-DD") == t)
             .map(act => ({
               q: act.q,
               name: act.name,
@@ -7588,8 +7842,8 @@ async function user_acts(name, d) {
               shop_id: act.shop_id,
               shop_name: act.shop_name,
               platform: act.platform,
-              date: act.date
-            }))
+              date: act.date,
+            })),
         }
       }, {})
     }
@@ -7604,9 +7858,9 @@ async function user_acts(name, d) {
 
 async function plans(ids, a) {
   try {
-    let data = await knx('test_analyse_t_')
+    let data = await knx("test_analyse_t_")
       .select()
-      .whereIn('id', ids)
+      .whereIn("id", ids)
 
     let res = new M(data)
       .bind(parse_a)
@@ -7618,8 +7872,8 @@ async function plans(ids, a) {
     let succs = []
     for (let r of res) {
       try {
-        let update_res = await knx('test_analyse_t_')
-          .where('id', r.id)
+        let update_res = await knx("test_analyse_t_")
+          .where("id", r.id)
           .update({ a: JSON.stringify(r.a) })
         succs.push(update_res)
       } catch (e) {
@@ -7642,7 +7896,7 @@ async function plans(ids, a) {
   function extend_qs(xs) {
     let ys = xs.map(x => ({
       ...x,
-      qs: ls_against(x)
+      qs: ls_against(x),
     }))
 
     return new M(ys)
@@ -7650,15 +7904,15 @@ async function plans(ids, a) {
 
   function format(xs) {
     function parse(a) {
-      let time = ''
+      let time = ""
       if (a.time.trim().length > 0) {
         // if(a.time.length < )
-        time = dayjs(a.time, 'YYYY/MM/DD HH:mm:ss')
+        time = dayjs(a.time, "YYYY/MM/DD HH:mm:ss")
       }
 
       return {
         ...a,
-        time_parsed: time
+        time_parsed: time,
       }
     }
 
@@ -7674,12 +7928,12 @@ async function plans(ids, a) {
         return {
           ...x,
           a: x.qs.map(q => ({
-            a: a.find(k => k.q == q.type).a || '',
+            a: a.find(k => k.q == q.type).a || "",
             name: a.find(k => k.q == q.type).name || xs.person,
-            operation: a.find(k => k.q == q.type).operation || 'save_all',
+            operation: a.find(k => k.q == q.type).operation || "save_all",
             q: q.type,
-            time: a.find(k => k.q == q.type).time || ''
-          }))
+            time: a.find(k => k.q == q.type).time || "",
+          })),
         }
       } else {
         return {
@@ -7689,8 +7943,8 @@ async function plans(ids, a) {
             name: a.find(k => k.q == v.q).name || v.name,
             operation: a.find(k => k.q == v.q).operation || v.operation,
             q: v.q,
-            time: a.find(k => k.q == v.q).time || v.time
-          }))
+            time: a.find(k => k.q == v.q).time || v.time,
+          })),
         }
       }
     })
@@ -7700,8 +7954,8 @@ async function plans(ids, a) {
 
 async function comments(id, c) {
   try {
-    let update_res = await knx('test_analyse_t_')
-      .where('id', id)
+    let update_res = await knx("test_analyse_t_")
+      .where("id", id)
       .update({ comments: c })
     return Promise.resolve(update_res)
   } catch (err) {
@@ -7718,7 +7972,7 @@ async function base(d) {
     let [data, _] = await knx.raw(date_sql(d))
     if (data.length == 0) {
       // await insertTable(d)
-      return Promise.reject('no data')
+      return Promise.reject("no data")
     }
 
     const res = new M(data)
@@ -7739,7 +7993,7 @@ async function base(d) {
   function split_shop(xs) {
     let ys = xs.map(x => ({
       ...x,
-      qs: ls_against(x)
+      qs: ls_against(x),
     }))
     let shop_success = ys.filter(x => x.qs.length == 0)
     let shop_failure = ys.filter(x => x.qs.length > 0)
@@ -7747,7 +8001,7 @@ async function base(d) {
     return new M({
       shops: ys,
       shop_success,
-      shop_failure
+      shop_failure,
     })
   }
 
@@ -7765,22 +8019,22 @@ async function base(d) {
       shop_failure: {
         shop_unimproved,
         shop_improved,
-        shop_improving
-      }
+        shop_improving,
+      },
     })
   }
 
   function format(xs) {
     function parse(a) {
-      let time = ''
+      let time = ""
       if (a.time.trim().length > 0) {
         // if(a.time.length < )
-        time = dayjs(a.time, 'YYYY/MM/DD HH:mm:ss')
+        time = dayjs(a.time, "YYYY/MM/DD HH:mm:ss")
       }
 
       return {
         ...a,
-        time_parsed: time
+        time_parsed: time,
       }
     }
 
@@ -7800,8 +8054,8 @@ async function base(d) {
       shop_failure: {
         shop_unimproved: formatShop(xs.shop_failure.shop_unimproved),
         shop_improved: formatShop(shop_improved),
-        shop_improving: formatShop(shop_improving)
-      }
+        shop_improving: formatShop(shop_improving),
+      },
     })
   }
 }
@@ -7882,8 +8136,8 @@ async function insertTableFromMysql(day_from_today = 1) {
     console.log(...arguments)
     await knx.raw(`SET @last_day = DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL ${day_from_today} DAY),'%Y%m%d');`)
     const [data, _] = await knx.raw(sql)
-    if (data.length == 0) return Promise.reject('no data')
-    const res = await knx('test_analyse_t_').insert(data)
+    if (data.length == 0) return Promise.reject("no data")
+    const res = await knx("test_analyse_t_").insert(data)
     return Promise.resolve(res)
   } catch (err) {
     return Promise.reject(err)
@@ -7895,7 +8149,7 @@ async function insertTable(day_from_today) {
     const [search, _] = await knx.raw(
       `select * from test_analyse_t_ where date = DATE_FORMAT(DATE_SUB(CURDATE(),INTERVAL ${day_from_today} DAY),'%Y%m%d');`
     )
-    if (search.length > 0) return Promise.reject('have been added')
+    if (search.length > 0) return Promise.reject("have been added")
     const res = await insertTableFromMysql(day_from_today)
     return Promise.resolve(res)
   } catch (err) {
@@ -7933,7 +8187,7 @@ function formatShop(data) {
     cost_score: fixed2(v.cost_score),
     consume_score: fixed2(v.consume_score),
     score: fixed2(v.score),
-    a: v.a == null ? [] : v.a
+    a: v.a == null ? [] : v.a,
   }))
 }
 
@@ -7942,19 +8196,19 @@ function distinct(ls, k) {
 }
 
 function empty(str) {
-  if (str == null) return '-'
+  if (str == null) return "-"
   else return str
 }
 
 function percent(num) {
   if (num == null) return num
-  if (typeof num === 'string') num = parseFloat(num)
+  if (typeof num === "string") num = parseFloat(num)
   return `${(num * 100).toFixed(2)}%`
 }
 
 function fixed2(num) {
   if (num == null) return num
-  if (typeof num === 'string') num = parseFloat(num)
+  if (typeof num === "string") num = parseFloat(num)
   return num.toFixed(2)
 }
 

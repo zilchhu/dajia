@@ -1,21 +1,28 @@
-import App from './index.js'
-import FallbackApp, { loop, wrap, readJson, readXls } from './fallback/fallback_app.js'
-import log from './log/log.js'
-import dayjs from 'dayjs'
-import xls2json from 'xls-to-json'
-import util from 'util'
-import fs from 'fs'
-import axios from 'axios'
+import FallbackApp, { loop, wrap, readJson, readXls } from "./fallback/fallback_app.js"
+import log from "./log/log.js"
+import dayjs from "dayjs"
+import xls2json from "xls-to-json"
+import util from "util"
+import fs from "fs"
+import axios from "axios"
 const axls2Json = util.promisify(xls2json)
-import sleep from 'sleep-promise'
-import schedule from 'node-schedule'
-import flatten from 'flatten'
-import knx from '../50/index.js'
-import pLimit from 'p-limit'
+import sleep from "sleep-promise"
+import schedule from "node-schedule"
+import flatten from "flatten"
+import knx from "../50/index.js"
+import pLimit from "p-limit"
+import pMap from "p-map"
 import {
-  keepBy, combineArray, isSameArrayBy, isDistinctArrayBy, mergeObjs, includesBy, diffArrayBy,
-  calcPrice, empty
-} from './utils/util.js'
+  keepBy,
+  combineArray,
+  isSameArrayBy,
+  isDistinctArrayBy,
+  mergeObjs,
+  includesBy,
+  diffArrayBy,
+  calcPrice,
+  empty,
+} from "./utils/util.js"
 
 async function test_reduction() {
   try {
@@ -38,25 +45,25 @@ async function test_reduction() {
 
     let policyDetail = [
       {
-        discounts: [{ code: 1, discount: 14, poi_charge: 14, agent_charge: 0, type: 'default', mt_charge: 0 }],
-        price: 16
+        discounts: [{ code: 1, discount: 14, poi_charge: 14, agent_charge: 0, type: "default", mt_charge: 0 }],
+        price: 16,
       },
       {
-        discounts: [{ code: 1, discount: 21, poi_charge: 21, agent_charge: 0, type: 'default', mt_charge: 0 }],
-        price: 32
+        discounts: [{ code: 1, discount: 21, poi_charge: 21, agent_charge: 0, type: "default", mt_charge: 0 }],
+        price: 32,
       },
       {
-        discounts: [{ code: 1, discount: 32, poi_charge: 32, agent_charge: 0, type: 'default', mt_charge: 0 }],
-        price: 48
+        discounts: [{ code: 1, discount: 32, poi_charge: 32, agent_charge: 0, type: "default", mt_charge: 0 }],
+        price: 48,
       },
       {
-        discounts: [{ code: 1, discount: 44, poi_charge: 44, agent_charge: 0, type: 'default', mt_charge: 0 }],
-        price: 88
+        discounts: [{ code: 1, discount: 44, poi_charge: 44, agent_charge: 0, type: "default", mt_charge: 0 }],
+        price: 88,
       },
       {
-        discounts: [{ code: 1, discount: 58, poi_charge: 58, agent_charge: 0, type: 'default', mt_charge: 0 }],
-        price: 158
-      }
+        discounts: [{ code: 1, discount: 58, poi_charge: 58, agent_charge: 0, type: "default", mt_charge: 0 }],
+        price: 158,
+      },
     ]
 
     // let e = await axls2Json({
@@ -81,9 +88,9 @@ async function test_reduction() {
     9976196
     9820232
     10231556`
-      .split('\n')
+      .split("\n")
       .map(v => v.trim())
-    let e = JSON.parse(fs.readFileSync('plan/12月8号批量改贡茶价格.xlsx.json'))
+    let e = JSON.parse(fs.readFileSync("plan/12月8号批量改贡茶价格.xlsx.json"))
 
     let e_name = Array.from(new Set(e.map(v => v.菜名)))
     e = e_name.map(name => e.find(v => v.菜名 == name))
@@ -131,7 +138,7 @@ async function updateFoodPrice(cookie, id, name, price) {
     const foodUpdatedPriceRes = await fallbackApp.food.find(name)
     return {
       ...foodUpdatePriceRes,
-      foodUpdatedPrice: foodUpdatedPriceRes.wmProductSkus.map(v => v.price).join(',')
+      foodUpdatedPrice: foodUpdatedPriceRes.wmProductSkus.map(v => v.price).join(","),
     }
   } catch (err) {
     return Promise.reject(err)
@@ -153,17 +160,17 @@ async function updateFoodBoxPrice(cookie, id, name, catName, boxPrice) {
         boxPrice
       )
       return Promise.resolve(updateBoxPriceRes)
-    } else return Promise.reject({ err: 'sync failed' })
+    } else return Promise.reject({ err: "sync failed" })
   } catch (err) {
     return Promise.reject(err)
   }
 }
 
-async function batchUpdateFoodSkus(cookie, id, name, catName, skus) {
+async function batchUpdateFoodSkus(cookie, id, name, catName, skus, spuId) {
   const fallbackApp = new FallbackApp(id, cookie)
 
   try {
-    const food = await fallbackApp.food.find(name, catName)
+    let food = await retryFind(cookie, id, catName, name, spuId)
 
     if (food.wmProductSkus.length >= skus.length)
       skus = skus.map((sku, i) => {
@@ -173,16 +180,14 @@ async function batchUpdateFoodSkus(cookie, id, name, catName, skus) {
           weight: sku.weight ?? food.wmProductSkus[i].weight,
           price: sku.price ?? food.wmProductSkus[i].price,
           stock: sku.stock ?? food.wmProductSkus[i].stock,
-          unifiedPackagingFee: 2,
+          unifiedPackagingFee: 1,
           minOrderCount: sku.minOrderCount,
-          wmProductLadderBoxPrice:
-            sku.wmProductLadderBoxPrice ??
-            food.wmProductSkus[i].wmProductLadderBoxPrice ??
-            {
+          wmProductLadderBoxPrice: sku.wmProductLadderBoxPrice ??
+            food.wmProductSkus[i].wmProductLadderBoxPrice ?? {
               ladder_num: 1,
               ladder_price: food.wmProductSkus[i].boxPrice,
-              status: 1
-            }
+              status: 1,
+            },
         }
       })
     else
@@ -193,22 +198,23 @@ async function batchUpdateFoodSkus(cookie, id, name, catName, skus) {
           weight: sku.weight ?? food.wmProductSkus[0].weight,
           price: sku.price ?? food.wmProductSkus[0].price,
           stock: sku.stock ?? food.wmProductSkus[0].stock,
-          unifiedPackagingFee: 2,
+          unifiedPackagingFee: 1,
           minOrderCount: sku.minOrderCount,
-          wmProductLadderBoxPrice:
-            sku.wmProductLadderBoxPrice ??
-            food.wmProductSkus[0].wmProductLadderBoxPrice ??
-            {
+          wmProductLadderBoxPrice: sku.wmProductLadderBoxPrice ??
+            food.wmProductSkus[0].wmProductLadderBoxPrice ?? {
               ladder_num: 1,
               ladder_price: food.wmProductSkus[0].boxPrice,
-              status: 1
-            }
+              status: 1,
+            },
         }
       })
     // console.log(food.wmProductSkus)
 
     const { ok } = await fallbackApp.food.setHighBoxPrice2(
-      Math.max(...skus.map(sku => sku.wmProductLadderBoxPrice?.ladder_price)), skus.length)
+      Math.max(...skus.map(sku => sku.wmProductLadderBoxPrice?.ladder_price)),
+      skus.length
+    )
+
     if (ok) {
       const batchUpdateSkusRes = await fallbackApp.food.batchUpdateSkus(
         [food.id],
@@ -216,9 +222,16 @@ async function batchUpdateFoodSkus(cookie, id, name, catName, skus) {
         skus
       )
       return batchUpdateSkusRes
-    } else return Promise.reject({ err: 'sync failed' })
+    }
+
+    return Promise.reject({ err: "sync failed" })
   } catch (err) {
-    console.log('update skus')
+    if (JSON.stringify(err)?.includes("请勿重复提交")) {
+      await sleep(Math.random() * 2000)
+      return await batchUpdateFoodSkus(cookie, id, name, catName, skus, spuId)
+    }
+
+    console.error("update skus", err)
     return Promise.reject(err)
   }
 }
@@ -237,7 +250,7 @@ async function saveReduction(cookie, id, startTime, endTime, policyDetail) {
       reduction.policy = JSON.parse(reduction.policy)
       poiPolicy = {
         ...reduction.policy,
-        policy_detail: policyDetail
+        policy_detail: policyDetail,
       }
       const saveReductionRes = await fallbackApp.act.reduction.save(reduction.id, startTime, endTime, poiPolicy)
       return saveReductionRes
@@ -282,7 +295,7 @@ async function delAct(cookie, id, spuId) {
     const actListRes = await fallbackApp.act.list()
     const actListWillDel = actListRes.filter(act => act.spuId == spuId)
     const actIds = actListWillDel.map(act => act.id)
-    console.log('actIds', actIds)
+    console.log("actIds", actIds)
     if (actIds.length == 0) return { noAct: true }
     const actDelRes = await fallbackApp.act.delete(actIds)
     return Promise.resolve({
@@ -290,11 +303,11 @@ async function delAct(cookie, id, spuId) {
       actPrice: JSON.parse(actListWillDel[0].actInfo).act_price,
       orderLimit: actListWillDel[0].orderLimit,
       sortIndex: actListWillDel[0].sortIndex,
-      sortNumber: actListWillDel[0].sortNumber
+      sortNumber: actListWillDel[0].sortNumber,
     })
   } catch (err) {
-    console.error('delAct')
-    if (err.msg == '活动不存在') return Promise.resolve({ noAct: true })
+    console.error("delAct")
+    if (err?.msg == "活动不存在") return Promise.resolve({ noAct: true })
     return Promise.reject(err)
   }
 }
@@ -308,7 +321,15 @@ async function createAct(cookie, id, name, catName, actPrice, orderLimit = -1, s
     const wmSkuId = foodWillCreateAct.wmProductSkus[0].id
     const originPrice = foodWillCreateAct.wmProductSkus[0].price
 
-    const actCreateRes = await fallbackApp.act.create(wmSkuId, name, originPrice, actPrice, orderLimit, sortIndex, sortNumber)
+    const actCreateRes = await fallbackApp.act.create(
+      wmSkuId,
+      name,
+      originPrice,
+      actPrice,
+      orderLimit,
+      sortIndex,
+      sortNumber
+    )
     const foodCreatedActRes = await fallbackApp.act.find(name)
 
     console.log(foodCreatedActRes)
@@ -316,11 +337,11 @@ async function createAct(cookie, id, name, catName, actPrice, orderLimit = -1, s
       ...actCreateRes.map(actC => actC.result),
       foodCreatedAct: {
         ...JSON.parse(foodCreatedActRes.actInfo),
-        orderLimit: foodCreatedActRes.orderLimit
-      }
+        orderLimit: foodCreatedActRes.orderLimit,
+      },
     })
   } catch (err) {
-    console.error('createAct')
+    console.error("createAct")
     console.error(err)
     return Promise.reject(err)
   }
@@ -353,8 +374,8 @@ async function updateAct(cookie, id, name, actPrice) {
       ...actUpdateRes.map(act => act.result),
       foodUpdatedAct: {
         ...JSON.parse(foodUpdatedActRes.actInfo),
-        orderLimit: foodUpdatedActRes.orderLimit
-      }
+        orderLimit: foodUpdatedActRes.orderLimit,
+      },
     }
   } catch (err) {
     return Promise.reject(err)
@@ -365,10 +386,10 @@ async function logActs(cookie, id) {
   const fallbackApp = new FallbackApp(id, cookie)
   try {
     const data = await fallbackApp.act.list()
-    const res = await knx('test_mt_acts_').insert(
+    const res = await knx("test_mt_acts_").insert(
       data.map(v => ({
         wmPoiId: id,
-        act_str: JSON.stringify({ ...v, charge: JSON.parse(v.charge), actInfo: JSON.parse(v.actInfo) })
+        act_str: JSON.stringify({ ...v, charge: JSON.parse(v.charge), actInfo: JSON.parse(v.actInfo) }),
       }))
     )
     return Promise.resolve(res)
@@ -387,12 +408,12 @@ async function updateActTime(cookie, id, act_str) {
         {
           ...data,
           startTime: dayjs()
-            .startOf('day')
+            .startOf("day")
             .unix(),
-          endTime: dayjs('2021-07-31').unix(),
-          WmActPriceVo: data.charge
-        }
-      ]
+          endTime: dayjs("2021-07-31").unix(),
+          WmActPriceVo: data.charge,
+        },
+      ],
     }
     return fallbackApp.act.save_(poiPolicy)
   } catch (err) {
@@ -406,7 +427,7 @@ async function test_price() {
   //   sheet: 'Sheet1',
   //   output: `-- 美团单折扣商品起送查询2(2).xlsx.json`
   // })
-  let e = JSON.parse(fs.readFileSync('plan/12月8号批量改贡茶价格.xlsx.json'))
+  let e = JSON.parse(fs.readFileSync("plan/12月8号批量改贡茶价格.xlsx.json"))
   let shopIds = Array.from(new Set(e.map(v => v.id)))
   let cont = true
   for (let shop of e) {
@@ -439,7 +460,7 @@ async function test_act(cookie) {
       if (shop.id == 10603386) continue
       try {
         const id = shop.id
-        const name = '热狗肠1根【粉丝福利，单点不送】'
+        const name = "热狗肠1根【粉丝福利，单点不送】"
         const actPrice = 0.1
         const orderLimit = 1
         console.log(shop.id, shop.poiName)
@@ -499,7 +520,7 @@ async function updateImg2(name, newUrl) {
     data = data.map(v => ({
       id: v.wmpoiid,
       foodId: v.productId,
-      newUrl
+      newUrl,
     }))
     return Promise.all(data.map(v => new FallbackApp(v.id).food.updateImg(v.foodId, v.newUrl)))
     // const foodUpdateImgRes = await fallbackApp.food.updateImg(foodId, newUrl)
@@ -529,14 +550,23 @@ async function updateUnitC(cookie, id, name, catName, weight, weightUnit) {
       const delActRes = await delAct(id, name)
       results.delActRes = delActRes
       await sleep(1500)
-      results.saveRes = await fallbackApp.food.save2(name, catName, null, null, null, null, parseInt(weight), weightUnit)
+      results.saveRes = await fallbackApp.food.save2(
+        name,
+        catName,
+        null,
+        null,
+        null,
+        null,
+        parseInt(weight),
+        weightUnit
+      )
       if (!delActRes.noAct) {
         await sleep(2000)
         const createActRes = await createAct(id, name, catName, delActRes.actPrice, delActRes.orderLimit)
         results.createActRes = createActRes
       }
       return results
-    } else return Promise.reject('sync failed')
+    } else return Promise.reject("sync failed")
   } catch (err) {
     return Promise.reject(err)
   }
@@ -561,7 +591,6 @@ async function test_updateImg() {
     //   10453345, 3636311516, 'http://p0.meituan.net/wmproduct/a0f32026f68806f6ac3393affc3eb8c02678017.gif']
     // console.log(await updateImg(...data))
 
-
     // await loop(
     //   updateImg2,
     //   ims.map(v => [v.name.replace('.jpg', ''), v.url])
@@ -572,12 +601,12 @@ async function test_updateImg() {
     //   WHERE f.wmpoiid = 11267829 AND f.date = CURDATE()`
     // )
     let cookie = await cookieMtRedis()
-    let data = await readXls('plan/8-8更换产品图-双打柠檬红茶.xlsx', '美团')
+    let data = await readXls("plan/8-8更换产品图-双打柠檬红茶.xlsx", "美团")
     data = data.map(v => [
       cookie,
       v.wmpoiid,
       v.productId,
-      'http://p1.meituan.net/wmproduct/6abf8e62c8ae61bf882c024fa22f9c93210507.jpg'
+      "http://p1.meituan.net/wmproduct/6abf8e62c8ae61bf882c024fa22f9c93210507.jpg",
     ])
     await loop(updateImg, data, false)
   } catch (err) {
@@ -587,7 +616,7 @@ async function test_updateImg() {
 
 async function test_updateUnitC() {
   try {
-    let data = await readXls('plan/美团商品规格(1)(1).xlsx', 'Sheet1')
+    let data = await readXls("plan/美团商品规格(1)(1).xlsx", "Sheet1")
     data = data.map((v, i) => [v.wmpoiid, v.name, v.tagName, v.weight, v.weightUnit, i])
     await loop(updateUnitC, data, false, { test: delFoods })
   } catch (err) {
@@ -602,7 +631,7 @@ async function updateUnit(cookie, id, name, unit) {
     if (ok) {
       const res = await fallbackApp.food.save(name, null, unit)
       return Promise.resolve(res)
-    } else return Promise.reject({ err: 'sync failed' })
+    } else return Promise.reject({ err: "sync failed" })
   } catch (err) {
     return Promise.reject(err)
   }
@@ -615,7 +644,7 @@ async function updateDesc(cookie, id, name, catName, desc) {
     if (ok) {
       const res = await fallbackApp.food.save2(name, catName, null, null, desc)
       return Promise.resolve(res)
-    } else return Promise.reject({ err: 'sync failed' })
+    } else return Promise.reject({ err: "sync failed" })
   } catch (err) {
     return Promise.reject(err)
   }
@@ -628,7 +657,7 @@ async function updateLabels(cookie, id, name, catName, labels) {
     if (ok) {
       const res = await fallbackApp.food.save2(name, catName, null, null, null, null, null, null, labels)
       return Promise.resolve(res)
-    } else return Promise.reject({ err: 'sync failed' })
+    } else return Promise.reject({ err: "sync failed" })
   } catch (err) {
     return Promise.reject(err)
   }
@@ -641,7 +670,7 @@ async function updatePvs(cookie, id, name, catName, pvs) {
     if (ok) {
       const res = await fallbackApp.food.save2(name, catName, null, null, null, null, null, null, null, pvs)
       return Promise.resolve(res)
-    } else return Promise.reject({ err: 'sync failed' })
+    } else return Promise.reject({ err: "sync failed" })
   } catch (err) {
     return Promise.reject(err)
   }
@@ -654,7 +683,7 @@ async function updateAttrs(cookie, id, name, attrs) {
     if (true) {
       const res = await fallbackApp.food.save(name, null, null, null, attrs)
       return Promise.resolve(res)
-    } else return Promise.reject({ err: 'sync failed' })
+    } else return Promise.reject({ err: "sync failed" })
   } catch (err) {
     return Promise.reject(err)
   }
@@ -680,34 +709,50 @@ async function updateAttrs2(cookie, id, name, catName, attrs) {
 
       const res = await fallbackApp.food.save2(name, catName, attrs)
       return Promise.resolve(res)
-    } else return Promise.reject({ err: 'sync failed' })
+    } else return Promise.reject({ err: "sync failed" })
   } catch (err) {
     return Promise.reject(err)
   }
 }
 
-const decodeSpuAttrs = (str) => {
+const decodeSpuAttrs = str => {
   const value = (s, p) => {
-    return { "name": p.name, "name_id": 0, "value": s, "value_id": 0, "price": 0, "no": p.no, "mode": 1, "value_sequence": p.value_sequence, "weight": 0, "weightUnit": null, "sell_status": 0 }
+    return {
+      name: p.name,
+      name_id: 0,
+      value: s,
+      value_id: 0,
+      price: 0,
+      no: p.no,
+      mode: 1,
+      value_sequence: p.value_sequence,
+      weight: 0,
+      weightUnit: null,
+      sell_status: 0,
+    }
   }
   const arr_value = (s, p) => {
-    return s.split('#').map((v, i) => value(v, { ...p, value_sequence: i + 1 }))
+    return s.split("#").map((v, i) => value(v, { ...p, value_sequence: i + 1 }))
   }
   const attr = (s, p) => {
-    let [name, ...values] = s.split('#')
-    return arr_value(values.join('#'), { name, no: p.no })
+    let [name, ...values] = s.split("#")
+    return arr_value(values.join("#"), { name, no: p.no })
   }
-  const arr_attr = (s) => {
-    return s.split('##').filter(a => a != '').map((a, i) => attr(a, { no: i + 1 })).flat()
+  const arr_attr = s => {
+    return s
+      .split("##")
+      .filter(a => a != "")
+      .map((a, i) => attr(a, { no: i + 1 }))
+      .flat()
   }
 
   if (str == null) return null
-  if (typeof str == 'object') return str
-  if (typeof str == 'string') {
+  if (typeof str == "object") return str
+  if (typeof str == "string") {
     // if (isJson(str)) {
     //   return JSON.parse(str)
     // }
-    if (str == '' || /\s+/.test(str)) return []
+    if (str == "" || /\s+/.test(str)) return []
     return arr_attr(str)
   }
 }
@@ -718,7 +763,7 @@ async function test_updateAttrs2() {
     // let [data,_] = await knx.raw(`SELECT * FROM foxx_food_manage f WHERE date = CURDATE() AND name LIKE '%杨枝甘露%'`)
     // let data = await readJson('log/log.json')
     let cookie = await cookieMtRedis()
-    let data = await readXls('plan/8-2美团商品规格修改2.xlsx', 'Sheet1')
+    let data = await readXls("plan/8-2美团商品规格修改2.xlsx", "Sheet1")
     // let data = await readJson('log/log.json')
     // console.log(data)
     // data = data.slice(data.length - 2)
@@ -742,9 +787,9 @@ async function test_testFood() {
 
 async function cookieMtRedis() {
   try {
-    const url = 'http://192.168.3.3:10002/cookie'
+    const url = "http://192.168.3.3:10002/cookie"
     const res = (await axios.get(url)).data
-    if (!res.ok) COOKIE = ''
+    if (!res.ok) COOKIE = ""
     return res.data
   } catch (error) {
     console.error(error)
@@ -755,13 +800,12 @@ async function cookieMtRedis() {
 async function test_saveFood() {
   // http://ruoyi.ruoyi-vue.192.168.3.173.nip.io:30737/prod-api/business/food_manage/list?pageNum=1&pageSize=10&sellStatus=%E4%B8%8A%E6%9E%B6&foodId=1161
 
-
   try {
     let cookie = await cookieMtRedis()
-    let source = await readXls('plan/属性(2)(1).xlsx', 'Sheet1')
+    let source = await readXls("plan/属性(2)(1).xlsx", "Sheet1")
     // let source = [{ 商品名称: '椰奶红豆', 属性: '温度#冷#热' }]
     // let source = await readXls('plan/美团贡茶(1)(1)(3)(1)(1)(1)(2).xls', '门店商品')
-    source = source.filter(v => v['菜名'] != '')
+    source = source.filter(v => v["菜名"] != "")
     // let source = ['火山石烤纯肉肠', '三拼手抓饼', '柠檬鸡爪4小个', '日式章鱼小丸子4个', '酸辣粉', '招牌芋圆', '芋圆椰奶烧仙草', '芋圆红豆双皮奶', '甜品招牌烧仙草', '芋圆椰汁西米露']
     let count = 1
     // {"group_id":18,"sub_attr":0}
@@ -783,13 +827,13 @@ async function test_saveFood() {
     //       SELECT * FROM food_id_info WHERE food_id IN (SELECT * FROM c)
     //     ),
     //     d AS (
-    //       SELECT wmpoiid, name, tagName, productId FROM food_id_info i 
+    //       SELECT wmpoiid, name, tagName, productId FROM food_id_info i
     //       LEFT JOIN foxx_food_manage f ON i.food_platform_id = f.productId
-    //       WHERE i.food_id IN (SELECT dict_value FROM c) AND f.date = CURDATE() 
+    //       WHERE i.food_id IN (SELECT dict_value FROM c) AND f.date = CURDATE()
     //     ),
     //     e AS (
     //       SELECT d.*, s.reptile_type FROM d JOIN foxx_shop_reptile s USING(wmpoiid) WHERE s.reptile_type LIKE '%贡茶%'
-    //     )		
+    //     )
     //     SELECT * FROM e
     // `)
     // let [data, _] = await knx.raw(`
@@ -800,17 +844,17 @@ async function test_saveFood() {
     //     SELECT * FROM food_id_info WHERE food_id IN (SELECT * FROM c)
     //   ),
     //   d AS (
-    //     SELECT wmpoiid, name, tagName, productId FROM food_id_info i 
+    //     SELECT wmpoiid, name, tagName, productId FROM food_id_info i
     //     LEFT JOIN foxx_food_manage f ON i.food_platform_id = f.productId
-    //     WHERE i.food_id IN (SELECT dict_value FROM c) AND f.date = CURDATE() 
+    //     WHERE i.food_id IN (SELECT dict_value FROM c) AND f.date = CURDATE()
     //   ),
     //   e AS (
     //     SELECT d.*, s.reptile_type FROM d LEFT JOIN foxx_shop_reptile s USING(wmpoiid) WHERE s.reptile_type LIKE '%甜品%'
-    //   )		  
+    //   )
     //   SELECT * FROM d
     // `)
     // let [data, _] = await knx.raw(`
-    //   select * from foxx_food_manage where date = curdate() and name = '${f['商品名称']}' and wmpoiid in (9725155,9485479,10083564,9720238,9014461,10515109,11663727,10093423,9920776,10464925,9842782,10307635,9732198,9927233,10045394,9861088,9411146,10285968,9802089,9901167,10328667,10554281,10345552,9344971,9470147,10061444,10497086,10372220,11676413,9391341,9018543,9411129,10369391,11678300,10148759,8890748,9576423,10038920,11663498,9776028,10700120,9123504,10096753,11677836,9596488,9324887,9997882,9592515,10456106,9620939,11320119,9636784,11663360,8981920,9999141,10056855,9703463,9355348,10106799,9999888,10014983,10480104,9812382,11663221,10076509,8751302,10096784,12080368,11289597,10427603,9936831,11649027,10854598,10417267,9206216,11913814,12038505,11258970,10451351,10722222,7735904,11100585,10757738,9236042,8911549,9250896,9100878,11116331,9249572,9258295,11223023,7673028,12271123,6950373,9153911,8670629,7632277,7779873,11457605,8981890,7968147,11512917,7351446,7740255,11528661,8051354,8221674,8981943,6434760) 
+    //   select * from foxx_food_manage where date = curdate() and name = '${f['商品名称']}' and wmpoiid in (9725155,9485479,10083564,9720238,9014461,10515109,11663727,10093423,9920776,10464925,9842782,10307635,9732198,9927233,10045394,9861088,9411146,10285968,9802089,9901167,10328667,10554281,10345552,9344971,9470147,10061444,10497086,10372220,11676413,9391341,9018543,9411129,10369391,11678300,10148759,8890748,9576423,10038920,11663498,9776028,10700120,9123504,10096753,11677836,9596488,9324887,9997882,9592515,10456106,9620939,11320119,9636784,11663360,8981920,9999141,10056855,9703463,9355348,10106799,9999888,10014983,10480104,9812382,11663221,10076509,8751302,10096784,12080368,11289597,10427603,9936831,11649027,10854598,10417267,9206216,11913814,12038505,11258970,10451351,10722222,7735904,11100585,10757738,9236042,8911549,9250896,9100878,11116331,9249572,9258295,11223023,7673028,12271123,6950373,9153911,8670629,7632277,7779873,11457605,8981890,7968147,11512917,7351446,7740255,11528661,8051354,8221674,8981943,6434760)
     // `)
 
     //   data = data.map((v, i) => [cookie, v.wmpoiid, v.name, v.tagName, decodeSpuAttrs(f['属性']), null, i])
@@ -818,11 +862,11 @@ async function test_saveFood() {
     //   // let data = readJson('log/log.json')
     //   // data = data.map(v => v.meta)
 
-
     //   count += 1
     // }
 
-    source = source.map((v, i) => [cookie, v.ID, v.菜名, v.分类名, decodeSpuAttrs(v.属性), null, i])
+    source = source
+      .map((v, i) => [cookie, v.ID, v.菜名, v.分类名, decodeSpuAttrs(v.属性), null, i])
       .sort((a, b) => a[1] - b[1])
 
     await loop(updateDesc, source, false, { test: delFoods })
@@ -842,8 +886,8 @@ async function test_updateDesc() {
   try {
     let cookie = await cookieMtRedis()
 
-    let data = await readXls('plan/违规词商品(1)(1).xlsx', 'Sheet')
-    data = data.filter(v => v.平台 == '美团')
+    let data = await readXls("plan/违规词商品(1)(1).xlsx", "Sheet")
+    data = data.filter(v => v.平台 == "美团")
     // let data = await readJson('elm/log/log.json')
     // data = data.filter(v => v.平台 == '饿了么')
     let limit = pLimit(1)
@@ -859,11 +903,8 @@ async function test_updateDesc() {
       console.log(shop[0][1])
 
       await sleep(5000)
-      await Promise.all(
-        shop.map(d => limit2(() => wrap(updateDesc, d)))
-      )
+      await Promise.all(shop.map(d => limit2(() => wrap(updateDesc, d))))
       await wrap(delFoods, [cookie, shop[0][1]])
-
     }
     // await loop(updateDesc, dat, false, { test: delFoods })
   } catch (e) {
@@ -889,7 +930,7 @@ async function updateFoodName(cookie, id, tagName, spuId, foodName, spuName) {
 
   try {
     console.log(id, tagName, spuId, foodName, spuName)
-    if (foodName.includes('冬至快乐')) {
+    if (foodName.includes("冬至快乐")) {
       const foodUpdateNameRes = await fallbackApp.food.updateName(spuId, `${spuName}`)
       return Promise.resolve({ ...foodUpdateNameRes, foodName })
     }
@@ -922,7 +963,7 @@ async function updateFoodName3(cookie, id, foodName) {
         const isAct = food.wmProductSkus.length == 1 && food.wmProductSkus[0].actInfoList.find(f => f.actType == 17)
         const isAct001 = isAct && food.wmProductSkus[0].actInfoList.find(f => f.actType == 17).actShowPrice == "0.01"
 
-        let newName = isAct001 ? '冰鲜柠檬水(首杯0.01)' : isAct ? '冰鲜柠檬水·折' : '冰鲜柠檬水'
+        let newName = isAct001 ? "冰鲜柠檬水(首杯0.01)" : isAct ? "冰鲜柠檬水·折" : "冰鲜柠檬水"
         console.log(food.name, newName, food.wmProductSkus[0].actInfoList)
         let res = await fallbackApp.food.updateName(food.id, newName)
         foodUpdateNameRes.push({ ok: 1, res })
@@ -952,16 +993,14 @@ async function test_rename() {
 
     // let data = await readXls('plan/7-26甜品产品名称修改.xlsx', '商品查询')
     // data = data.filter(v => v.平台 == '美团')
-    let data = await readJson('log/log.json')
+    let data = await readJson("log/log.json")
 
     let limit = pLimit(50)
 
     // let dat = data.map(v => [cookie, v.wmpoiid, v.productId, v.修改后的产品名])
     let dat = data.map(v => v.meta)
     // await loop(renameFoodPic, dat, false)
-    await Promise.all(
-      dat.map(d => limit(() => wrap(updateFoodName4, d)))
-    )
+    await Promise.all(dat.map(d => limit(() => wrap(updateFoodName4, d))))
 
     // await loop(updateFoodName4, dat, false)
   } catch (err) {
@@ -973,7 +1012,7 @@ async function test_rename_pic() {
   try {
     const cookie = await cookieMtRedis()
 
-    let data = await readXls('plan/0.01招牌芋圆修改前备份(2).xlsx', 'Sheet1')
+    let data = await readXls("plan/0.01招牌芋圆修改前备份(2).xlsx", "Sheet1")
     data = data.map(v => [cookie, v.shop_id, v.food_name, v.tagName, v.new_name, v.pic])
 
     await loop(updateFoodName2, data, false)
@@ -983,7 +1022,7 @@ async function test_rename_pic() {
 }
 
 async function test_actPrice() {
-  let dataSource = readJson('log/log.json')
+  let dataSource = readJson("log/log.json")
   dataSource = dataSource.map(v => Object.values(v.meta))
 
   await loop(updateAct, dataSource)
@@ -995,7 +1034,7 @@ async function updateTagSeq(cookie, id, name) {
   try {
     const tags = await fallbackApp.food.listTags()
     const tagWillUpdate = tags.find(v => v.name.includes(name))
-    if (!tagWillUpdate) return Promise.reject({ err: 'tag1 not find' })
+    if (!tagWillUpdate) return Promise.reject({ err: "tag1 not find" })
     const tagUpdateSeqRes = await fallbackApp.food.updateFoodCatSeq(tagWillUpdate.id, 1)
     const tagUpdated = await fallbackApp.food.searchTag(name)
     return Promise.resolve({ ...tagUpdateSeqRes, tagUpdated: { seq: tagUpdated.sequence } })
@@ -1010,7 +1049,7 @@ async function updateTagTime(cookie, id, name) {
   try {
     const tags = await fallbackApp.food.listTags()
     const tagWillUpdate = tags.find(v => v.name.includes(name))
-    if (!tagWillUpdate) return Promise.reject({ err: 'tag1 not find' })
+    if (!tagWillUpdate) return Promise.reject({ err: "tag1 not find" })
     const tagUpdateSeqRes = await fallbackApp.food.updateFoodCatSeq(tagWillUpdate.id, tags.length)
     const tagUpdated = await fallbackApp.food.searchTag(name)
     return Promise.resolve({ ...tagUpdateSeqRes, tagUpdated: { seq: tagUpdated.sequence } })
@@ -1025,7 +1064,7 @@ async function updateTagTop(cookie, id, name) {
   try {
     const tags = await fallbackApp.food.listTags()
     const tagWillUpdate = tags.find(v => v.name.includes(name))
-    if (!tagWillUpdate) return Promise.reject({ err: 'tag1 not find' })
+    if (!tagWillUpdate) return Promise.reject({ err: "tag1 not find" })
     const tagUpdateSeqRes = await fallbackApp.food.updateFoodCatTop_(tagWillUpdate)
     const tagUpdated = await fallbackApp.food.searchTag(name)
     return Promise.resolve({ ...tagUpdateSeqRes, tagUpdated: { timeZone: tagUpdated.timeZoneForHuman } })
@@ -1040,7 +1079,7 @@ async function updateTagUnTop(cookie, id, name) {
   try {
     const tags = await fallbackApp.food.listTags()
     const tagWillUpdate = tags.find(v => v.name.includes(name))
-    if (!tagWillUpdate) return Promise.reject({ err: 'tag1 not find' })
+    if (!tagWillUpdate) return Promise.reject({ err: "tag1 not find" })
     const tagUpdateSeqRes = await fallbackApp.food.updateFoodCatUnTop_(tagWillUpdate)
     const tagUpdated = await fallbackApp.food.searchTag(name)
     return Promise.resolve({ ...tagUpdateSeqRes, tagUpdated: { timeZone: tagUpdated.timeZone } })
@@ -1053,7 +1092,7 @@ async function test_sortTag() {
   const fallbackApp = new FallbackApp()
   try {
     let dataSource = await fallbackApp.poi.list()
-    dataSource = dataSource.map(v => [v.id, '5 2 0大行动'])
+    dataSource = dataSource.map(v => [v.id, "5 2 0大行动"])
 
     await loop(updateTagSeq, dataSource)
   } catch (error) {
@@ -1070,16 +1109,16 @@ async function test_name() {
       console.log(cnt)
       try {
         fallbackApp = new FallbackApp(poi.id)
-        const tag = await fallbackApp.food.searchTag('甜糯汤圆')
+        const tag = await fallbackApp.food.searchTag("甜糯汤圆")
         const foods = await fallbackApp.food.listFoods(tag.id)
         for (let food of foods) {
           try {
             const updateFoodNameRes = await updateFoodName(
               poi.id,
-              '甜糯汤圆',
+              "甜糯汤圆",
               food.id,
               food.name,
-              food.name.replace('（冬至快乐）', '')
+              food.name.replace("（冬至快乐）", "")
             )
             console.log(updateFoodNameRes)
           } catch (err) {
@@ -1115,7 +1154,7 @@ async function test_catName() {
     let poiList = await fallbackApp.poi.list()
     for (let poi of poiList) {
       try {
-        const res = await updateFoodCatName(poi.id, '冬至汤圆', '甜糯汤圆')
+        const res = await updateFoodCatName(poi.id, "冬至汤圆", "甜糯汤圆")
         console.log(res)
       } catch (err) {
         console.error(err)
@@ -1135,9 +1174,9 @@ async function moveFood(cookie, id, name) {
     // const tag = tags.find(v => /.*店铺公告|门店公告|不要下单|别点了.*/.test(v.name))
     const tag = tags.find(v => /鲜奶系列/.test(v.name))
     if (!tag) {
-      const oldTag = tags.find(v => v.name == '双皮奶类')
-      if (!oldTag) return Promise.reject({ err: 'old tag null' })
-      console.log(await fallbackApp.food.saveFoodCat('鲜奶系列', oldTag.sequence))
+      const oldTag = tags.find(v => v.name == "双皮奶类")
+      if (!oldTag) return Promise.reject({ err: "old tag null" })
+      console.log(await fallbackApp.food.saveFoodCat("鲜奶系列", oldTag.sequence))
       await sleep(600)
       await moveFood(id, name)
     }
@@ -1151,7 +1190,7 @@ async function moveFood(cookie, id, name) {
 
 async function test_move() {
   try {
-    let data = await readJson('log/log.json')
+    let data = await readJson("log/log.json")
     data = data.map(v => v.meta)
     await loop(moveFood, data, false)
   } catch (error) {
@@ -1163,17 +1202,18 @@ export async function delFoods(cookie, id) {
   const fallbackApp = new FallbackApp(id, cookie)
 
   try {
-    console.log('del tests...', id)
-    let tests = await fallbackApp.food.searchFood('测试')
+    console.log("del tests...", id)
+    let tests = await fallbackApp.food.searchFood("测试")
     let tags = await fallbackApp.food.listTags()
     // console.log(tags)
     tests = tests.filter(v => /测试\d+/.test(v.name) && /店铺公告\d+/.test(v.tagName))
     tags = tags.filter(v => /店铺公告\d+/.test(v.name))
 
-
     console.log(tests.map(t => ({ name: t.name, tagName: t.tagName })))
-    const res = tests.length > 0 ? await fallbackApp.food.batchDeleteFoods(tests.map(v => v.wmProductSkus.map(k => k.id).join(',')))
-      : []
+    const res =
+      tests.length > 0
+        ? await fallbackApp.food.batchDeleteFoods(tests.map(v => v.wmProductSkus.map(k => k.id).join(",")))
+        : []
     await sleep(3000)
     const res2 = await Promise.all(tags.map(tag => fallbackApp.food.delTag(tag.id)))
     // let results = []
@@ -1202,12 +1242,64 @@ export async function delFoods(cookie, id) {
   }
 }
 
+export async function creFoods(cookie, id) {
+  const fallbackApp = new FallbackApp(id, cookie)
+  const { ok } = await fallbackApp.food.setHighBoxPrice2()
+  return ok
+}
+
+export async function tryCreateTestFoods(cookie, id) {
+  try {
+    const fallbackApp = new FallbackApp(id, cookie)
+    const { ok } = await fallbackApp.food.setHighBoxPrice2()
+    return ok
+  } catch (err) {
+    console.error("try-create-tests", id, err)
+    return false
+  }
+}
+
+export async function tryDeleteTestFoods(cookie, id, retry = 0) {
+  const fallbackApp = new FallbackApp(id, cookie)
+
+  const tagMapper = async tag => {
+    let res = await fallbackApp.food.delTag(tag.id)
+    return res
+  }
+
+  try {
+    console.log("del tests...", id)
+    let tests = await fallbackApp.food.searchFood("测试")
+    let tags = await fallbackApp.food.listTags()
+    // console.log(tags)
+    tests = tests.filter(v => /测试\d+/.test(v.name) && /店铺公告\d+/.test(v.tagName))
+    tags = tags.filter(v => /店铺公告\d+/.test(v.name))
+
+    console.log(tests.map(t => ({ name: t.name, tagName: t.tagName })))
+    const res =
+      tests.length > 0
+        ? await fallbackApp.food.batchDeleteFoods(tests.map(v => v.wmProductSkus.map(k => k.id).join(",")))
+        : []
+
+    await sleep(3000)
+    const res2 = await pMap(tags, tagMapper, { concurrency: 1 })
+    return Promise.resolve({ res, res2 })
+  } catch (err) {
+    if (retry < 10) {
+      console.log("retry-delete-tests...", id, retry)
+      return await tryDeleteTestFoods(cookie, id, retry + 1)
+    }
+    console.error("del-tests", err)
+    // throw err
+  }
+}
+
 async function delFood(cookie, id, name) {
   try {
     const fallbackApp = new FallbackApp(id, cookie)
     let foods = await fallbackApp.food.searchFood(name)
     if (foods.length == 0) return
-    const skuIds = foods.map(v => v.wmProductSkus.map(k => k.id).join(','))
+    const skuIds = foods.map(v => v.wmProductSkus.map(k => k.id).join(","))
     const res = await fallbackApp.food.batchDeleteFoods(skuIds)
     return res
   } catch (e) {
@@ -1218,7 +1310,7 @@ async function delFood(cookie, id, name) {
 async function delTag(cookie, id) {
   const fallbackApp = new FallbackApp(id, cookie)
   try {
-    let tag = await fallbackApp.food.searchTag('5 2 0大行动')
+    let tag = await fallbackApp.food.searchTag("5 2 0大行动")
     return fallbackApp.food.delTag(tag.id)
   } catch (e) {
     return Promise.reject(e)
@@ -1238,11 +1330,17 @@ async function test_delTag() {
 async function test_delFoods() {
   try {
     let fallbackApp = new FallbackApp()
-    let shops = await knx('foxx_shop_reptile').select().where({ status: 0 })
+    let shops = await knx("foxx_shop_reptile")
+      .select()
+      .where({ status: 0 })
 
     // shops = shops.slice(shops.length - 260)
 
-    await loop(delFoods, shops.map(s => [s.cookie, s.wmpoiid]), true)
+    await loop(
+      delFoods,
+      shops.map(s => [s.cookie, s.wmpoiid]),
+      true
+    )
 
     // await loop(delFood, shops.map(v => [v.id, '送你甜蜜魔盒（生活需要仪式感）']))
     // await loop(delFood, shops.map(v => [v.id, '520爱你💖甜甜蜜蜜💖(随单附赠小礼品）']))
@@ -1272,7 +1370,7 @@ async function renameFood(cookie, id, spuId, oldName, newName) {
 
 async function test_rename2() {
   try {
-    let data = await readXls('plan/3-1批量修改.xls', '美团产品名修改')
+    let data = await readXls("plan/3-1批量修改.xls", "美团产品名修改")
     data = data.map(v => [v.shop_id, null, v.name, v.修改后的产品名])
     await loop(renameFood, data, false)
   } catch (error) {
@@ -1287,9 +1385,9 @@ async function test_pois() {
     data = data.map(v => ({
       id: v.id,
       name: v.poiName,
-      city: v.city
+      city: v.city,
     }))
-    const res = await knx('mt_shops_').insert(data)
+    const res = await knx("mt_shops_").insert(data)
     console.log(res)
   } catch (error) {
     console.error(error)
@@ -1303,8 +1401,8 @@ async function updateFoodSku(cookie, id, name, price, boxPrice) {
     let skus = [
       {
         price,
-        wmProductLadderBoxPrice: { ladder_num: 1, ladder_price: boxPrice, status: 1 }
-      }
+        wmProductLadderBoxPrice: { ladder_num: 1, ladder_price: boxPrice, status: 1 },
+      },
     ]
     const { ok } = await fallbackApp.food.setHighBoxPrice(0, true)
     if (ok) {
@@ -1328,7 +1426,7 @@ async function updateFoodSku(cookie, id, name, price, boxPrice) {
       const saveRes = await fallbackApp.food.save(name, minOrderCount)
 
       return Promise.resolve({ delActRes, updateSkusRes, createActRes, minOrderCount, saveRes })
-    } else return Promise.reject({ err: 'sync failed' })
+    } else return Promise.reject({ err: "sync failed" })
   } catch (err) {
     return Promise.reject(err)
   }
@@ -1345,8 +1443,8 @@ async function updatePlan(cookie, id, name, minOrder, price, boxPrice, actPrice,
         let skus = [
           {
             price,
-            wmProductLadderBoxPrice: boxPrice ? { ladder_num: 1, ladder_price: boxPrice, status: 1 } : null
-          }
+            wmProductLadderBoxPrice: boxPrice ? { ladder_num: 1, ladder_price: boxPrice, status: 1 } : null,
+          },
         ]
 
         const delActRes = await delAct(id, name)
@@ -1354,7 +1452,7 @@ async function updatePlan(cookie, id, name, minOrder, price, boxPrice, actPrice,
 
         results.priceRes = {
           delActRes,
-          updateSkusRes
+          updateSkusRes,
         }
 
         if (minOrderCount != 1) {
@@ -1395,20 +1493,33 @@ async function updatePlan(cookie, id, name, minOrder, price, boxPrice, actPrice,
       }
 
       return Promise.resolve(results)
-    } else return Promise.reject({ err: 'sync failed' })
+    } else return Promise.reject({ err: "sync failed" })
   } catch (err) {
     return Promise.reject(err)
   }
 }
 
-export async function updatePlan2(cookie, id, catName, name, minOrder, price, boxPrice, actPrice, orderLimit, weight, unit, shouldDelAct) {
+export async function updatePlan2(
+  cookie,
+  id,
+  catName,
+  name,
+  minOrder,
+  price,
+  boxPrice,
+  actPrice,
+  orderLimit,
+  weight,
+  unit,
+  shouldDelAct
+) {
   const fallbackApp = new FallbackApp(id, cookie)
 
   let results = {}
   try {
     if (shouldDelAct) {
       const delActRes = await delAct(cookie, id, name)
-      results['[删除折扣]'] = delActRes?.actDelRes?.msg
+      results["[删除折扣]"] = delActRes?.actDelRes?.msg
     }
 
     if (price != null) {
@@ -1421,8 +1532,8 @@ export async function updatePlan2(cookie, id, catName, name, minOrder, price, bo
           weight_unit: unit,
           weight,
           minOrderCount: minOrder ?? minOrderCount,
-          wmProductLadderBoxPrice: boxPrice != null ? { ladder_num: 1, ladder_price: boxPrice, status: 1 } : null
-        }
+          wmProductLadderBoxPrice: boxPrice != null ? { ladder_num: 1, ladder_price: boxPrice, status: 1 } : null,
+        },
       ]
 
       // delAct
@@ -1431,100 +1542,226 @@ export async function updatePlan2(cookie, id, catName, name, minOrder, price, bo
       // upSkus
       const updateSkusRes = await batchUpdateFoodSkus(cookie, id, name, catName, skus)
 
-      results['[删除折扣]'] = delActRes?.actDelRes?.msg
-      results['[修改规格]'] = updateSkusRes.msg
+      results["[删除折扣]"] = delActRes?.actDelRes?.msg
+      results["[修改规格]"] = updateSkusRes?.msg
 
       // addAct
       if (!delActRes.noAct && actPrice == null && orderLimit == null) {
-        const createActRes = await createAct(cookie, id, name, catName, delActRes.actPrice, delActRes.orderLimit, delActRes.sortIndex, delActRes.sortNumber)
-        results['[创建活动]'] = `\n活动价: ${createActRes?.foodCreatedAct?.act_price}\n原价: ${createActRes?.foodCreatedAct?.origin_price}\n限购: ${createActRes?.foodCreatedAct?.orderLimit}`
+        const createActRes = await createAct(
+          cookie,
+          id,
+          name,
+          catName,
+          delActRes.actPrice,
+          delActRes.orderLimit,
+          delActRes.sortIndex,
+          delActRes.sortNumber
+        )
+        results[
+          "[创建活动]"
+        ] = `\n活动价: ${createActRes?.foodCreatedAct?.act_price}\n原价: ${createActRes?.foodCreatedAct?.origin_price}\n限购: ${createActRes?.foodCreatedAct?.orderLimit}`
       }
     }
 
     if (boxPrice != null && price == null) {
       const boxPriceRes = await updateFoodBoxPrice(cookie, id, name, catName, boxPrice)
-      results['[修改餐盒价格]'] = boxPriceRes.msg
+      results["[修改餐盒价格]"] = boxPriceRes.msg
     }
 
     if (minOrder != null && price == null) {
       const minOrderRes = await fallbackApp.food.save2(name, catName, null, minOrder, null, null, weight, unit)
-      results['[修改商品]'] = minOrderRes.msg
+      results["[修改商品]"] = minOrderRes.msg
     }
 
     if ((weight != null || unit != null) && price == null && minOrder == null) {
       const weightRes = await fallbackApp.food.save2(name, catName, null, null, null, null, weight, unit)
-      results['[修改商品]'] = weightRes.msg
+      results["[修改商品]"] = weightRes.msg
     }
 
     /* act */
     if (actPrice != null && orderLimit != null) {
       const delActRes = await delAct(cookie, id, name)
-      results['[删除折扣]'] = delActRes?.actDelRes?.msg
-      const createActRes = await createAct(cookie, id, name, catName, actPrice, orderLimit, delActRes?.sortIndex, delActRes?.sortNumber)
-      results['[创建活动]'] = `\n活动价: ${createActRes?.foodCreatedAct?.act_price}\n原价: ${createActRes?.foodCreatedAct?.origin_price}\n限购: ${createActRes?.foodCreatedAct?.orderLimit}`
+      results["[删除折扣]"] = delActRes?.actDelRes?.msg
+      const createActRes = await createAct(
+        cookie,
+        id,
+        name,
+        catName,
+        actPrice,
+        orderLimit,
+        delActRes?.sortIndex,
+        delActRes?.sortNumber
+      )
+      results[
+        "[创建活动]"
+      ] = `\n活动价: ${createActRes?.foodCreatedAct?.act_price}\n原价: ${createActRes?.foodCreatedAct?.origin_price}\n限购: ${createActRes?.foodCreatedAct?.orderLimit}`
     } else {
       if (actPrice) {
         const delActRes = await delAct(cookie, id, name)
-        results['[删除折扣]'] = delActRes?.actDelRes?.msg
-        const createActRes = await createAct(cookie, id, name, catName, actPrice, delActRes.orderLimit ?? -1, delActRes?.sortIndex, delActRes?.sortNumber)
-        results['[创建活动]'] = `\n活动价: ${createActRes?.foodCreatedAct?.act_price}\n原价: ${createActRes?.foodCreatedAct?.origin_price}\n限购: ${createActRes?.foodCreatedAct?.orderLimit}`
+        results["[删除折扣]"] = delActRes?.actDelRes?.msg
+        const createActRes = await createAct(
+          cookie,
+          id,
+          name,
+          catName,
+          actPrice,
+          delActRes.orderLimit ?? -1,
+          delActRes?.sortIndex,
+          delActRes?.sortNumber
+        )
+        results[
+          "[创建活动]"
+        ] = `\n活动价: ${createActRes?.foodCreatedAct?.act_price}\n原价: ${createActRes?.foodCreatedAct?.origin_price}\n限购: ${createActRes?.foodCreatedAct?.orderLimit}`
       }
 
       if (orderLimit) {
         const delActRes = await delAct(cookie, id, name)
-        results['[删除折扣]'] = delActRes?.actDelRes?.msg
-        const createActRes = await createAct(cookie, id, name, catName, delActRes.actPrice, orderLimit, delActRes.sortIndex, delActRes.sortNumber)
-        results['[创建活动]'] = `\n活动价: ${createActRes?.foodCreatedAct?.act_price}\n原价: ${createActRes?.foodCreatedAct?.origin_price}\n限购: ${createActRes?.foodCreatedAct?.orderLimit}`
+        results["[删除折扣]"] = delActRes?.actDelRes?.msg
+        const createActRes = await createAct(
+          cookie,
+          id,
+          name,
+          catName,
+          delActRes.actPrice,
+          orderLimit,
+          delActRes.sortIndex,
+          delActRes.sortNumber
+        )
+        results[
+          "[创建活动]"
+        ] = `\n活动价: ${createActRes?.foodCreatedAct?.act_price}\n原价: ${createActRes?.foodCreatedAct?.origin_price}\n限购: ${createActRes?.foodCreatedAct?.orderLimit}`
       }
     }
 
-    console.log('run ')
+    console.log("run ")
     return Promise.resolve(results)
-
   } catch (err) {
     console.log(err)
     return Promise.reject(err)
   }
 }
 
-export async function updatePlan3(cookie, id, catName, name, minOrder, priceBoxPriceWieightAndUnits,
-  actPrice, orderLimit, shouldDelAct, pic, newName, attrs, description, weight, unit) {
+export async function updatePlan3(
+  cookie,
+  id,
+  catName,
+  name,
+  spuId,
+  minOrder,
+  priceBoxPriceWieightAndUnits,
+  actPrice,
+  orderLimit,
+  shouldDelAct,
+  pic,
+  newName,
+  attrs,
+  description,
+  weight,
+  unit,
+  shouldDelFood,
+  shouldOffsellFood,
+  shouldOnsellFood,
+  newCatName,
+  tagDesc,
+  shouldTopTag,
+  shouldUntopTag,
+  tagTopZone,
+  tagSeq
+) {
   const fallbackApp = new FallbackApp(id, cookie)
 
   let results = {}
   try {
-    let food = await retryFind(cookie, id, catName, name)
+    console.log("in-update-plan3", catName, name, spuId)
+    let food = await retryFind(cookie, id, catName, name, spuId)
+    let foodActs = []
+    let foodActIds = []
     let foodAct = null
 
-    if (pic) {
-      const picRes = await updateImg(cookie, id, food.id, pic)
-      results['[修改图片]'] = picRes
+    if (shouldDelAct || priceBoxPriceWieightAndUnits.length > 0 || actPrice != null || orderLimit != null) {
+      foodActs = await retryFilterAct(cookie, id, name)
+      foodActIds = food.wmProductSkus.flatMap(sku => sku.actInfoList.map(act => act.actId)).filter(id => id != null)
+      foodAct = foodActs[0]
     }
 
-    if (shouldDelAct) {
-      const actIds = food.wmProductSkus.flatMap(sku => sku.actInfoList.map(act => act.actId)).filter(id => id != null)
-      if (actIds.length > 0) {
-        const delActRes = await fallbackApp.act.delete(actIds)
-        results['[删除折扣]'] = delActRes?.msg
+    const recoverAct = async () => {
+      // addAct
+      if (foodAct && actPrice == null && orderLimit == null) {
+        foodAct = { ...foodAct, actInfo: JSON.parse(foodAct.actInfo), charge: JSON.parse(foodAct.charge) }
+        const saveActRes = await retryCreateAct(
+          cookie,
+          id,
+          { act: foodAct },
+          {
+            id: 0,
+            wmSkuId: food.wmProductSkus[0].id,
+            actInfo: {
+              discount: "NaN",
+              origin_price: food.wmProductSkus[0].price,
+              act_price: foodAct.actInfo.act_price,
+            },
+            WmActPriceVo: {
+              originPrice: food.wmProductSkus[0].price,
+              actPrice: foodAct.charge.actPrice,
+              mtCharge: "0",
+              agentCharge: 0,
+              poiCharge: food.wmProductSkus[0].price - foodAct.charge.actPrice,
+            },
+          }
+        )
+        results["[创建折扣]"] = saveActRes
+
+        const sortActRes = await fallbackApp.act.sort(
+          { id: saveActRes[0]?.id },
+          { skuSet: { sortNumber: foodAct.sortNumber }, opType: foodAct.sortIndex >= 1000000000 ? 8 : 7 }
+        )
+        results["[排序折扣]"] = sortActRes
       }
+    }
+
+    if (pic) {
+      console.log("// pic")
+      const picRes = await updateImg(cookie, id, food.id, pic)
+      results["[修改图片]"] = picRes
+    }
+
+    if (attrs || description || weight || unit) {
+      console.log("// attrs | desc | weight | unit")
+      const attrsRes = await fallbackApp.food.save2(
+        name,
+        catName,
+        spuId,
+        decodeSpuAttrs(attrs),
+        null,
+        description,
+        null,
+        weight,
+        unit
+      )
+      results["[修改商品]"] = attrsRes?.msg
+    }
+
+    if (shouldDelAct && foodActIds.length > 0) {
+      console.log("// del-act")
+      const delActRes = await fallbackApp.act.delete(foodActIds)
+      results["[删除折扣]"] = delActRes?.msg
     }
 
     if (priceBoxPriceWieightAndUnits.length > 0) {
+      console.log("// price and weight units")
       // minOrder
-      const minOrderCount = await fallbackApp.food.getMinOrderCount2(name, catName)
+      const minOrderCount = await fallbackApp.food.getMinOrderCount2(name, catName, spuId)
 
-      // delAct
-      const actIds = food.wmProductSkus.flatMap(sku => sku.actInfoList.map(act => act.actId)).filter(id => id != null)
-      if (actIds.length > 0) {
-        foodAct = await fallbackApp.act.find2(actIds[0])
-        const delActRes = await fallbackApp.act.delete(actIds)
-        results['[删除折扣]'] = delActRes?.msg
+      // delActs
+      if (foodActIds.length > 0) {
+        const delActRes = await fallbackApp.act.delete(foodActIds)
+        results["[删除折扣]"] = delActRes?.msg
       }
 
-      if (food.wmProductSkus.length > 1) {
-        const unifiedPackRes = await retrySaveFood(cookie, id, { name, catName }, {})
-        results['[修改商品]'] = unifiedPackRes?.msg
-      }
+      // if (food.wmProductSkus.length > 1) {
+      //   const unifiedPackRes = await retrySaveFood(cookie, id, { name, catName }, {})
+      //   results["[修改商品]"] = unifiedPackRes?.msg
+      // }
 
       let skus = priceBoxPriceWieightAndUnits.map(v => ({
         spec: v.spec,
@@ -1532,49 +1769,35 @@ export async function updatePlan3(cookie, id, catName, name, minOrder, priceBoxP
         weight_unit: v.unit,
         weight: v.weight,
         minOrderCount: minOrder ?? minOrderCount,
-        wmProductLadderBoxPrice: v.boxPrice != null ? { ladder_num: 1, ladder_price: v.boxPrice, status: 1 } : null
+        wmProductLadderBoxPrice: v.boxPrice != null ? { ladder_num: 1, ladder_price: v.boxPrice, status: 1 } : null,
       }))
 
       // upSkus
-      const updateSkusRes = await batchUpdateFoodSkus(cookie, id, name, catName, skus)
-      results['[修改规格]'] = updateSkusRes.msg
+      let updSkusErr = null
 
-      food = await retryFind(cookie, id, catName, name)
-
-      // addAct
-      if (foodAct && actPrice == null && orderLimit == null) {
-        foodAct = { ...foodAct, actInfo: JSON.parse(foodAct.actInfo), charge: JSON.parse(foodAct.charge) }
-        const saveActRes = await retryCreateAct(cookie, id, { act: foodAct },
-          {
-            id: 0, wmSkuId: food.wmProductSkus[0].id,
-            "actInfo": {
-              "discount": "NaN",
-              "origin_price": food.wmProductSkus[0].price,
-              "act_price": foodAct.actInfo.act_price
-            },
-            "WmActPriceVo": {
-              "originPrice": food.wmProductSkus[0].price,
-              "actPrice": foodAct.charge.actPrice,
-              "mtCharge": "0", "agentCharge": 0,
-              "poiCharge": food.wmProductSkus[0].price - foodAct.charge.actPrice
-            }
-          }
-        )
-        results['[创建折扣]'] = saveActRes
-
-        const sortActRes = await fallbackApp.act.sort({ id: saveActRes[0]?.id },
-          { skuSet: { sortNumber: foodAct.sortNumber }, opType: foodAct.sortIndex >= 1000000000 ? 8 : 7 })
-        results['[排序折扣]'] = sortActRes
+      try {
+        const updateSkusRes = await batchUpdateFoodSkus(cookie, id, name, catName, skus, spuId)
+        results["[修改规格]"] = updateSkusRes?.msg
+      } catch (err) {
+        updSkusErr = err
+      } finally {
+        await sleep(2000)
+        food = await retryFind(cookie, id, catName, name, spuId)
+        await recoverAct()
       }
+
+      if (updSkusErr) return Promise.reject(updSkusErr)
     }
 
     if (minOrder != null && priceBoxPriceWieightAndUnits.length == 0) {
+      console.log("// min-order")
       const minOrderRes = await fallbackApp.food.batchUpdateMinOrderCount(food.id, minOrder)
-      results['[修改起购]'] = minOrderRes.msg
+      results["[修改起购]"] = minOrderRes?.msg
     }
 
     /* act */
     if (actPrice != null || orderLimit != null) {
+      console.log("// act")
       // delAct
       const actIds = food.wmProductSkus.flatMap(sku => sku.actInfoList.map(act => act.actId)).filter(id => id != null)
       if (actIds.length > 0) {
@@ -1582,56 +1805,88 @@ export async function updatePlan3(cookie, id, catName, name, minOrder, priceBoxP
         foodAct = { ...foodAct, actInfo: JSON.parse(foodAct.actInfo), charge: JSON.parse(foodAct.charge) }
 
         const delActRes = await fallbackApp.act.delete(actIds)
-        results['[删除折扣]'] = delActRes?.msg
+        results["[删除折扣]"] = delActRes?.msg
 
-        const saveActRes = await retryCreateAct(cookie, id, { act: foodAct },
+        let actPoiCharge = Math.round((food.wmProductSkus[0].price - (actPrice ?? foodAct.charge.actPrice)) * 100) / 100
+        if (actPoiCharge < 0) {
+          console.error(food.name, actPoiCharge)
+          return Promise.reject({ message: "金额类数据不能小于0元" })
+        }
+
+        const saveActRes = await retryCreateAct(
+          cookie,
+          id,
+          { act: foodAct },
           {
-            id: 0, wmSkuId: food.wmProductSkus[0].id,
-            "actInfo": {
-              "discount": "NaN",
-              "origin_price": food.wmProductSkus[0].price,
-              "act_price": actPrice ?? foodAct.actInfo.act_price
+            id: 0,
+            wmSkuId: food.wmProductSkus[0].id,
+            actInfo: {
+              discount: "NaN",
+              origin_price: food.wmProductSkus[0].price,
+              act_price: actPrice ?? foodAct.actInfo.act_price,
             },
-            "WmActPriceVo": {
-              "originPrice": food.wmProductSkus[0].price,
-              "actPrice": actPrice ?? foodAct.charge.actPrice,
-              "mtCharge": "0", "agentCharge": 0,
-              "poiCharge": food.wmProductSkus[0].price - (actPrice ?? foodAct.charge.actPrice)
+            WmActPriceVo: {
+              originPrice: food.wmProductSkus[0].price,
+              actPrice: actPrice ?? foodAct.charge.actPrice,
+              mtCharge: "0",
+              agentCharge: 0,
+              poiCharge: actPoiCharge,
             },
-            orderLimit: orderLimit ?? foodAct.orderLimit
+            orderLimit: orderLimit ?? foodAct.orderLimit,
           }
         )
-        results['[创建折扣]'] = saveActRes
+        results["[创建折扣]"] = saveActRes
 
-        const sortActRes = await fallbackApp.act.sort({ id: saveActRes[0]?.id },
-          { skuSet: { sortNumber: foodAct.sortNumber }, opType: foodAct.sortIndex >= 1000000000 ? 8 : 7 })
-        results['[排序折扣]'] = sortActRes
+        const sortActRes = await fallbackApp.act.sort(
+          { id: saveActRes[0]?.id },
+          { skuSet: { sortNumber: foodAct.sortNumber }, opType: foodAct.sortIndex >= 1000000000 ? 8 : 7 }
+        )
+        results["[排序折扣]"] = sortActRes
       } else {
+        let actPoiCharge = Math.round((food.wmProductSkus[0].price - actPrice) * 100) / 100
+        if (actPoiCharge < 0) {
+          console.error(food.name, actPoiCharge)
+          return Promise.reject({ message: "金额类数据不能小于0元" })
+        }
+
         let act = {
-          "id": 0,
-          "wmPoiId": id,
-          "wmSkuId": food.wmProductSkus[0].id,
-          "wmActPolicyId": 1001,
-          "actInfo": JSON.stringify({ isSettle: 1, discount: 2.85, origin_price: food.wmProductSkus[0].price, act_price: actPrice, onlinePay: 1 }),
-          "wmUserType": 0,
-          "poiUserType": 0,
-          "orderPayType": 2,
-          "orderLimit": orderLimit ?? -1,
-          "charge": JSON.stringify({ actPrice: actPrice, agentCharge: 0.0, mtCharge: 0.0, orderPrice: 0.0, originPrice: food.wmProductSkus[0].price, poiCharge: food.wmProductSkus[0].price - actPrice }),
-          "itemName": food.name,
-          "dayLimit": -1,
-          "wmActPoiId": 0,
-          "settingType": 1,
-          "todaySaleNum": -1,
-          "sortIndex": 0,
-          "actType": 17,
-          "originId": 0,
-          "spuId": food.id,
-          "spec": "",
-          "chargeType": 0,
+          id: 0,
+          wmPoiId: id,
+          wmSkuId: food.wmProductSkus[0].id,
+          wmActPolicyId: 1001,
+          actInfo: JSON.stringify({
+            isSettle: 1,
+            discount: 2.85,
+            origin_price: food.wmProductSkus[0].price,
+            act_price: actPrice,
+            onlinePay: 1,
+          }),
+          wmUserType: 0,
+          poiUserType: 0,
+          orderPayType: 2,
+          orderLimit: orderLimit ?? -1,
+          charge: JSON.stringify({
+            actPrice: actPrice,
+            agentCharge: 0.0,
+            mtCharge: 0.0,
+            orderPrice: 0.0,
+            originPrice: food.wmProductSkus[0].price,
+            poiCharge: actPoiCharge,
+          }),
+          itemName: food.name,
+          dayLimit: -1,
+          wmActPoiId: 0,
+          settingType: 1,
+          todaySaleNum: -1,
+          sortIndex: 0,
+          actType: 17,
+          originId: 0,
+          spuId: food.id,
+          spec: "",
+          chargeType: 0,
         }
         const saveActRes = await retryCreateAct(cookie, id, { act }, {})
-        results['[创建折扣]'] = saveActRes
+        results["[创建折扣]"] = saveActRes
       }
       // const delActRes = await delAct(cookie, id, food.id)
       // results['[删除折扣]'] = delActRes?.actDelRes?.msg
@@ -1640,21 +1895,639 @@ export async function updatePlan3(cookie, id, catName, name, minOrder, priceBoxP
       // results['[创建活动]'] = `\n活动价: ${createActRes?.foodCreatedAct?.act_price}\n原价: ${createActRes?.foodCreatedAct?.origin_price}\n限购: ${createActRes?.foodCreatedAct?.orderLimit}`
     }
 
-    if (attrs || description || weight || unit) {
-      const attrsRes = await fallbackApp.food.save2(name, catName, decodeSpuAttrs(attrs), null, description, null, weight, unit)
-      results['[修改商品]'] = attrsRes.msg
+    if (shouldOffsellFood) {
+      console.log("// offsell")
+      const offSellRes = await retryUpdateSell(
+        cookie,
+        id,
+        food.wmProductSkus.map(v => v.id),
+        1
+      )
+      results["下架商品"] = offSellRes?.msg
     }
 
-    if (newName) {
+    if (shouldOnsellFood) {
+      console.log("// onsell")
+      const onSellRes = await retryUpdateSell(
+        cookie,
+        id,
+        food.wmProductSkus.map(v => v.id),
+        0
+      )
+      results["上架商品"] = onSellRes?.msg
+    }
+
+    if (shouldDelFood) {
+      console.log("// del-food")
+      const delFoodRes = await fallbackApp.food.batchDeleteFoods(food.wmProductSkus.map(k => k.id))
+      results["[删除商品]"] = delFoodRes?.msg
+    }
+
+    if (newCatName || tagDesc || shouldTopTag || shouldUntopTag || tagTopZone || tagSeq) {
+      console.log("// upd-cat")
+      let tag = await fallbackApp.food.findTag2({ name: catName })
+      let topFlag = tag.topFlag
+      if (shouldTopTag) topFlag = 1
+      if (shouldUntopTag) topFlag = 0
+
+      let updTagRes = await fallbackApp.food.saveFoodCat_(tag, {
+        name: newCatName,
+        description: tagDesc,
+        topFlag,
+        timeZone: tagTopZone ? tagTopZone.split(",") : null,
+        sequence: tagSeq,
+      })
+      console.log("upd-tag-res", updTagRes)
+      results["[修改分类]"] = updTagRes?.msg
+    }
+
+    if (newName && !shouldDelFood) {
+      console.log("// new-name")
       const updNameRes = await fallbackApp.food.updateName(food.id, newName)
-      results['[修改商品名称]'] = updNameRes.msg
+      results["[修改商品名称]"] = updNameRes?.msg
     }
 
-    console.log('run ')
+    console.log("run ")
     return Promise.resolve(results)
-
   } catch (err) {
-    console.log(err)
+    console.error(err)
+    return Promise.reject(err)
+  }
+}
+
+export async function updateTagPlan({ cookie, id, tagName, tagId, newTagName, tagDesc, topFlag, topZone, tagSeq }) {
+  let results = {}
+  let tag = await retryFindTag(cookie, id, tagName, tagId)
+  let updTagRes = await retrySaveTag(cookie, id, tag, {
+    name: newTagName,
+    description: tagDesc,
+    topFlag,
+    timeZone: topZone ? topZone.split(",") : null,
+    sequence: tagSeq,
+  })
+  results["[保存分类]"] = updTagRes
+  return results
+}
+
+export async function updateSpuPlan({
+  cookie,
+  id,
+  tagName,
+  spuName,
+  spuId,
+  weight,
+  weightUnit,
+  price,
+  boxNum,
+  boxPrice,
+  actPrice,
+  orderLimit,
+  delActFlag,
+  pic,
+  attr,
+  desc,
+  minOrderCount,
+  sellFlag,
+  delSpuFlag,
+  newSpuName,
+}) {
+  const fallbackApp = new FallbackApp(id, cookie)
+  let results = {}
+
+  let food = await retryFind(cookie, id, tagName, spuName, spuId)
+
+  const updAct = async ({ foodAct, food }, { actPrice, orderLimit }) => {
+    if (foodAct == null) return
+
+    foodAct = { ...foodAct, actInfo: JSON.parse(foodAct.actInfo), charge: JSON.parse(foodAct.charge) }
+
+    let _actPrice = actPrice ?? foodAct.charge.actPrice
+    let actPoiCharge = Math.round((food.wmProductSkus[0].price - _actPrice) * 100) / 100
+
+    if (actPoiCharge < 0) {
+      throw new Error("金额类数据不能小于0元")
+    }
+
+    const saveActRes = await retryCreateAct(
+      cookie,
+      id,
+      { act: foodAct },
+      {
+        id: 0,
+        wmSkuId: food.wmProductSkus[0].id,
+        actInfo: {
+          discount: "NaN",
+          origin_price: food.wmProductSkus[0].price,
+          act_price: _actPrice,
+        },
+        WmActPriceVo: {
+          originPrice: food.wmProductSkus[0].price,
+          actPrice: _actPrice,
+          mtCharge: "0",
+          agentCharge: 0,
+          poiCharge: actPoiCharge,
+        },
+        orderLimit: orderLimit ?? foodAct.orderLimit,
+      }
+    )
+    results["[保存折扣]"] = saveActRes
+
+    const sortActRes = await retrySortAct(
+      cookie,
+      id,
+      { id: saveActRes[0]?.id },
+      { skuSet: { sortNumber: foodAct.sortNumber }, opType: foodAct.sortIndex >= 1000000000 ? 8 : 7 }
+    )
+    results["[排序折扣]"] = sortActRes
+  }
+
+  if (pic || attr || desc) {
+    let foodEdit = await fallbackApp.food.getEditView2(food.id)
+    let foodTemp = await fallbackApp.food.getTemplate(food.id, 1)
+    foodEdit = foodEdit.wmProductSpu
+
+    let saveSpuRes = await retrySaveFood6(
+      cookie,
+      id,
+      { originFood: foodEdit, originTemp: foodTemp },
+      {
+        prodPics: pic ? [pic] : null,
+        get spuAttrs() {
+          if (!attr) return null
+          let weightAttrs = foodEdit.newSpuAttrs.filter(v => v.name == "份量")
+          let otherAttrs = attr
+            .split("##")
+            .filter(v => v)
+            .flatMap(v => {
+              let [name, ...values] = v.split("#")
+              return values.map(value => ({ name, value }))
+            })
+          return weightAttrs.concat(otherAttrs)
+        },
+        description: desc,
+      }
+    )
+    results["[保存商品]"] = saveSpuRes
+  }
+
+  if (weight != null || weightUnit || price != null || boxNum != null || boxPrice != null) {
+    let foodEdit = await fallbackApp.food.getEditView2(food.id)
+    foodEdit = foodEdit.wmProductSpu
+
+    let originMinOrderCount = await foodEdit.minOrderCount
+    let foodActs = await retryFilterAct(cookie, id, spuName)
+    let foodAct = foodActs[0]
+
+    if (foodActs.length > 0) {
+      let delActsRes = await fallbackApp.act.delete(foodActs.map(v => v.id))
+      results["[删除折扣]"] = delActsRes
+    }
+
+    let skus = [
+      {
+        spec: "",
+        price,
+        weight,
+        weight_unit: weightUnit,
+        minOrderCount: minOrderCount ?? originMinOrderCount,
+        wmProductLadderBoxPrice:
+          boxPrice != null ? { ladder_num: boxNum ?? 1, ladder_price: boxPrice, status: 1 } : null,
+      },
+    ]
+    let updSkusErr = null
+    try {
+      const updateSkusRes = await batchUpdateFoodSkus(cookie, id, spuName, tagName, skus, spuId)
+      results["[修改规格]"] = updateSkusRes?.msg
+    } catch (err) {
+      updSkusErr = err
+    } finally {
+      await sleep(2000)
+      food = await retryFind(cookie, id, tagName, spuName, spuId)
+      if (actPrice == null) await updAct({ foodAct, food }, {})
+    }
+    if (updSkusErr) return Promise.reject(updSkusErr)
+  }
+
+  if (minOrderCount != null) {
+    console.log("// min-order")
+    const minOrderRes = await fallbackApp.food.batchUpdateMinOrderCount(food.id, minOrderCount)
+    results["[修改起购]"] = minOrderRes?.msg
+  }
+
+  if (actPrice != null) {
+    console.log("// act")
+    // delAct
+    let foodActs = await retryFilterAct(cookie, id, spuName)
+
+    if (foodActs.length > 0) {
+      const delActRes = await fallbackApp.act.delete(foodActs.map(v => v.id))
+      results["[删除折扣]"] = delActRes?.msg
+
+      let foodAct = foodActs[0]
+      await updAct({ foodAct, food }, { actPrice, orderLimit })
+    } else {
+      let actPoiCharge = Math.round((food.wmProductSkus[0].price - actPrice) * 100) / 100
+
+      if (actPoiCharge < 0) {
+        return Promise.reject({ message: "金额类数据不能小于0元" })
+      }
+
+      let act = {
+        id: 0,
+        wmPoiId: id,
+        wmSkuId: food.wmProductSkus[0].id,
+        wmActPolicyId: 1001,
+        actInfo: JSON.stringify({
+          isSettle: 1,
+          discount: "NaN",
+          origin_price: food.wmProductSkus[0].price,
+          act_price: actPrice,
+          onlinePay: 1,
+        }),
+        wmUserType: 0,
+        poiUserType: 0,
+        orderPayType: 2,
+        orderLimit: orderLimit ?? -1,
+        charge: JSON.stringify({
+          actPrice: actPrice,
+          agentCharge: 0.0,
+          mtCharge: 0.0,
+          orderPrice: 0.0,
+          originPrice: food.wmProductSkus[0].price,
+          poiCharge: actPoiCharge,
+        }),
+        itemName: food.name,
+        dayLimit: -1,
+        wmActPoiId: 0,
+        settingType: 1,
+        todaySaleNum: -1,
+        sortIndex: 0,
+        actType: 17,
+        originId: 0,
+        spuId: food.id,
+        spec: "",
+        chargeType: 0,
+      }
+      const saveActRes = await retryCreateAct(cookie, id, { act }, {})
+      results["[保存折扣]"] = saveActRes
+    }
+  }
+
+  if (delActFlag) {
+    let foodActs = await retryFilterAct(cookie, id, spuName)
+    const delActsRes = await fallbackApp.act.delete(foodActs.map(v => v.id))
+    results["[删除折扣]"] = delActsRes?.msg
+  }
+
+  if (sellFlag !== null) {
+    const updSellRes = await retryUpdateSell(
+      cookie,
+      id,
+      food.wmProductSkus.map(v => v.id),
+      sellFlag
+    )
+    results["[上下架商品]"] = updSellRes
+  }
+
+  if (delSpuFlag) {
+    const delFoodRes = await fallbackApp.food.batchDeleteFoods(food.wmProductSkus.map(k => k.id))
+    results["[删除商品]"] = delFoodRes?.msg
+  }
+
+  if (newSpuName && !delSpuFlag) {
+    const updNameRes = await fallbackApp.food.updateName(food.id, newSpuName)
+    results["[修改商品名称]"] = updNameRes?.msg
+  }
+
+  return results
+}
+
+export async function substituteSpuPlan({ cookie, id, aTagName, aSpuName, bTagName, bSpuName }) {
+  const fallbackApp = new FallbackApp(id, cookie)
+
+  try {
+    let aFood = await fallbackApp.food.find(aSpuName, aTagName)
+    let aFoodEdit = await fallbackApp.food.getEditView2(aFood.id)
+    let aFDAct = await fallbackApp.act.tradeIn.find(aFood.wmProductSkus.map(v => v.id))
+    console.log("aFood")
+
+    let bFood = await fallbackApp.food.find(bSpuName, bTagName)
+    let obFood = { ...bFood }
+    let obFoodEdit = await fallbackApp.food.getEditView2(bFood.id)
+    let obFoodTemp = await fallbackApp.food.getTemplate(bFood.id, 1)
+    let obActs = await fallbackApp.act.filter2(bSpuName, obFood.id)
+    let obFDAct = await fallbackApp.act.tradeIn.find(obFood.wmProductSkus.map(v => v.id))
+    console.log("bFood")
+    fs.appendFileSync("test2.json", JSON.stringify({ obFood, obFoodEdit, obActs }))
+
+    let results = {}
+
+    // MODIFY B
+    console.log("// del b acts")
+    if (obActs.length > 0) {
+      const delBActsRes = await fallbackApp.act.delete(obActs.map(v => v.id))
+      console.log(delBActsRes)
+      results["[del-b-acts]"] = delBActsRes?.msg
+    }
+
+    console.log("// del b fd-act")
+    if (obFDAct) {
+      const delBFDActRes = await fallbackApp.act.tradeIn.delete([obFDAct.id])
+      console.log(delBFDActRes)
+      results["[del-b-fd-act]"] = delBFDActRes?.msg
+    }
+
+    console.log("// save b1")
+
+    const maxObFoodEditAddedPrice =
+      obFoodEdit.wmProductSpu.newSpuAttrs.filter(v => v.name != "份量").length == 0
+        ? 0
+        : Math.max(
+            ...combineArray(
+              Object.values(
+                obFoodEdit.wmProductSpu.newSpuAttrs
+                  .filter(v => v.name != "份量")
+                  .reduce((p, v, _, a) => ({ ...p, [v.name]: a.filter(k => k.name == v.name) }), {})
+              )
+            ).map(arr => arr.reduce((p, v) => p + v.price, 0))
+          )
+
+    let b1NewSpuAttrs = [
+      ...obFoodEdit.wmProductSpu.newSpuAttrs,
+      {
+        name: "份量",
+        name_id: 0,
+        price: 500 - maxObFoodEditAddedPrice,
+        value_id: 0,
+        value: String(Math.random()).slice(2, 12),
+        no: obFoodEdit.wmProductSpu.newSpuAttrs.find(v => v.name == "份量").no,
+        mode: 2,
+        weight: -2,
+        weightUnit: "1人份",
+        sell_status: 0,
+        value_sequence: obFoodEdit.wmProductSpu.newSpuAttrs.filter(v => v.name == "份量").length + 1,
+      },
+    ]
+    const saveB1Res = await retrySaveFood(
+      cookie,
+      id,
+      { food: obFood, foodEdit: obFoodEdit, foodTemp: obFoodTemp },
+      {
+        unifiedPackagingFee: 2,
+        newSpuAttrs: b1NewSpuAttrs,
+        stockAndBoxPriceSkus: buildStockAndBoxPriceSkus(b1NewSpuAttrs, obFoodEdit.wmProductSpu),
+      }
+    )
+    console.log(saveB1Res)
+    results["[save-b1]"] = saveB1Res?.msg
+
+    console.log("// save b2")
+    let b2NewSpuAttrs = [
+      {
+        name: "份量",
+        name_id: 0,
+        price: 500 - maxObFoodEditAddedPrice,
+        value: "-",
+        value_id: 0,
+        no: obFoodEdit.wmProductSpu.newSpuAttrs.find(v => v.name == "份量").no,
+        mode: 2,
+        weight: -2,
+        weightUnit: "1人份",
+        sell_status: 0,
+        value_sequence: 1,
+      },
+    ]
+    const saveB2Res = await retrySaveFood(
+      cookie,
+      id,
+      { food: obFood, foodEdit: obFoodEdit, foodTemp: obFoodTemp },
+      {
+        unifiedPackagingFee: 1,
+        newSpuAttrs: b2NewSpuAttrs,
+        stockAndBoxPriceSkus: [],
+        wmProductLadderBoxPrice: { ladder_num: 1, ladder_price: 0, status: 1 },
+      }
+    )
+    console.log(saveB2Res)
+    results["[save-b2]"] = saveB2Res?.msg
+
+    console.log("// copy a to b")
+    const saveBRes = await retrySaveFood(
+      cookie,
+      id,
+      { name: aSpuName, catName: aTagName },
+      {
+        id: bFood.id,
+        name: "测试aaa",
+        labelList: aFoodEdit.wmProductSpu?.labelList?.filter(v => v.group_id != 1) ?? [],
+      }
+    )
+    console.log(saveBRes)
+    results["[copy-a->b]"] = saveBRes?.msg
+
+    console.log("// get modified b")
+    bFood = await retryFind2(cookie, id, aTagName, "测试aaa")
+
+    console.log("// create b acts")
+    let aActIds = aFood.wmProductSkus.map(sku => sku.actInfoList[0]?.actId).filter(id => id != null)
+    if (aActIds.length > 0) {
+      const saveBActsRes = await Promise.allSettled(
+        aActIds.map(async aActId => {
+          let act = await fallbackApp.act.find2(aActId)
+          return await retryCreateAct(
+            cookie,
+            id,
+            { act },
+            {
+              id: 0,
+              itemName: bFood.name,
+              spuId: bFood.id,
+              wmSkuId: bFood.wmProductSkus
+                .map((k, _, a) => ({ ...k, _spec: a.length == 1 ? "" : a.spec }))
+                .find(k => k._spec == act.spec || k.spec == act.spec || k.unit == act.spec)?.id,
+            }
+          )
+        })
+      )
+      console.log(saveBActsRes)
+      results["[save-b-acts]"] = saveBActsRes
+    }
+
+    console.log("// save b fd-act")
+    if (aFDAct) {
+      const saveBFDActRes = await fallbackApp.act.tradeIn.save(aFDAct, {
+        skuId: bFood.wmProductSkus[0].id,
+        itemName: bFood.name,
+      })
+      console.log(saveBFDActRes)
+      results["[save-b-fd-act]"] = saveBFDActRes
+    }
+
+    console.log("// set b sell")
+    const updBSellRes = await retryUpdateSell(
+      cookie,
+      id,
+      bFood.wmProductSkus.map(v => v.id),
+      aFood.sellStatus
+    )
+    results["[set-b-sell]"] = updBSellRes
+
+    // MODIFY A
+    console.log("// del a acts")
+    aActIds = aFood.wmProductSkus.flatMap(sku => sku.actInfoList.map(act => act.actId)).filter(id => id != null)
+    if (aActIds.length > 0) {
+      const delAActsRes = await fallbackApp.act.delete(aActIds)
+      console.log(delAActsRes)
+      results["[del-a-acts]"] = delAActsRes?.msg
+    }
+
+    console.log("// del a fd-act")
+    if (aFDAct) {
+      const delAFDActRes = await fallbackApp.act.tradeIn.delete([aFDAct.id])
+      console.log(delAFDActRes)
+      results["[del-a-fd-act]"] = delAFDActRes?.msg
+    }
+
+    console.log("// save a1")
+    const maxAFoodEditAddedPrice =
+      aFoodEdit.wmProductSpu.newSpuAttrs.filter(v => v.name != "份量").length == 0
+        ? 0
+        : Math.max(
+            ...combineArray(
+              Object.values(
+                aFoodEdit.wmProductSpu.newSpuAttrs
+                  .filter(v => v.name != "份量")
+                  .reduce((p, v, _, a) => ({ ...p, [v.name]: a.filter(k => k.name == v.name) }), {})
+              )
+            ).map(arr => arr.reduce((p, v) => p + v.price, 0))
+          )
+
+    let a1NewSpuAttrs = [
+      ...aFoodEdit.wmProductSpu.newSpuAttrs,
+      {
+        name: "份量",
+        name_id: 0,
+        price: 500 - maxAFoodEditAddedPrice,
+        value_id: 0,
+        value: String(Math.random()).slice(2, 12),
+        no: aFoodEdit.wmProductSpu.newSpuAttrs.find(v => v.name == "份量").no,
+        mode: 2,
+        weight: -2,
+        weightUnit: "1人份",
+        sell_status: 0,
+        value_sequence: aFoodEdit.wmProductSpu.newSpuAttrs.filter(v => v.name == "份量").length + 1,
+      },
+    ]
+    const saveA1Res = await retrySaveFood(
+      cookie,
+      id,
+      { name: aSpuName, catName: aTagName },
+      {
+        unifiedPackagingFee: 2,
+        newSpuAttrs: a1NewSpuAttrs,
+        stockAndBoxPriceSkus: buildStockAndBoxPriceSkus(a1NewSpuAttrs, aFoodEdit.wmProductSpu),
+      }
+    )
+    console.log(saveA1Res)
+    results["[save-a1]"] = saveA1Res?.msg
+
+    console.log("// save a2")
+    let a2NewSpuAttrs = [
+      {
+        name: "份量",
+        name_id: 0,
+        price: 500 - maxAFoodEditAddedPrice,
+        value: "-",
+        value_id: 0,
+        no: aFoodEdit.wmProductSpu.newSpuAttrs.find(v => v.name == "份量").no,
+        mode: 2,
+        weight: -2,
+        weightUnit: "1人份",
+        sell_status: 0,
+        value_sequence: 1,
+      },
+    ]
+    const saveA2Res = await retrySaveFood(
+      cookie,
+      id,
+      { name: aSpuName, catName: aTagName },
+      {
+        unifiedPackagingFee: 1,
+        newSpuAttrs: a2NewSpuAttrs,
+        stockAndBoxPriceSkus: [],
+        wmProductLadderBoxPrice: { ladder_num: 1, ladder_price: 0, status: 1 },
+      }
+    )
+    console.log(saveA2Res)
+    results["[save-a2]"] = saveA2Res?.msg
+
+    console.log("// copy b to a")
+    const saveARes = await retrySaveFood(
+      cookie,
+      id,
+      { food: obFood, foodEdit: obFoodEdit, foodTemp: obFoodTemp },
+      { id: aFood.id }
+    )
+    console.log(saveARes)
+    results["[copy-b->a]"] = saveARes?.msg
+
+    console.log("// get modified a")
+    aFood = await retryFind2(cookie, id, obFood.tagName, obFood.name)
+
+    console.log("// create a acts")
+    if (obActs.length > 0) {
+      try {
+        const saveAActsRes = await Promise.allSettled(
+          obActs.map(async obAct =>
+            retryCreateAct(
+              cookie,
+              id,
+              { act: obAct },
+              {
+                id: 0,
+                itemName: aFood.name,
+                spuId: aFood.id,
+                wmSkuId: aFood.wmProductSkus
+                  .map((k, _, a) => ({ ...k, _spec: a.length == 1 ? "" : a.spec }))
+                  .find(k => k._spec == obAct.spec || k.spec == obAct.spec || k.unit == obAct.spec)?.id,
+              }
+            )
+          )
+        )
+        console.log(saveAActsRes)
+        results["[save-a-acts]"] = saveAActsRes
+      } catch (err) {
+        console.error("catch", err)
+      }
+    }
+
+    if (obFDAct) {
+      const saveAFDActRes = await fallbackApp.act.tradeIn.save(obFDAct, {
+        skuId: aFood.wmProductSkus[0].id,
+        itemName: aFood.name,
+      })
+      console.log(saveAFDActRes)
+      results["[save-a-fd-act]"] = saveAFDActRes
+    }
+
+    console.log("// set a sell")
+    const updASellRes = await retryUpdateSell(
+      cookie,
+      id,
+      aFood.wmProductSkus.map(v => v.id),
+      obFood.sellStatus
+    )
+    results["[set-a-sell]"] = updASellRes
+
+    console.log("// save b name")
+    const saveBName = await fallbackApp.food.updateName(bFood.id, aSpuName)
+    console.log(saveBName)
+    results["[save-b-name]"] = saveBName?.msg
+
+    results["[sub-food-id]"] = await substituteFoodPlatformId(aFood.id, obFood.id)
+
+    return results
+  } catch (err) {
     return Promise.reject(err)
   }
 }
@@ -1662,10 +2535,11 @@ export async function updatePlan3(cookie, id, catName, name, minOrder, priceBoxP
 export async function uploadImg(cookie, filename) {
   const fallbackApp = new FallbackApp(-1, cookie)
   try {
-    const multipart = fs.readFileSync(`uploads/${filename}`).toString('base64')
+    const multipart = fs.readFileSync(`uploads/${filename}`).toString("base64")
     const res = await fallbackApp.food.uploadImg(multipart)
     return res
   } catch (err) {
+    console.error(err)
     return Promise.reject(err)
   }
 }
@@ -1674,10 +2548,8 @@ async function createTempFood(cookie, id, catName, retry = 0) {
   const fallbackApp = new FallbackApp(id, cookie)
 
   try {
-
-
     await sleep(2000)
-    let tempFood = await fallbackApp.food.find('temp', catName)
+    let tempFood = await fallbackApp.food.find("temp", catName)
 
     return tempFood
   } catch (error) {
@@ -1686,20 +2558,86 @@ async function createTempFood(cookie, id, catName, retry = 0) {
   }
 }
 
-async function retryFind(cookie, id, catName, name, retry = 0) {
+async function retryFind(cookie, id, catName, name, spuId = -1, retry = 0) {
   const fallbackApp = new FallbackApp(id, cookie)
 
   try {
-    console.log('retry find ...', retry)
-    await sleep(2500)
-    let tempFood = await fallbackApp.food.find(name, catName)
-    return tempFood
-  } catch (error) {
+    console.log("retry find ...", catName, name, spuId, retry)
+    let found = await fallbackApp.food.find(name, catName, spuId)
+    return found
+  } catch (err) {
     if (retry < 8) {
-      return await retryFind(cookie, id, catName, name, retry + 1)
+      await sleep(1500 + Math.random() * 2000)
+      return await retryFind(cookie, id, catName, name, spuId, retry + 1)
     }
-    console.error(error)
-    return Promise.reject(error)
+    console.error("retry find err!", err)
+    return Promise.reject(err)
+  }
+}
+
+async function retryFindTag(cookie, id, tagName, tagId, retry = 0) {
+  const fallbackApp = new FallbackApp(id, cookie)
+
+  try {
+    console.log("retry find tag...", tagName, tagId, retry)
+    let tag = await fallbackApp.food.findTag2({ name: tagName, id: tagId })
+    return tag
+  } catch (err) {
+    if (retry < 20 && err.msg?.includes("请稍后重试")) {
+      await sleep(500 + Math.random() * 2000)
+      return await retryFindTag(cookie, id, tagName, tagId, retry + 1)
+    }
+    return Promise.reject(err)
+  }
+}
+
+async function retrySaveTag(cookie, id, tag, upds, retry = 0) {
+  const fallbackApp = new FallbackApp(id, cookie)
+
+  try {
+    console.log("retry save tag...", tag.name, retry)
+    let updTagRes = await fallbackApp.food.saveFoodCat_(tag, upds)
+    return updTagRes
+  } catch (err) {
+    if (retry < 20 && err.msg?.includes("请稍后重试")) {
+      await sleep(500 + Math.random() * 2000)
+      return await retrySaveTag(cookie, id, tag, upds, retry + 1)
+    }
+    return Promise.reject(err)
+  }
+}
+
+async function retryFilterAct(cookie, id, name, retry = 0) {
+  const fallbackApp = new FallbackApp(id, cookie)
+
+  try {
+    console.log("retry find acts...", name, retry)
+    let founds = await fallbackApp.act.filter(name)
+    return founds
+  } catch (err) {
+    if (retry < 8) {
+      await sleep(1500 + Math.random() * 2000)
+      return await retryFilterAct(cookie, id, name, retry + 1)
+    }
+    console.error("retry find acts err!", err)
+    return Promise.reject(err)
+  }
+}
+
+async function retryUpdateSell(cookie, id, skuIds, sellStatus, retry = 0) {
+  const fallbackApp = new FallbackApp(id, cookie)
+
+  try {
+    console.log("retry set sell...", skuIds, retry)
+    let updSellRes = await fallbackApp.food.batchUpdateSell(skuIds, sellStatus)
+    return updSellRes
+  } catch (err) {
+    if (retry < 20 && err.msg?.includes("请稍后重试")) {
+      await sleep(500 + Math.random() * 2000)
+      return await retryUpdateSell(cookie, id, skuIds, sellStatus, retry + 1)
+    }
+    console.error("retry set sell err!", err)
+    return Promise.reject(err)
   }
 }
 
@@ -1707,7 +2645,7 @@ async function retryFind2(cookie, id, catName, name, retry = 0) {
   const fallbackApp = new FallbackApp(id, cookie)
 
   try {
-    console.log('retry find ...', retry)
+    console.log("retry find ...", retry)
     await sleep(2500)
     let tempFood = await fallbackApp.food.findInTag(name, catName)
     return tempFood
@@ -1724,15 +2662,34 @@ async function retryCreateAct(cookie, id, query, updates, retry = 0) {
   const fallbackApp = new FallbackApp(id, cookie)
 
   try {
-    console.log('retry create act ...', retry)
+    console.log("retry create act ...", retry)
     await sleep(2500 + retry * 300)
     const saveAActRes = await fallbackApp.act.save2(query, updates)
     return saveAActRes
   } catch (error) {
+    if (JSON.stringify(error)?.includes("不是7天最低价,不能创建活动")) return Promise.reject(error)
+
     if (retry < 15) {
       return await retryCreateAct(cookie, id, query, updates, retry + 1)
     }
-    console.error(error)
+
+    return Promise.reject(error)
+  }
+}
+
+async function retrySortAct(cookie, id, query, updates, retry = 0) {
+  const fallbackApp = new FallbackApp(id, cookie)
+
+  try {
+    console.log("retry sort act ...", retry)
+    const sortActRes = await fallbackApp.act.sort(query, updates)
+    return sortActRes
+  } catch (error) {
+    if (retry < 15) {
+      await sleep(1500 + retry * 2000)
+      return await retrySortAct(cookie, id, query, updates, retry + 1)
+    }
+
     return Promise.reject(error)
   }
 }
@@ -1741,42 +2698,82 @@ async function retrySaveFood(cookie, id, query, updates, retry = 0) {
   const fallbackApp = new FallbackApp(id, cookie)
 
   try {
-    console.log('retry save food ...', retry)
+    console.log("retry save food ...", retry)
     await sleep(2000)
     const saveFoodRes = await fallbackApp.food.save5(query, updates)
     return saveFoodRes
   } catch (error) {
+    if (error?.msg?.includes("未知服务端异常")) {
+      // console.log(updates)
+      return Promise.reject(error)
+    }
+
     if (retry < 3) {
       return await retrySaveFood(cookie, id, query, updates, retry + 1)
     }
+
+    console.error(error)
+    return Promise.reject(error)
+  }
+}
+
+async function retrySaveFood6(cookie, id, query, updates, retry = 0) {
+  const fallbackApp = new FallbackApp(id, cookie)
+
+  try {
+    console.log("retry save food ...", retry)
+    await sleep(2000)
+    const saveFoodRes = await fallbackApp.food.save6(query, updates)
+    return saveFoodRes
+  } catch (error) {
+    if (error?.msg?.includes("未知服务端异常")) {
+      // console.log(updates)
+      return Promise.reject(error)
+    }
+
+    if (retry < 10) {
+      return await retrySaveFood6(cookie, id, query, updates, retry + 1)
+    }
+
     console.error(error)
     return Promise.reject(error)
   }
 }
 
 function queryItem(array, query) {
-  return array.filter(item =>
-    Object.keys(query).reduce((p, v) => p && item[v] == query[v], true)
-  )
+  return array.filter(item => Object.keys(query).reduce((p, v) => p && item[v] == query[v], true))
 }
 
 function buildStockAndBoxPriceSkus(newSpuAttrs, wmProductSpu) {
-  let g_new_spu_attrs = combineArray(Object.values(newSpuAttrs.filter(v => v.name == '份量' || v.price > 0)
-    .reduce((p, v, _, a) => ({ ...p, [v.name]: a.filter(k => k.name == v.name) }), {})))
+  let g_new_spu_attrs = combineArray(
+    Object.values(
+      newSpuAttrs
+        .filter(v => v.name == "份量" || v.price > 0)
+        .reduce((p, v, _, a) => ({ ...p, [v.name]: a.filter(k => k.name == v.name) }), {})
+    )
+  )
 
   return g_new_spu_attrs.map(v => {
-    let wa = v.find(k => k.name == '份量')
+    let wa = v.find(k => k.name == "份量")
     let unit = wa.weight == -2 ? wa.weightUnit : `${wa.weight}${wa.weightUnit}`
-    let runit = /\d+人份/.test(unit) ? unit : '约' + unit
-    let attrList = v.map(k => ({ ...k, value: k.name == '份量' && empty(k.value) ? unit : k.value }))
-      .map(k => keepBy(k, ['name', 'name_id', 'value', 'value_id'].concat(k.name == '份量' ? ['no'] : [])))
-    let spec = (empty(wa.value) ? runit : `${wa.value}（${runit}）`) + ' '
-    v.filter(k => k.name != '份量').map(k => k.value).join('·')
-    let ospec = g_new_spu_attrs.length <= 1 ? '' :
-      (empty(wa.value) == '' ? unit : `${wa.value}(${unit})`) +
-      (v.filter(k => k.name != '份量').length > 0 ? '·' : '') +
-      v.filter(k => k.name != '份量').map(k => k.value).join('·')
-    let osku = wmProductSpu.wmProductSkus.find(k => isSameArrayBy(k.attrList, v, ['name', 'value']))
+    let runit = /\d+人份/.test(unit) ? unit : "约" + unit
+    let attrList = v
+      .map(k => ({ ...k, value: k.name == "份量" && empty(k.value) ? unit : k.value }))
+      .map(k => keepBy(k, ["name", "name_id", "value", "value_id"].concat(k.name == "份量" ? ["no"] : [])))
+    let spec = (empty(wa.value) ? runit : `${wa.value}（${runit}）`) + " "
+    v.filter(k => k.name != "份量")
+      .map(k => k.value)
+      .join("·")
+    let ospec =
+      g_new_spu_attrs.length <= 1
+        ? ""
+        : (empty(wa.value) == "" ? unit : `${wa.value}(${unit})`) +
+          (v.filter(k => k.name != "份量").length > 0 ? "·" : "") +
+          v
+            .filter(k => k.name != "份量")
+            .map(k => k.value)
+            .join("·")
+    let osku = wmProductSpu.wmProductSkus.find(k => isSameArrayBy(k.attrList, v, ["name", "value"]))
 
     return {
       attrList,
@@ -1789,24 +2786,52 @@ function buildStockAndBoxPriceSkus(newSpuAttrs, wmProductSpu) {
       wmProductLadderBoxPrice: {
         ladder_num: osku?.box_num ?? 1,
         ladder_price: osku?.box_price ?? 0,
-        status: 1
+        status: 1,
       },
       wmProductStock: {
         id: "0",
         stock: osku?.stock ?? "10000",
         max_stock: "-1",
-        auto_refresh: 1
-      }
+        auto_refresh: 1,
+      },
     }
   })
 }
 
 function buildWmProductPics(url) {
-  return [{
-    "pic_large_url": url,
-    "pic_small_url": url,
-    "sequence": 0, "specialEffectEnable": 0, "is_quality_low": false, "quality_score": 1, "picPropagandaList": [],
-  }]
+  return [
+    {
+      pic_large_url: url,
+      pic_small_url: url,
+      sequence: 0,
+      specialEffectEnable: 0,
+      is_quality_low: false,
+      quality_score: 1,
+      picPropagandaList: [],
+    },
+  ]
+}
+
+async function substituteFoodPlatformId(aId, bId) {
+  const a = await knx("food_id_info")
+    .where({ food_platform_id: aId })
+    .first()
+  const b = await knx("food_id_info")
+    .where({ food_platform_id: bId })
+    .first()
+  if (a == null || b == null) {
+    console.error("商品真名替换失败")
+    return
+  }
+
+  return Promise.all([
+    knx("food_id_info")
+      .where({ id: a.id })
+      .update({ food_id: b.food_id, food_num: b.food_num, is_delete: b.is_delete }),
+    knx("food_id_info")
+      .where({ id: b.id })
+      .update({ food_id: a.food_id, food_num: a.food_num, is_delete: a.is_delete }),
+  ])
 }
 
 export async function substituteFood(cookie, id, aCatName, aName, bCatName, bName) {
@@ -1815,7 +2840,7 @@ export async function substituteFood(cookie, id, aCatName, aName, bCatName, bNam
   try {
     let aFood = await fallbackApp.food.find(aName, aCatName)
     let aFoodEdit = await fallbackApp.food.getEditView2(aFood.id)
-    console.log('aFood')
+    console.log("aFood")
 
     let bFood = await fallbackApp.food.find(bName, bCatName)
 
@@ -1828,9 +2853,9 @@ export async function substituteFood(cookie, id, aCatName, aName, bCatName, bNam
       obActs = (await fallbackApp.act.list()).filter(v => obActIds.includes(v.id))
     }
 
-    fs.appendFileSync('test2.json', JSON.stringify({ obFood, obFoodEdit, obActs }))
+    fs.appendFileSync("test2.json", JSON.stringify({ obFood, obFoodEdit, obActs }))
 
-    console.log('bFood')
+    console.log("bFood")
 
     let results = {}
 
@@ -1887,12 +2912,12 @@ export async function substituteFood(cookie, id, aCatName, aName, bCatName, bNam
     */
 
     // MODIFY B
-    console.log('// del b acts')
+    console.log("// del b acts")
     const bActIds = bFood.wmProductSkus.flatMap(sku => sku.actInfoList.map(act => act.actId)).filter(id => id != null)
     if (bActIds.length > 0) {
       const delBActsRes = await fallbackApp.act.delete(bActIds)
       console.log(delBActsRes)
-      results['[del-b-acts]'] = delBActsRes?.msg
+      results["[del-b-acts]"] = delBActsRes?.msg
     }
 
     // console.log('// save b sku')
@@ -1906,175 +2931,241 @@ export async function substituteFood(cookie, id, aCatName, aName, bCatName, bNam
     // }])
     // results['[save-b-skus]'] = saveBSkusRes?.msg
 
-    console.log('// save b1')
+    console.log("// save b1")
 
-    const maxObFoodEditAddedPrice = obFoodEdit.wmProductSpu.newSpuAttrs.filter(v => v.name != '份量').length == 0 ? 0 :
-      Math.max(...(combineArray(Object.values(obFoodEdit.wmProductSpu.newSpuAttrs.filter(v => v.name != '份量')
-        .reduce((p, v, _, a) => ({ ...p, [v.name]: a.filter(k => k.name == v.name) }), {})))
-        .map(arr => arr.reduce((p, v) => p + v.price, 0)))
-      )
+    const maxObFoodEditAddedPrice =
+      obFoodEdit.wmProductSpu.newSpuAttrs.filter(v => v.name != "份量").length == 0
+        ? 0
+        : Math.max(
+            ...combineArray(
+              Object.values(
+                obFoodEdit.wmProductSpu.newSpuAttrs
+                  .filter(v => v.name != "份量")
+                  .reduce((p, v, _, a) => ({ ...p, [v.name]: a.filter(k => k.name == v.name) }), {})
+              )
+            ).map(arr => arr.reduce((p, v) => p + v.price, 0))
+          )
 
     let b1NewSpuAttrs = [
       ...obFoodEdit.wmProductSpu.newSpuAttrs,
       {
-        "name": "份量",
-        "name_id": 0,
-        "price": 500 - maxObFoodEditAddedPrice,
-        "value_id": 0,
-        "value": String(Math.random()).slice(2, 12),
-        "no": obFoodEdit.wmProductSpu.newSpuAttrs.find(v => v.name == '份量').no,
-        "mode": 2,
-        "weight": -2,
-        "weightUnit": "1人份",
-        "sell_status": 0,
-        "value_sequence": obFoodEdit.wmProductSpu.newSpuAttrs.filter(v => v.name == '份量').length + 1
-      }
+        name: "份量",
+        name_id: 0,
+        price: 500 - maxObFoodEditAddedPrice,
+        value_id: 0,
+        value: String(Math.random()).slice(2, 12),
+        no: obFoodEdit.wmProductSpu.newSpuAttrs.find(v => v.name == "份量").no,
+        mode: 2,
+        weight: -2,
+        weightUnit: "1人份",
+        sell_status: 0,
+        value_sequence: obFoodEdit.wmProductSpu.newSpuAttrs.filter(v => v.name == "份量").length + 1,
+      },
     ]
-    const saveB1Res = await retrySaveFood(cookie, id, { food: obFood, foodEdit: obFoodEdit, foodTemp: obFoodTemp }, {
-      unifiedPackagingFee: 2,
-      newSpuAttrs: b1NewSpuAttrs,
-      stockAndBoxPriceSkus: buildStockAndBoxPriceSkus(b1NewSpuAttrs, obFoodEdit.wmProductSpu)
-    })
+    const saveB1Res = await retrySaveFood(
+      cookie,
+      id,
+      { food: obFood, foodEdit: obFoodEdit, foodTemp: obFoodTemp },
+      {
+        unifiedPackagingFee: 2,
+        newSpuAttrs: b1NewSpuAttrs,
+        stockAndBoxPriceSkus: buildStockAndBoxPriceSkus(b1NewSpuAttrs, obFoodEdit.wmProductSpu),
+      }
+    )
     console.log(saveB1Res)
-    results['[save-b1]'] = saveB1Res?.msg
+    results["[save-b1]"] = saveB1Res?.msg
 
-    console.log('// save b2')
-    let b2NewSpuAttrs = [{
-      "name": "份量",
-      "name_id": 0,
-      "price": 500 - maxObFoodEditAddedPrice,
-      "value": "-",
-      "value_id": 0,
-      "no": obFoodEdit.wmProductSpu.newSpuAttrs.find(v => v.name == '份量').no,
-      "mode": 2,
-      "weight": -2,
-      "weightUnit": "1人份",
-      "sell_status": 0,
-      "value_sequence": 1
-    }]
-    const saveB2Res = await retrySaveFood(cookie, id, { food: obFood, foodEdit: obFoodEdit, foodTemp: obFoodTemp }, {
-      unifiedPackagingFee: 1,
-      newSpuAttrs: b2NewSpuAttrs,
-      stockAndBoxPriceSkus: [],
-      wmProductLadderBoxPrice: { ladder_num: 1, ladder_price: 0, status: 1 }
-    })
+    console.log("// save b2")
+    let b2NewSpuAttrs = [
+      {
+        name: "份量",
+        name_id: 0,
+        price: 500 - maxObFoodEditAddedPrice,
+        value: "-",
+        value_id: 0,
+        no: obFoodEdit.wmProductSpu.newSpuAttrs.find(v => v.name == "份量").no,
+        mode: 2,
+        weight: -2,
+        weightUnit: "1人份",
+        sell_status: 0,
+        value_sequence: 1,
+      },
+    ]
+    const saveB2Res = await retrySaveFood(
+      cookie,
+      id,
+      { food: obFood, foodEdit: obFoodEdit, foodTemp: obFoodTemp },
+      {
+        unifiedPackagingFee: 1,
+        newSpuAttrs: b2NewSpuAttrs,
+        stockAndBoxPriceSkus: [],
+        wmProductLadderBoxPrice: { ladder_num: 1, ladder_price: 0, status: 1 },
+      }
+    )
     console.log(saveB2Res)
-    results['[save-b2]'] = saveB2Res?.msg
+    results["[save-b2]"] = saveB2Res?.msg
 
-    console.log('// copy a to b')
-    const saveBRes = await retrySaveFood(cookie, id, { name: aName, catName: aCatName },
-      { id: bFood.id, name: '测试', labelList: aFoodEdit.wmProductSpu?.labelList?.filter(v => v.group_id != 1) ?? [] })
+    console.log("// copy a to b")
+    const saveBRes = await retrySaveFood(
+      cookie,
+      id,
+      { name: aName, catName: aCatName },
+      {
+        id: bFood.id,
+        name: "测试aaa",
+        labelList: aFoodEdit.wmProductSpu?.labelList?.filter(v => v.group_id != 1) ?? [],
+      }
+    )
     console.log(saveBRes)
-    results['[copy-a->b]'] = saveBRes?.msg
+    results["[copy-a->b]"] = saveBRes?.msg
 
-    console.log('// get modified b')
-    bFood = await retryFind2(cookie, id, aCatName, '测试')
+    console.log("// get modified b")
+    bFood = await retryFind2(cookie, id, aCatName, "测试aaa")
 
-    console.log('// create b acts')
+    console.log("// create b acts")
     let aActIds = aFood.wmProductSkus.map(sku => sku.actInfoList[0]?.actId).filter(id => id != null)
     if (aActIds.length > 0) {
-      const saveBActsRes = await Promise.allSettled(aActIds.map(async aActId => {
-        let act = await fallbackApp.act.find2(aActId)
-        return await retryCreateAct(cookie, id, { act },
-          {
-            id: 0, itemName: bFood.name, spuId: bFood.id,
-            wmSkuId: bFood.wmProductSkus.map((k, _, a) => ({ ...k, _spec: a.length == 1 ? '' : a.spec }))
-              .find(k => k._spec == act.spec || k.spec == act.spec || k.unit == act.spec)?.id
-          }
-        )
-      }))
+      const saveBActsRes = await Promise.allSettled(
+        aActIds.map(async aActId => {
+          let act = await fallbackApp.act.find2(aActId)
+          return await retryCreateAct(
+            cookie,
+            id,
+            { act },
+            {
+              id: 0,
+              itemName: bFood.name,
+              spuId: bFood.id,
+              wmSkuId: bFood.wmProductSkus
+                .map((k, _, a) => ({ ...k, _spec: a.length == 1 ? "" : a.spec }))
+                .find(k => k._spec == act.spec || k.spec == act.spec || k.unit == act.spec)?.id,
+            }
+          )
+        })
+      )
       console.log(saveBActsRes)
-      results['[save-b-acts]'] = saveBActsRes
+      results["[save-b-acts]"] = saveBActsRes
     }
 
     // MODIFY A
-    console.log('// del a acts')
+    console.log("// del a acts")
     aActIds = aFood.wmProductSkus.flatMap(sku => sku.actInfoList.map(act => act.actId)).filter(id => id != null)
     if (aActIds.length > 0) {
       const delAActsRes = await fallbackApp.act.delete(aActIds)
       console.log(delAActsRes)
-      results['[del-a-acts]'] = delAActsRes?.msg
+      results["[del-a-acts]"] = delAActsRes?.msg
     }
 
-    console.log('// save a1')
-    const maxAFoodEditAddedPrice = aFoodEdit.wmProductSpu.newSpuAttrs.filter(v => v.name != '份量').length == 0 ? 0 :
-      Math.max(...(combineArray(Object.values(aFoodEdit.wmProductSpu.newSpuAttrs.filter(v => v.name != '份量')
-        .reduce((p, v, _, a) => ({ ...p, [v.name]: a.filter(k => k.name == v.name) }), {})))
-        .map(arr => arr.reduce((p, v) => p + v.price, 0)))
-      )
+    console.log("// save a1")
+    const maxAFoodEditAddedPrice =
+      aFoodEdit.wmProductSpu.newSpuAttrs.filter(v => v.name != "份量").length == 0
+        ? 0
+        : Math.max(
+            ...combineArray(
+              Object.values(
+                aFoodEdit.wmProductSpu.newSpuAttrs
+                  .filter(v => v.name != "份量")
+                  .reduce((p, v, _, a) => ({ ...p, [v.name]: a.filter(k => k.name == v.name) }), {})
+              )
+            ).map(arr => arr.reduce((p, v) => p + v.price, 0))
+          )
 
     let a1NewSpuAttrs = [
       ...aFoodEdit.wmProductSpu.newSpuAttrs,
       {
-        "name": "份量",
-        "name_id": 0,
-        "price": 500 - maxAFoodEditAddedPrice,
-        "value_id": 0,
-        "value": String(Math.random()).slice(2, 12),
-        "no": aFoodEdit.wmProductSpu.newSpuAttrs.find(v => v.name == '份量').no,
-        "mode": 2,
-        "weight": -2,
-        "weightUnit": "1人份",
-        "sell_status": 0,
-        "value_sequence": aFoodEdit.wmProductSpu.newSpuAttrs.filter(v => v.name == '份量').length + 1
-      }
+        name: "份量",
+        name_id: 0,
+        price: 500 - maxAFoodEditAddedPrice,
+        value_id: 0,
+        value: String(Math.random()).slice(2, 12),
+        no: aFoodEdit.wmProductSpu.newSpuAttrs.find(v => v.name == "份量").no,
+        mode: 2,
+        weight: -2,
+        weightUnit: "1人份",
+        sell_status: 0,
+        value_sequence: aFoodEdit.wmProductSpu.newSpuAttrs.filter(v => v.name == "份量").length + 1,
+      },
     ]
-    const saveA1Res = await retrySaveFood(cookie, id, { name: aName, catName: aCatName }, {
-      unifiedPackagingFee: 2,
-      newSpuAttrs: a1NewSpuAttrs,
-      stockAndBoxPriceSkus: buildStockAndBoxPriceSkus(a1NewSpuAttrs, aFoodEdit.wmProductSpu)
-    })
+    const saveA1Res = await retrySaveFood(
+      cookie,
+      id,
+      { name: aName, catName: aCatName },
+      {
+        unifiedPackagingFee: 2,
+        newSpuAttrs: a1NewSpuAttrs,
+        stockAndBoxPriceSkus: buildStockAndBoxPriceSkus(a1NewSpuAttrs, aFoodEdit.wmProductSpu),
+      }
+    )
     console.log(saveA1Res)
-    results['[save-a1]'] = saveA1Res?.msg
+    results["[save-a1]"] = saveA1Res?.msg
 
-    console.log('// save a2')
-    let a2NewSpuAttrs = [{
-      "name": "份量",
-      "name_id": 0,
-      "price": 500 - maxAFoodEditAddedPrice,
-      "value": "-",
-      "value_id": 0,
-      "no": aFoodEdit.wmProductSpu.newSpuAttrs.find(v => v.name == '份量').no,
-      "mode": 2,
-      "weight": -2,
-      "weightUnit": "1人份",
-      "sell_status": 0,
-      "value_sequence": 1
-    }]
-    const saveA2Res = await retrySaveFood(cookie, id, { name: aName, catName: aCatName }, {
-      unifiedPackagingFee: 1,
-      newSpuAttrs: a2NewSpuAttrs,
-      stockAndBoxPriceSkus: [],
-      wmProductLadderBoxPrice: { ladder_num: 1, ladder_price: 0, status: 1 },
-    })
+    console.log("// save a2")
+    let a2NewSpuAttrs = [
+      {
+        name: "份量",
+        name_id: 0,
+        price: 500 - maxAFoodEditAddedPrice,
+        value: "-",
+        value_id: 0,
+        no: aFoodEdit.wmProductSpu.newSpuAttrs.find(v => v.name == "份量").no,
+        mode: 2,
+        weight: -2,
+        weightUnit: "1人份",
+        sell_status: 0,
+        value_sequence: 1,
+      },
+    ]
+    const saveA2Res = await retrySaveFood(
+      cookie,
+      id,
+      { name: aName, catName: aCatName },
+      {
+        unifiedPackagingFee: 1,
+        newSpuAttrs: a2NewSpuAttrs,
+        stockAndBoxPriceSkus: [],
+        wmProductLadderBoxPrice: { ladder_num: 1, ladder_price: 0, status: 1 },
+      }
+    )
     console.log(saveA2Res)
-    results['[save-a2]'] = saveA2Res?.msg
+    results["[save-a2]"] = saveA2Res?.msg
 
-    console.log('// copy b to a')
-    const saveARes = await retrySaveFood(cookie, id, { food: obFood, foodEdit: obFoodEdit, foodTemp: obFoodTemp },
-      { id: aFood.id })
+    console.log("// copy b to a")
+    const saveARes = await retrySaveFood(
+      cookie,
+      id,
+      { food: obFood, foodEdit: obFoodEdit, foodTemp: obFoodTemp },
+      { id: aFood.id }
+    )
     console.log(saveARes)
-    results['[copy-b->a]'] = saveARes?.msg
+    results["[copy-b->a]"] = saveARes?.msg
 
-    console.log('// get modified a')
+    console.log("// get modified a")
     aFood = await retryFind2(cookie, id, obFood.tagName, obFood.name)
 
-    console.log('// create a acts')
+    console.log("// create a acts")
     if (obActs.length > 0) {
       try {
-        const saveAActsRes = await Promise.allSettled(obActs.map(async obAct =>
-          retryCreateAct(cookie, id, { act: obAct },
-            {
-              id: 0, itemName: aFood.name, spuId: aFood.id,
-              wmSkuId: aFood.wmProductSkus.map((k, _, a) => ({ ...k, _spec: a.length == 1 ? '' : a.spec }))
-                .find(k => k._spec == obAct.spec || k.spec == obAct.spec || k.unit == obAct.spec)?.id
-            }
+        const saveAActsRes = await Promise.allSettled(
+          obActs.map(async obAct =>
+            retryCreateAct(
+              cookie,
+              id,
+              { act: obAct },
+              {
+                id: 0,
+                itemName: aFood.name,
+                spuId: aFood.id,
+                wmSkuId: aFood.wmProductSkus
+                  .map((k, _, a) => ({ ...k, _spec: a.length == 1 ? "" : a.spec }))
+                  .find(k => k._spec == obAct.spec || k.spec == obAct.spec || k.unit == obAct.spec)?.id,
+              }
+            )
           )
-        ))
+        )
         console.log(saveAActsRes)
-        results['[save-a-acts]'] = saveAActsRes
+        results["[save-a-acts]"] = saveAActsRes
       } catch (err) {
-        console.error('catch', err)
+        console.error("catch", err)
       }
     }
 
@@ -2089,10 +3180,12 @@ export async function substituteFood(cookie, id, aCatName, aName, bCatName, bNam
     }
     */
 
-    console.log('// save b name')
+    console.log("// save b name")
     const saveBName = await fallbackApp.food.updateName(bFood.id, aName)
     console.log(saveBName)
-    results['[save-b-name]'] = saveBName?.msg
+    results["[save-b-name]"] = saveBName?.msg
+
+    results["[sub-food-id]"] = await substituteFoodPlatformId(aFood.id, bFood.id)
 
     return results
   } catch (err) {
@@ -2136,7 +3229,7 @@ update poiid 3213 skuid 3132 boxprice 3
 */
 export async function updatePlan4(cookie, ctx, query, updates) {
   function sortNewSpuAttrs(attrs) {
-    return attrs.sort((a, b) => (a.no * 100 + a.value_sequence - b.no * 100 + b.value_sequence))
+    return attrs.sort((a, b) => a.no * 100 + a.value_sequence - b.no * 100 + b.value_sequence)
   }
 
   function groupNewSpuAttrs(attrs) {
@@ -2144,23 +3237,27 @@ export async function updatePlan4(cookie, ctx, query, updates) {
   }
 
   function isAddedPriceGroup(values) {
-    if (values.find(v => v.name == '份量' || v.price > 0)) return true
+    if (values.find(v => v.name == "份量" || v.price > 0)) return true
     return false
   }
 
   function flattenNewSpuAttrsGroup(group) {
-    return Object.keys(group).filter(g => group[g].length > 0)
-      .flatMap((g, i) => group[g].map((v, j, a) => ({
-        ...v,
-        value: v.value ?? '',
-        mode: isAddedPriceGroup(a) ? 2 : 1,
-        no: i,
-        value_sequence: j + 1
-      })))
+    return Object.keys(group)
+      .filter(g => group[g].length > 0)
+      .flatMap((g, i) =>
+        group[g].map((v, j, a) => ({
+          ...v,
+          value: v.value ?? "",
+          mode: isAddedPriceGroup(a) ? 2 : 1,
+          no: i,
+          value_sequence: j + 1,
+        }))
+      )
   }
 
   function extractWeightUnit(unit) {
-    const m1 = unit?.match(/\d+人份/), m2 = unit?.match(/(\d+)(.*)/)
+    const m1 = unit?.match(/\d+人份/),
+      m2 = unit?.match(/(\d+)(.*)/)
     if (m1) return { weight: -2, weightUnit: m1[0] }
     if (m2) return { weight: m2[1], weightUnit: m2[2] }
     return { weight: null, weightUnit: null }
@@ -2173,37 +3270,48 @@ export async function updatePlan4(cookie, ctx, query, updates) {
 
   function mergeAttrToNewSpuAttr(oattr, attr) {
     const { weight, weightUnit } = extractWeightUnit(attr.unit)
-    let defaultAttr = { name_id: 0, value: '', value_id: 0, sell_status: 0, price: 0, weightUnit: null },
+    let defaultAttr = { name_id: 0, value: "", value_id: 0, sell_status: 0, price: 0, weightUnit: null },
       defaultWeightAttr = { ...defaultAttr, weight: -1 },
       defaultOtherAttr = { ...defaultAttr, weight: 0 },
-      partAttr = { name: attr.name, value: attr.new_value, price: attr.price, sell_status: attr.sell, weight, weightUnit }
+      partAttr = {
+        name: attr.name,
+        value: attr.new_value,
+        price: attr.price,
+        sell_status: attr.sell,
+        weight,
+        weightUnit,
+      }
 
-    if (attr.name == '份量') return mergeObjs(defaultWeightAttr, oattr, partAttr)
+    if (attr.name == "份量") return mergeObjs(defaultWeightAttr, oattr, partAttr)
     return mergeObjs(defaultOtherAttr, oattr, partAttr)
   }
 
   function mergeSkuToStockAndBox(ostockAndBox, sku) {
     return mergeObjs(ostockAndBox, {
       box_price: sku.box_price,
-      wmProductLadderBoxPrice: mergeObjs(ostockAndBox.wmProductLadderBoxPrice,
-        { ladder_num: sku.box_num, ladder_price: sku.box_price }),
-      wmProductStock: mergeObjs(ostockAndBox.wmProductStock, { stock: sku.stock })
+      wmProductLadderBoxPrice: mergeObjs(ostockAndBox.wmProductLadderBoxPrice, {
+        ladder_num: sku.box_num,
+        ladder_price: sku.box_price,
+      }),
+      wmProductStock: mergeObjs(ostockAndBox.wmProductStock, { stock: sku.stock }),
     })
   }
 
   function mapSkuToAttr(sku, oskus, oattrs) {
     let fsku = oskus.find(v => v.spec == sku.spec)
-    if (!fsku) return { name: '份量', value: sku.spec, op: sku.op, price: sku.price, unit: sku.unit }
-    let fattrs = oattrs.filter(v => includesBy(fsku.attrList,
-      { ...v, value: v.value ?? v._unit }, ['name', 'value']))
+    if (!fsku) return { name: "份量", value: sku.spec, op: sku.op, price: sku.price, unit: sku.unit }
+    let fattrs = oattrs.filter(v => includesBy(fsku.attrList, { ...v, value: v.value ?? v._unit }, ["name", "value"]))
 
-    let weight_attr = fattrs.find(v => v.name == '份量')
-    let other_attrs = diffArrayBy(fattrs, [weight_attr], ['name', 'value'])
-    let weight_price = sku.price == null ? null :
-      calcPrice(() => sku.price - other_attrs.map(v => v.price).reduce((p, v) => p + v, 0))
+    let weight_attr = fattrs.find(v => v.name == "份量")
+    let other_attrs = diffArrayBy(fattrs, [weight_attr], ["name", "value"])
+    let weight_price =
+      sku.price == null ? null : calcPrice(() => sku.price - other_attrs.map(v => v.price).reduce((p, v) => p + v, 0))
     return {
-      name: weight_attr.name, value: weight_attr.value ?? weight_attr._unit,
-      op: sku.op, price: weight_price, unit: sku.unit ?? weight_attr._unit
+      name: weight_attr.name,
+      value: weight_attr.value ?? weight_attr._unit,
+      op: sku.op,
+      price: weight_price,
+      unit: sku.unit ?? weight_attr._unit,
     }
   }
 
@@ -2212,11 +3320,11 @@ export async function updatePlan4(cookie, ctx, query, updates) {
     for (let attr of attrs) {
       let g = group[attr.name]
       let i = g?.findIndex(v => (v.value ?? v._unit) == attr.value) ?? -1
-      if (attr.op == '+') {
+      if (attr.op == "+") {
         if (g == null) group[attr.name] = []
         if (i == -1) group[attr.name].push(mergeAttrToNewSpuAttr(null, attr))
         else group[attr.name][i] = mergeAttrToNewSpuAttr(g[i], attr)
-      } else if (attr.op == '-') {
+      } else if (attr.op == "-") {
         if (i > -1) group[attr.name].splice(i, 1)
       }
     }
@@ -2228,7 +3336,7 @@ export async function updatePlan4(cookie, ctx, query, updates) {
     let boxAndStocks = buildStockAndBoxPriceSkus(attrs, { wmProductSkus: oskus })
     for (let sku of skus) {
       let i = boxAndStocks.findIndex(v => v.ospec == sku.spec)
-      if (sku.op == '+') {
+      if (sku.op == "+") {
         if (i > -1) boxAndStocks[i] = mergeSkuToStockAndBox(boxAndStocks[i], sku)
       }
     }
@@ -2244,46 +3352,56 @@ export async function updatePlan4(cookie, ctx, query, updates) {
     return labels
   }
 
-  // + ... actPrice actLimit 
+  // + ... actPrice actLimit
   function opActs(acts, oacts, food) {
     let _acts = oacts.map(v => ({
-      ...v, actInfo: JSON.parse(v.actInfo), charge: JSON.parse(v.charge),
-      sku: food.wmProductSkus.find(k => k._tspec == v.spec)
+      ...v,
+      actInfo: JSON.parse(v.actInfo),
+      charge: JSON.parse(v.charge),
+      sku: food.wmProductSkus.find(k => k._tspec == v.spec),
     }))
     for (let act of _acts) {
       let i = _acts.findIndex(v => v.spec == act.spec)
-      if (sku.op == '-') {
-        if (i > -1) { }
+      if (sku.op == "-") {
+        if (i > -1) {
+        }
       }
     }
   }
 
   function calcMaxPrice(newSpuAttrs) {
-    return newSpuAttrs.filter(v => v.name == '份量').map(v => v.price)
-      .reduce((p, v) => v > p ? v : p, 0)
+    return newSpuAttrs
+      .filter(v => v.name == "份量")
+      .map(v => v.price)
+      .reduce((p, v) => (v > p ? v : p), 0)
   }
 
   function calcSumAddedPrice(newSpuAttrs) {
-    let weight_attrs = newSpuAttrs.filter(v => v.name == '份量')
-    let other_attrs = diffArrayBy(newSpuAttrs, weight_attrs, ['name', 'value'])
-    return other_attrs.length == 0 ? 0 :
-      Math.max(...(combineArray(Object.values(groupNewSpuAttrs(other_attrs)))
-        .map(arr => arr.map(v => v.price).reduce((p, v) => p + v, 0)))
-      )
+    let weight_attrs = newSpuAttrs.filter(v => v.name == "份量")
+    let other_attrs = diffArrayBy(newSpuAttrs, weight_attrs, ["name", "value"])
+    return other_attrs.length == 0
+      ? 0
+      : Math.max(
+          ...combineArray(Object.values(groupNewSpuAttrs(other_attrs))).map(arr =>
+            arr.map(v => v.price).reduce((p, v) => p + v, 0)
+          )
+        )
   }
 
   try {
     const { pois } = ctx
     const { poi_id, poi_name, tag_id, tag_name, spu_id, spu_name } = query
     let { attrs, skus, acts, min_order_count, sell_status, pic, attr, desc, single_buy, label_sign } = updates
-    let results = {}, spuUpdates = {}, spuUpdates2 = {}
+    let results = {},
+      spuUpdates = {},
+      spuUpdates2 = {}
 
     const fallbackApp = new FallbackApp(poi_id, cookie)
 
-    // get poi food edit template acts 
+    // get poi food edit template acts
     let poi = pois.find(v => v.id == poi_id || v.poiName == poi_name)
     if (poi == null) return Promise.reject({ message: `poi:${poi_id} not found` })
-    if (poi.category != 'FOOD_CATE') return Promise.reject({ message: `poi-cate:${poi.category} not supported` })
+    if (poi.category != "FOOD_CATE") return Promise.reject({ message: `poi-cate:${poi.category} not supported` })
 
     let food = await fallbackApp.food.findFood({ spuId: spu_id, spuName: spu_name, tagId: tag_id, tagName: tag_name })
     let foodEdit = await fallbackApp.food.getEditView2(food.id)
@@ -2297,20 +3415,27 @@ export async function updatePlan4(cookie, ctx, query, updates) {
     }
 
     // trans food
-    food.wmProductSkus = food.wmProductSkus.map((v, _, a) => ({ ...v, _tspec: a.length == 1 ? '' : a.spec }))
+    food.wmProductSkus = food.wmProductSkus.map((v, _, a) => ({ ...v, _tspec: a.length == 1 ? "" : a.spec }))
 
     // trans edit
     foodEdit.wmProductSpu.labelList = foodEdit.wmProductSpu.labelList ?? []
-    foodEdit.wmProductSpu.newSpuAttrs = foodEdit.wmProductSpu.newSpuAttrs.map(v => ({ ...v, _unit: buildUnit(v.weight, v.weightUnit) }))
-    foodEdit.wmProductSpu.wmProductSkus = foodEdit.wmProductSpu.wmProductSkus.map((v, _, a) => ({ ...v, _tspec: a.length == 1 ? '' : v.spec }))
+    foodEdit.wmProductSpu.newSpuAttrs = foodEdit.wmProductSpu.newSpuAttrs.map(v => ({
+      ...v,
+      _unit: buildUnit(v.weight, v.weightUnit),
+    }))
+    foodEdit.wmProductSpu.wmProductSkus = foodEdit.wmProductSpu.wmProductSkus.map((v, _, a) => ({
+      ...v,
+      _tspec: a.length == 1 ? "" : v.spec,
+    }))
 
     // save food
     if (min_order_count != null) {
-      if (!/\d+/.test(min_order_count)) return Promise.reject({ message: `min_order_count: ${min_order_count} invalid` })
+      if (!/\d+/.test(min_order_count))
+        return Promise.reject({ message: `min_order_count: ${min_order_count} invalid` })
       spuUpdates.min_order_count = min_order_count
     }
     if (pic != null) {
-      if (!pic.startsWith('http')) return Promise.reject({ message: `pic: ${pic} invalid` })
+      if (!pic.startsWith("http")) return Promise.reject({ message: `pic: ${pic} invalid` })
       spuUpdates.wmProductPics = buildWmProductPics(pic)
     }
     if (desc != null) spuUpdates.description = desc
@@ -2325,7 +3450,9 @@ export async function updatePlan4(cookie, ctx, query, updates) {
 
     // sku -> newSpuAttrs, stockAndBox
     if (skus.length > 0) {
-      attrs.push(...skus.map(k => mapSkuToAttr(k, foodEdit.wmProductSpu.wmProductSkus, foodEdit.wmProductSpu.newSpuAttrs)))
+      attrs.push(
+        ...skus.map(k => mapSkuToAttr(k, foodEdit.wmProductSpu.wmProductSkus, foodEdit.wmProductSpu.newSpuAttrs))
+      )
     }
 
     if (attrs.length > 0) {
@@ -2345,44 +3472,40 @@ export async function updatePlan4(cookie, ctx, query, updates) {
 
     // validate spuUpdates
     if (spuUpdates.newSpuAttrs) {
-      if (!isDistinctArrayBy(spuUpdates.newSpuAttrs, ['name', 'value', 'weight', 'weightUnit']))
+      if (!isDistinctArrayBy(spuUpdates.newSpuAttrs, ["name", "value", "weight", "weightUnit"]))
         return Promise.reject({ message: `newSpuAttrs: ${JSON.stringify(spuUpdates.newSpuAttrs)} invalid` })
 
       if (calcMaxPrice(spuUpdates.newSpuAttrs) > calcMaxPrice(foodEdit.wmProductSpu.newSpuAttrs)) {
-
         if (foodActIds2.length > 0) {
           const delFActsRes = await fallbackApp.act.delete(foodActIds2)
           console.log(delFActsRes)
         }
 
         let zAttr = {
-          "name": "份量",
-          "name_id": 0,
-          "price": 500 - calcSumAddedPrice(foodEdit.wmProductSpu.newSpuAttrs),
-          "value_id": 0,
-          "value": "-",
-          "no": 0,
-          "mode": 2,
-          "weight": -2,
-          "weightUnit": "1人份",
-          "sell_status": 0,
-          "value_sequence": foodEdit.wmProductSpu.newSpuAttrs.filter(v => v.name == '份量').length + 1
+          name: "份量",
+          name_id: 0,
+          price: 500 - calcSumAddedPrice(foodEdit.wmProductSpu.newSpuAttrs),
+          value_id: 0,
+          value: "-",
+          no: 0,
+          mode: 2,
+          weight: -2,
+          weightUnit: "1人份",
+          sell_status: 0,
+          value_sequence: foodEdit.wmProductSpu.newSpuAttrs.filter(v => v.name == "份量").length + 1,
         }
-        spuUpdates2.newSpuAttrs = [
-          ...foodEdit.wmProductSpu.newSpuAttrs.map(v => ({ ...v, no: 0 })),
-          zAttr
-        ]
+        spuUpdates2.newSpuAttrs = [...foodEdit.wmProductSpu.newSpuAttrs.map(v => ({ ...v, no: 0 })), zAttr]
         spuUpdates2.stockAndBoxPriceSkus = buildStockAndBoxPriceSkus(spuUpdates2.newSpuAttrs, foodEdit.wmProductSpu)
-        console.log('%o', spuUpdates2)
-        console.log('=================')
+        console.log("%o", spuUpdates2)
+        console.log("=================")
         const saveF1Res = await fallbackApp.food.save5({ food, foodEdit, foodTemp }, spuUpdates2)
         console.log(saveF1Res)
         await sleep(3000)
 
         spuUpdates2.newSpuAttrs = [zAttr]
         spuUpdates2.stockAndBoxPriceSkus = buildStockAndBoxPriceSkus(spuUpdates2.newSpuAttrs, foodEdit.wmProductSpu)
-        console.log('%o', spuUpdates2)
-        console.log('=================')
+        console.log("%o", spuUpdates2)
+        console.log("=================")
         const saveF2Res = await fallbackApp.food.save5({ food, foodEdit, foodTemp }, spuUpdates2)
         console.log(saveF2Res)
         await sleep(3000)
@@ -2397,18 +3520,26 @@ export async function updatePlan4(cookie, ctx, query, updates) {
 
     if (foodActs.length > 0 || acts.length > 0) {
       try {
-        const saveFActsRes = await Promise.allSettled(foodActs.map(async act =>
-          retryCreateAct(cookie, id, { act }, {
-            id: 0, itemName: food.name, spuId: food.id,
-            wmSkuId: food.wmProductSkus.find(k => k.spec == act.spec || k.unit == act.spec)?.id
-          })
-        ))
+        const saveFActsRes = await Promise.allSettled(
+          foodActs.map(async act =>
+            retryCreateAct(
+              cookie,
+              id,
+              { act },
+              {
+                id: 0,
+                itemName: food.name,
+                spuId: food.id,
+                wmSkuId: food.wmProductSkus.find(k => k.spec == act.spec || k.unit == act.spec)?.id,
+              }
+            )
+          )
+        )
         console.log(saveFActsRes)
       } catch (err) {
-        console.error('catch', err)
+        console.error("catch", err)
       }
     }
-
   } catch (err) {
     return Promise.reject(err)
   }
@@ -2420,7 +3551,7 @@ async function updateNotDeliverAlone(cookie, id, name) {
     // const { ok } = await fallbackApp.food.setHighBoxPrice2()
     if (true) {
       return fallbackApp.food.save2(name, null, null, null, true)
-    } else return Promise.reject({ err: 'sync failed' })
+    } else return Promise.reject({ err: "sync failed" })
   } catch (e) {
     return Promise.reject(e)
   }
@@ -2428,9 +3559,9 @@ async function updateNotDeliverAlone(cookie, id, name) {
 
 async function test_plan() {
   try {
-    let data = await readXls('plan/武广美团贡茶.xlsx', 'hh美团产品名带折扣')
+    let data = await readXls("plan/武广美团贡茶.xlsx", "hh美团产品名带折扣")
     data = data
-      .filter(v => v.调整后餐盒费 != '' || v.调整后折扣价格 != '')
+      .filter(v => v.调整后餐盒费 != "" || v.调整后折扣价格 != "")
       .map((v, i) => [
         9535472,
         v.tagName,
@@ -2438,9 +3569,9 @@ async function test_plan() {
         null,
         null,
         null,
-        v.修改后特价 == '' ? null : v.修改后特价,
+        v.修改后特价 == "" ? null : v.修改后特价,
         null,
-        i
+        i,
       ])
     await loop(updatePlan2, data, false, { test: delFoods })
   } catch (error) {
@@ -2452,7 +3583,7 @@ async function test_updateActTime() {
   try {
     // let data = await knx('test_mt_acts_').select()
     // data = data.map(v => [v.wmPoiId, v.act_str]).slice(14000, 16000)
-    let data = await readJson('log/log.json').map(v => v.meta)
+    let data = await readJson("log/log.json").map(v => v.meta)
     await loop(updateActTime, data, false)
   } catch (error) {
     console.error(error)
@@ -2461,8 +3592,8 @@ async function test_updateActTime() {
 
 async function test_updateAct() {
   try {
-    let data = await readXls('plan/美团折扣价修改.xls', '2美团商品查询')
-    data = data.filter(v => v.修改后折扣价 != '').map(v => [v.编号, v.商品, v.修改后折扣价])
+    let data = await readXls("plan/美团折扣价修改.xls", "2美团商品查询")
+    data = data.filter(v => v.修改后折扣价 != "").map(v => [v.编号, v.商品, v.修改后折扣价])
     await loop(updateAct, data, false)
   } catch (error) {
     console.error(error)
@@ -2525,8 +3656,8 @@ async function test_createAct() {
     // 9899410`
     //   .split('\n')
     //   .map(v => v.trim())
-    let data = await readXls('plan/美团汤圆(3)(1)(1)(1).xls', 'Sheet1')
-    data = data.filter(v => v.修改后折扣价 != '').map(v => [v.编号, v.商品, v.修改后折扣价])
+    let data = await readXls("plan/美团汤圆(3)(1)(1)(1).xls", "Sheet1")
+    data = data.filter(v => v.修改后折扣价 != "").map(v => [v.编号, v.商品, v.修改后折扣价])
 
     // data = data.map(v => [v, '五福临门年夜饭套餐', 99.9])
     await loop(createAct, data, false)
@@ -2547,7 +3678,7 @@ async function delNewCustAct(cookie, id) {
 // 231
 async function test_delNewCustomer() {
   try {
-    let data = await readXls('plan/新客立减.xls', 'Sheet1')
+    let data = await readXls("plan/新客立减.xls", "Sheet1")
     data = data.map(v => [v.wmpoiid])
     await loop(delNewCustAct, data, true)
   } catch (error) {
@@ -2557,8 +3688,8 @@ async function test_delNewCustomer() {
 
 async function test_delAct() {
   try {
-    let data = await readXls('plan/美团折扣商品涨原价表格模板(1).xlsx', 'Sheet1')
-    data = data.map(v => [, v['店铺id'], v['商品名称']])
+    let data = await readXls("plan/美团折扣商品涨原价表格模板(1).xlsx", "Sheet1")
+    data = data.map(v => [, v["店铺id"], v["商品名称"]])
     await loop(delAct, data, true)
   } catch (error) {
     console.error(error)
@@ -2579,7 +3710,7 @@ async function createDieliverAct(cookie, id, fee) {
   const fallbackApp = new FallbackApp(id, cookie)
   try {
     const res = await delDieliverAct(id)
-    const policy = [{ discount: fee, shipping_charge: '0', mt_charge: '0', poi_charge: fee, agent_charge: '0' }]
+    const policy = [{ discount: fee, shipping_charge: "0", mt_charge: "0", poi_charge: fee, agent_charge: "0" }]
     const res2 = await fallbackApp.act.dieliver.save(policy)
     return Promise.resolve({ res2 })
   } catch (e) {
@@ -2589,24 +3720,24 @@ async function createDieliverAct(cookie, id, fee) {
 
 async function test_reduction2() {
   try {
-    let data = await readXls('plan/择优门店方案（广州、上海、北京、贵阳、厦门）.xlsx', 'Sheet1')
+    let data = await readXls("plan/择优门店方案（广州、上海、北京、贵阳、厦门）.xlsx", "Sheet1")
     data = data.map(v => ({
       ...v,
-      reduc: v.需要修改的.split(',').map(k => ({
+      reduc: v.需要修改的.split(",").map(k => ({
         discounts: [
           {
             code: 1,
-            discount: k.split('-')[1],
-            poi_charge: k.split('-')[1],
+            discount: k.split("-")[1],
+            poi_charge: k.split("-")[1],
             agent_charge: 0,
-            type: 'default',
-            mt_charge: 0
-          }
+            type: "default",
+            mt_charge: 0,
+          },
         ],
-        price: k.split('-')[0]
-      }))
+        price: k.split("-")[0],
+      })),
     }))
-    data = data.map(v => [v['门店ID'], null, null, v['reduc']])
+    data = data.map(v => [v["门店ID"], null, null, v["reduc"]])
     await loop(saveReduction, data, false)
   } catch (error) {
     console.error(error)
@@ -2615,9 +3746,7 @@ async function test_reduction2() {
 
 async function test_delivery() {
   try {
-    let data = ``
-      .split('\n')
-      .map(v => v.trim())
+    let data = ``.split("\n").map(v => v.trim())
     data = data.map(v => [v, 6.1])
     await loop(createDieliverAct, data, false)
   } catch (e) {
@@ -2627,7 +3756,7 @@ async function test_delivery() {
 
 async function test_updateTagName() {
   try {
-    let data = await readXls('plan/3-1批量修改.xls', '美团分类名修改')
+    let data = await readXls("plan/3-1批量修改.xls", "美团分类名修改")
     data = data.map(v => [v.shop_id, v.category_name, v.修改后的分类名])
     await loop(updateFoodCatName, data, false)
   } catch (err) {
@@ -2637,9 +3766,9 @@ async function test_updateTagName() {
 
 async function test_updateTagTop() {
   try {
-    let data = await readXls('plan/美团汤圆(3)(1)(1)(1).xls', 'Sheet1')
+    let data = await readXls("plan/美团汤圆(3)(1)(1)(1).xls", "Sheet1")
     data = Array.from(new Set(data.map(v => v.编号)))
-    data = data.map(v => [v, '元宵汤圆'])
+    data = data.map(v => [v, "元宵汤圆"])
     await loop(updateTagTop, data, false)
   } catch (err) {
     console.error(err)
@@ -2648,9 +3777,9 @@ async function test_updateTagTop() {
 
 async function test_updateTagUnTop() {
   try {
-    let data = await readXls('plan/美团汤圆(3)(1)(1)(1).xls', 'Sheet1')
+    let data = await readXls("plan/美团汤圆(3)(1)(1)(1).xls", "Sheet1")
     data = Array.from(new Set(data.map(v => v.编号)))
-    data = data.map(v => [v, '元宵汤圆'])
+    data = data.map(v => [v, "元宵汤圆"])
     await loop(updateTagUnTop, data, false)
   } catch (err) {
     console.error(err)
@@ -2660,7 +3789,7 @@ async function test_updateTagUnTop() {
 async function updateFoodMater(cookie, id, name) {
   try {
     const fallbackApp = new FallbackApp(id, cookie)
-    return fallbackApp.food.save(name, null, null, '椰果')
+    return fallbackApp.food.save(name, null, null, "椰果")
   } catch (e) {
     return Promise.reject(e)
   }
@@ -2673,7 +3802,7 @@ async function updateFoodWeight(cookie, id, name, weight, unit) {
     if (ok) {
       const res = await fallbackApp.food.save(name, null, weight, unit)
       return Promise.resolve(res)
-    } else return Promise.reject({ err: 'sync failed' })
+    } else return Promise.reject({ err: "sync failed" })
   } catch (err) {
     return Promise.reject(err)
   }
@@ -2684,23 +3813,23 @@ async function test_updateWeight() {
     let [data, _] = await knx.raw(
       `select * from foxx_food_manage where date=curdate() and name LIKE '%杨枝甘露%' AND minOrderCount <> 2 AND weightUnit <> '2人份'`
     )
-    data = data.slice(8).map((v, i) => [v.wmpoiid, v.name, '500', '毫升', i])
+    data = data.slice(8).map((v, i) => [v.wmpoiid, v.name, "500", "毫升", i])
     await loop(updateFoodWeight, data, true, { test: delFoods })
   } catch (error) {
     console.error(error)
   }
 }
 
-async function updateFoodMinOrder(cookie, id, name, catName, minOrder) {
+async function updateFoodMinOrder(cookie, id, name, catName, spuId, minOrder) {
   const fallbackApp = new FallbackApp(id, cookie)
   try {
     const { ok } = { ok: true } // await fallbackApp.food.setHighBoxPrice(0, true)
 
     if (ok) {
       // const res = await fallbackApp.food.save(name, minOrder)
-      const res = await fallbackApp.food.save2(name, catName, null, minOrder)
+      const res = await fallbackApp.food.save2(name, catName, spuId, null, minOrder)
       return Promise.resolve(res)
-    } else return Promise.reject({ err: 'sync failed' })
+    } else return Promise.reject({ err: "sync failed" })
   } catch (err) {
     return Promise.reject(err)
   }
@@ -2708,10 +3837,8 @@ async function updateFoodMinOrder(cookie, id, name, catName, minOrder) {
 
 async function test_updateMinOrder() {
   try {
-    let data = await readXls('plan/05-23饿了么低折扣商品起购错误查询(1)(1).xlsx', '饿了么低折扣商品起购错误查询')
-    data = data
-      .filter(v => v.平台 == '美团')
-      .map(v => [v.店铺id, v.商品, v.分类, 1])
+    let data = await readXls("plan/05-23饿了么低折扣商品起购错误查询(1)(1).xlsx", "饿了么低折扣商品起购错误查询")
+    data = data.filter(v => v.平台 == "美团").map(v => [v.店铺id, v.商品, v.分类, 1])
     await loop(updateFoodMinOrder, data, false)
   } catch (error) {
     console.error(error)
@@ -2721,12 +3848,12 @@ async function test_updateMinOrder() {
 async function test_autotask() {
   try {
     let tasks = {
-      薯饼虾饼鸡柳无起购: async function () {
+      薯饼虾饼鸡柳无起购: async function() {
         try {
-          console.log('薯饼虾饼鸡柳无起购')
-          let task = await knx('test_task_')
+          console.log("薯饼虾饼鸡柳无起购")
+          let task = await knx("test_task_")
             .select()
-            .where({ title: '薯饼虾饼鸡柳无起购', platform: '美团' })
+            .where({ title: "薯饼虾饼鸡柳无起购", platform: "美团" })
           if (!task) return
           let [data, _] = await knx.raw(task[0].sql)
           data = data.map((v, i) => [v.门店id, v.品名, 2, null, null, 0.99, 1, i])
@@ -2735,12 +3862,12 @@ async function test_autotask() {
           console.error(e)
         }
       },
-      两份起购餐盒费: async function () {
+      两份起购餐盒费: async function() {
         try {
-          console.log('两份起购餐盒费')
-          let task = await knx('test_task_')
+          console.log("两份起购餐盒费")
+          let task = await knx("test_task_")
             .select()
-            .where({ title: '两份起购餐盒费', platform: '饿了么' })
+            .where({ title: "两份起购餐盒费", platform: "饿了么" })
           if (!task) return
           let [data, _] = await knx.raw(task[0].sql)
           data = data.map(v => [v.门店id, v.品名, null, 1.5, null, null])
@@ -2749,12 +3876,12 @@ async function test_autotask() {
           console.error(e)
         }
       },
-      两份起购无餐盒费: async function () {
+      两份起购无餐盒费: async function() {
         try {
-          console.log('两份起购无餐盒费')
-          let task = await knx('test_task_')
+          console.log("两份起购无餐盒费")
+          let task = await knx("test_task_")
             .select()
-            .where({ title: '两份起购无餐盒费', platform: '饿了么' })
+            .where({ title: "两份起购无餐盒费", platform: "饿了么" })
           if (!task) return
           let [data, _] = await knx.raw(task[0].sql)
           data = data.map(v => [v.门店id, v.品名, null, 0.5, null, null])
@@ -2763,12 +3890,12 @@ async function test_autotask() {
           console.error(e)
         }
       },
-      常规产品无餐盒费: async function () {
+      常规产品无餐盒费: async function() {
         try {
-          console.log('常规产品无餐盒费')
-          let task = await knx('test_task_')
+          console.log("常规产品无餐盒费")
+          let task = await knx("test_task_")
             .select()
-            .where({ title: '常规产品无餐盒费', platform: '饿了么' })
+            .where({ title: "常规产品无餐盒费", platform: "饿了么" })
           if (!task) return
           let [data, _] = await knx.raw(task[0].sql)
           data = data.map(v => [v.门店id, v.品名, null, 1, null, null])
@@ -2777,12 +3904,12 @@ async function test_autotask() {
           console.error(e)
         }
       },
-      非: async function () {
+      非: async function() {
         try {
-          console.log('非')
-          let task = await knx('test_task_')
+          console.log("非")
+          let task = await knx("test_task_")
             .select()
-            .where({ title: '≠6.9+0.5', platform: '饿了么' })
+            .where({ title: "≠6.9+0.5", platform: "饿了么" })
           if (!task) return
           let [data, _] = await knx.raw(task[0].sql)
           data = data.map(v => [v.shop_id, v.name, null, 0.5, 6.9, null])
@@ -2791,12 +3918,12 @@ async function test_autotask() {
           console.error(e)
         }
       },
-      原价餐盒凑起送: async function () {
+      原价餐盒凑起送: async function() {
         try {
-          console.log('原价餐盒凑起送')
-          let task = await knx('test_task_')
+          console.log("原价餐盒凑起送")
+          let task = await knx("test_task_")
             .select()
-            .where({ title: '原价餐盒凑起送', platform: '饿了么' })
+            .where({ title: "原价餐盒凑起送", platform: "饿了么" })
           if (!task) return
           let [data, _] = await knx.raw(task[0].sql)
           data = data.map(v => [v.门店id, v.品名, null, 1, 13.8, null])
@@ -2805,12 +3932,12 @@ async function test_autotask() {
           console.error(e)
         }
       },
-      甜品粉面套餐: async function () {
+      甜品粉面套餐: async function() {
         try {
-          console.log('甜品粉面套餐')
-          let task = await knx('test_task_')
+          console.log("甜品粉面套餐")
+          let task = await knx("test_task_")
             .select()
-            .where({ title: '甜品粉面套餐', platform: '饿了么' })
+            .where({ title: "甜品粉面套餐", platform: "饿了么" })
           if (!task) return
           let [data, _] = await knx.raw(task[0].sql)
           data = data.map(v => [v.门店id, v.品名, null, 2, 27.8, 15.8])
@@ -2819,12 +3946,12 @@ async function test_autotask() {
           console.error(e)
         }
       },
-      贡茶粉面套餐: async function () {
+      贡茶粉面套餐: async function() {
         try {
-          console.log('贡茶粉面套餐')
-          let task = await knx('test_task_')
+          console.log("贡茶粉面套餐")
+          let task = await knx("test_task_")
             .select()
-            .where({ title: '贡茶粉面套餐', platform: '饿了么' })
+            .where({ title: "贡茶粉面套餐", platform: "饿了么" })
           if (!task) return
           let [data, _] = await knx.raw(task[0].sql)
           data = data.map(v => [v.门店id, v.品名, null, 2, 29.6, 15.8])
@@ -2833,12 +3960,12 @@ async function test_autotask() {
           console.error(e)
         }
       },
-      除原价扣点加料价格: async function () {
+      除原价扣点加料价格: async function() {
         try {
-          console.log('除原价扣点加料价格')
-          let task = await knx('test_task_')
+          console.log("除原价扣点加料价格")
+          let task = await knx("test_task_")
             .select()
-            .where({ title: '除原价扣点加料价格', platform: '饿了么' })
+            .where({ title: "除原价扣点加料价格", platform: "饿了么" })
           if (!task) return
           let [data, _] = await knx.raw(task[0].sql)
           data = data.map(v => [v.门店id, v.品名, null, 0, 6, null])
@@ -2847,12 +3974,12 @@ async function test_autotask() {
           console.error(e)
         }
       },
-      两份起购起购数: async function () {
+      两份起购起购数: async function() {
         try {
-          console.log('两份起购起购数')
-          let task = await knx('test_task_')
+          console.log("两份起购起购数")
+          let task = await knx("test_task_")
             .select()
-            .where({ title: '两份起购起购数', platform: '饿了么' })
+            .where({ title: "两份起购起购数", platform: "饿了么" })
           if (!task) return
           let [data, _] = await knx.raw(task[0].sql)
           data = data.map(v => [v.门店id, v.品名, 2, null, null, null])
@@ -2860,12 +3987,12 @@ async function test_autotask() {
         } catch (e) {
           console.error(e)
         }
-      }
+      },
     }
     // await tasks['薯饼虾饼鸡柳无起购']()
     const fallbackApp = new FallbackApp(9999888)
 
-    console.log(await fallbackApp.food.save('招牌芋圆【店长推荐】', 1, null, null))
+    console.log(await fallbackApp.food.save("招牌芋圆【店长推荐】", 1, null, null))
   } catch (error) {
     console.error(error)
   }
@@ -2882,7 +4009,7 @@ async function updateStock2(cookie, id) {
       pageSize: 500,
       wmPoiId: id,
       needAllCount: true,
-      needTagList: true
+      needTagList: true,
     })
     let skuIds = flatten(foods.productList.map(v => v.wmProductSkus.map(sku => sku.id)))
 
@@ -2895,7 +4022,7 @@ async function updateStock2(cookie, id) {
 
 async function test_stock() {
   try {
-    let data = await readJson('log/log.json')
+    let data = await readJson("log/log.json")
     data = data.map(v => v.meta)
 
     await loop(updateStock2, data, false)
@@ -2906,7 +4033,7 @@ async function test_stock() {
 
 async function test_boxPrice() {
   try {
-    let data = await readXls('plan/折扣价0.01的商品餐盒费.xls', 'Sheet1')
+    let data = await readXls("plan/折扣价0.01的商品餐盒费.xls", "Sheet1")
     data = data.map((v, i) => [v.门店id, v.品名, 1.5, i])
 
     await loop(updateFoodBoxPrice, data, false, { test: delFoods })
@@ -2928,12 +4055,12 @@ async function listLowQuals(cookie, id) {
         priceRange: spu.priceRange,
         monthSaled: spu.monthSaled,
         code: entity.code,
-        desc: entity.desc
+        desc: entity.desc,
       }))
     )
     data = flatten(data)
-    if (data.length == 0) return Promise.resolve('no lqs')
-    return knx('test_mt_food_lq_').insert(data)
+    if (data.length == 0) return Promise.resolve("no lqs")
+    return knx("test_mt_food_lq_").insert(data)
   } catch (err) {
     return Promise.reject(err)
   }
@@ -2971,7 +4098,6 @@ async function getAttrs(cookie, id, spuId) {
 }
 
 async function updateTemplateAndAttrs(cookie, id, name, catName) {
-
   try {
     const fallbackApp = new FallbackApp(id, cookie)
     const food = await fallbackApp.food.find(name, catName)
@@ -2984,12 +4110,15 @@ async function updateTemplateAndAttrs(cookie, id, name, catName) {
     // console.log(temp)
     const { ok } = await fallbackApp.food.setHighBoxPrice2()
     if (ok) {
-      return fallbackApp.food.save5({ name, catName }, {
-        category_id: temp2.categoryId,
-        properties_values: temp
-      })
+      return fallbackApp.food.save5(
+        { name, catName },
+        {
+          category_id: temp2.categoryId,
+          properties_values: temp,
+        }
+      )
     } else {
-      return Promise.reject('h e')
+      return Promise.reject("h e")
     }
   } catch (e) {
     console.error(e?.message ?? e)
@@ -2997,28 +4126,33 @@ async function updateTemplateAndAttrs(cookie, id, name, catName) {
   }
 
   function combineTemp(temp1, temp2) {
-    return { ...temp2.properties_values, '1200001152': temp1.properties_values['1200001152'] }
+    return { ...temp2.properties_values, "1200001152": temp1.properties_values["1200001152"] }
   }
 }
 
 async function test_getTemp() {
   try {
-    let cookie = "wpush_server_url=wss://wpush.meituan.com; uuid_update=true; _lxsdk_cuid=17c6cde6de7c8-0e613ac27c7f1a-b7a1b38-100200-17c6cde6de8c8; _lxsdk=17c6cde6de7c8-0e613ac27c7f1a-b7a1b38-100200-17c6cde6de8c8; acctId=105595922; token=0jyifSoRodTO5sIZ2jm_D1x_hFyNEHCb9zfdMt6dXOEA*; brandId=-1; isOfflineSelfOpen=0; city_id=0; isChain=1; existBrandPoi=true; ignore_set_router_proxy=true; region_id=; region_version=0; newCategory=false; bsid=rPfFw_7n15VN_VOYYWEtVnOBTOjBUejA5ApdcUtdeqj8hFMso0f5ktEJTBhgQY_ekUwAsIxhYgupJO3bBu2Gwg; cityId=440300; provinceId=440000; city_location_id=0; location_id=0; pushToken=0jyifSoRodTO5sIZ2jm_D1x_hFyNEHCb9zfdMt6dXOEA*; labelInfo=20211011:0:0; _lxsdk_s=17c6cde6de9-157-3ed-5af%7C%7C2197; device_uuid=!a75844bc-97f3-4923-9167-3465d42b16e7; _lxsdk_s=17c6cde6de9-157-3ed-5af%7C%7C2198; _lxsdk_s=17c6cde6de9-157-3ed-5af%7C%7C2198; _lxsdk_s=17c6cde6de9-157-3ed-5af%7C%7C2198; wmPoiId=13187701; wmPoiName=%E7%88%B1%E6%8B%89%E5%B1%8B%E9%9D%A2%E5%8C%85%C2%B7%E6%89%8B%E5%B7%A5%E8%9B%8B%E7%B3%95%E7%94%9C%E5%93%81%E7%83%98%E7%84%99%E5%BA%97%EF%BC%88%E5%94%90%E5%B1%B1%E5%BA%97%EF%BC%89; logistics_support=1; shopCategory=food; set_info=%7B%22wmPoiId%22%3A13187701%2C%22ignoreSetRouterProxy%22%3Atrue%7D; JSESSIONID=zyf8e7hwf88sysjf02geqme6; setPrivacyTime=3_20211029; logan_session_token=xgi4ulubd10ywwy0rmlb",
+    let cookie =
+        "wpush_server_url=wss://wpush.meituan.com; uuid_update=true; _lxsdk_cuid=17c6cde6de7c8-0e613ac27c7f1a-b7a1b38-100200-17c6cde6de8c8; _lxsdk=17c6cde6de7c8-0e613ac27c7f1a-b7a1b38-100200-17c6cde6de8c8; acctId=105595922; token=0jyifSoRodTO5sIZ2jm_D1x_hFyNEHCb9zfdMt6dXOEA*; brandId=-1; isOfflineSelfOpen=0; city_id=0; isChain=1; existBrandPoi=true; ignore_set_router_proxy=true; region_id=; region_version=0; newCategory=false; bsid=rPfFw_7n15VN_VOYYWEtVnOBTOjBUejA5ApdcUtdeqj8hFMso0f5ktEJTBhgQY_ekUwAsIxhYgupJO3bBu2Gwg; cityId=440300; provinceId=440000; city_location_id=0; location_id=0; pushToken=0jyifSoRodTO5sIZ2jm_D1x_hFyNEHCb9zfdMt6dXOEA*; labelInfo=20211011:0:0; _lxsdk_s=17c6cde6de9-157-3ed-5af%7C%7C2197; device_uuid=!a75844bc-97f3-4923-9167-3465d42b16e7; _lxsdk_s=17c6cde6de9-157-3ed-5af%7C%7C2198; _lxsdk_s=17c6cde6de9-157-3ed-5af%7C%7C2198; _lxsdk_s=17c6cde6de9-157-3ed-5af%7C%7C2198; wmPoiId=13187701; wmPoiName=%E7%88%B1%E6%8B%89%E5%B1%8B%E9%9D%A2%E5%8C%85%C2%B7%E6%89%8B%E5%B7%A5%E8%9B%8B%E7%B3%95%E7%94%9C%E5%93%81%E7%83%98%E7%84%99%E5%BA%97%EF%BC%88%E5%94%90%E5%B1%B1%E5%BA%97%EF%BC%89; logistics_support=1; shopCategory=food; set_info=%7B%22wmPoiId%22%3A13187701%2C%22ignoreSetRouterProxy%22%3Atrue%7D; JSESSIONID=zyf8e7hwf88sysjf02geqme6; setPrivacyTime=3_20211029; logan_session_token=xgi4ulubd10ywwy0rmlb",
       wmPoiId = 13187701
     const app = new FallbackApp(wmPoiId, cookie)
     let { productList } = await app.food.list2_({ pageSize: 500 })
     console.log(productList.length)
     const limit = pLimit(3)
 
-    const res = await Promise.allSettled(productList.map((prod, i, a) => limit(async () => {
-      console.log(prod.name, prod.tagName, i + 1, a.length)
-      if (prod.name.match(/测试\d+/)) return null
-      const res = await updateTemplateAndAttrs(cookie, wmPoiId, prod.name, prod.tagName)
-      console.log(res)
-      // await sleep(2000)
-    })))
+    const res = await Promise.allSettled(
+      productList.map((prod, i, a) =>
+        limit(async () => {
+          console.log(prod.name, prod.tagName, i + 1, a.length)
+          if (prod.name.match(/测试\d+/)) return null
+          const res = await updateTemplateAndAttrs(cookie, wmPoiId, prod.name, prod.tagName)
+          console.log(res)
+          // await sleep(2000)
+        })
+      )
+    )
     console.log(res)
-    fs.writeFileSync('test2.log', JSON.stringify(res))
+    fs.writeFileSync("test2.log", JSON.stringify(res))
 
     // await loop(updateTemplateAndAttrs, data, false, { test: delFoods }) //
   } catch (error) {
@@ -3028,20 +4162,25 @@ async function test_getTemp() {
 
 async function test_getHighbox() {
   try {
-
-    // let [data, _] = await knx.raw(`SELECT *, r.cookie FROM foxx_food_manage f 
+    // let [data, _] = await knx.raw(`SELECT *, r.cookie FROM foxx_food_manage f
     //   LEFT JOIN foxx_shop_reptile r USING(wmpoiid)
     //   WHERE date = CURDATE() AND name LIKE '莲子椰汁西米露%'`)
     const cookie = await cookieMtRedis()
     // let data = await readXls('plan/0.01招牌芋圆修改前备份(2).xlsx', 'Sheet1')
-    let data = await knx('foxx_shop_reptile').where({ status: 0 }).select()
+    let data = await knx("foxx_shop_reptile")
+      .where({ status: 0 })
+      .select()
     // let data = await readJson('log/log.json')
     // data = data.map(v => [cookie, v.shop_id, v.new_name, v.tagName])
     data = data.map(v => [cookie, v.wmpoiid])
 
-    await loop(async (cookie, id) => {
-      console.log(await new FallbackApp(id, cookie).food.getHighBoxPrice())
-    }, data, false) //
+    await loop(
+      async (cookie, id) => {
+        console.log(await new FallbackApp(id, cookie).food.getHighBoxPrice())
+      },
+      data,
+      false
+    ) //
   } catch (error) {
     console.error(error)
   }
@@ -3050,11 +4189,12 @@ async function test_getHighbox() {
 async function test_substitute() {
   try {
     // const cookie = await cookieMtRedis()
-    const cookie = "_lxsdk_cuid=17b09b195865b-00353994050c4-c501831-1fa400-17b09b19587c8; _lxsdk=17b09b195865b-00353994050c4-c501831-1fa400-17b09b19587c8; device_uuid=!4254ca0c-87b5-44aa-9855-47ebc3ccf297; uuid_update=true; acctId=78648864; token=0bMXqJMWosq9f9vOwFEM_cENQHyO6LQIrUtAZ5SEzfEU*; brandId=-1; wmPoiId=2700545; isOfflineSelfOpen=0; city_id=999999; isChain=0; existBrandPoi=false; ignore_set_router_proxy=false; region_id=2000000001; region_version=1522822151; newCategory=false; bsid=-L-xy-ybMWpJ4-qRmap_r1bKkmzo0qjT2P_3ADlPWjLWeeX19jy6EZdr49VH3MH-989iVO75YdPiBOPMBC9xTw; cityId=440300; provinceId=440000; city_location_id=10000004; location_id=10000005; pushToken=0bMXqJMWosq9f9vOwFEM_cENQHyO6LQIrUtAZ5SEzfEU*; labelInfo=20210901:0:0; set_info=%7B%22wmPoiId%22%3A2700545%2C%22region_id%22%3A%222000000001%22%2C%22region_version%22%3A1522822151%7D; wpush_server_url=wss://wpush.meituan.com; shopCategory=food; JSESSIONID=3fbhrtr10v2q1cvuts0ol8kkg; logan_session_token=b7t2zb1l4ruvnf5am4gs; _lxsdk_s=17be875287a-22b-c44-e8f%7C78648864%7C34"
+    const cookie =
+      "_lxsdk_cuid=17b09b195865b-00353994050c4-c501831-1fa400-17b09b19587c8; _lxsdk=17b09b195865b-00353994050c4-c501831-1fa400-17b09b19587c8; device_uuid=!4254ca0c-87b5-44aa-9855-47ebc3ccf297; uuid_update=true; acctId=78648864; token=0bMXqJMWosq9f9vOwFEM_cENQHyO6LQIrUtAZ5SEzfEU*; brandId=-1; wmPoiId=2700545; isOfflineSelfOpen=0; city_id=999999; isChain=0; existBrandPoi=false; ignore_set_router_proxy=false; region_id=2000000001; region_version=1522822151; newCategory=false; bsid=-L-xy-ybMWpJ4-qRmap_r1bKkmzo0qjT2P_3ADlPWjLWeeX19jy6EZdr49VH3MH-989iVO75YdPiBOPMBC9xTw; cityId=440300; provinceId=440000; city_location_id=10000004; location_id=10000005; pushToken=0bMXqJMWosq9f9vOwFEM_cENQHyO6LQIrUtAZ5SEzfEU*; labelInfo=20210901:0:0; set_info=%7B%22wmPoiId%22%3A2700545%2C%22region_id%22%3A%222000000001%22%2C%22region_version%22%3A1522822151%7D; wpush_server_url=wss://wpush.meituan.com; shopCategory=food; JSESSIONID=3fbhrtr10v2q1cvuts0ol8kkg; logan_session_token=b7t2zb1l4ruvnf5am4gs; _lxsdk_s=17be875287a-22b-c44-e8f%7C78648864%7C34"
 
-    console.log(await substituteFood(cookie, 2700545, '饮料汤羹', '芙蓉菌菇汤（需自备开水）',
-      '饮料汤羹', '皮蛋粥（正餐）'
-    ))
+    console.log(
+      await substituteFood(cookie, 2700545, "饮料汤羹", "芙蓉菌菇汤（需自备开水）", "饮料汤羹", "皮蛋粥（正餐）")
+    )
     // console.log(await delFoods())
   } catch (error) {
     console.error(error)
@@ -3064,17 +4204,18 @@ async function test_substitute() {
 async function test_updatePlan4() {
   try {
     // const cookie = await cookieMtRedis()
-    const cookie = "_lxsdk_cuid=17b09b195865b-00353994050c4-c501831-1fa400-17b09b19587c8; _lxsdk=17b09b195865b-00353994050c4-c501831-1fa400-17b09b19587c8; device_uuid=!4254ca0c-87b5-44aa-9855-47ebc3ccf297; uuid_update=true; acctId=78648864; token=0bMXqJMWosq9f9vOwFEM_cENQHyO6LQIrUtAZ5SEzfEU*; brandId=-1; wmPoiId=2700545; isOfflineSelfOpen=0; city_id=999999; isChain=0; existBrandPoi=false; ignore_set_router_proxy=false; region_id=2000000001; region_version=1522822151; newCategory=false; bsid=-L-xy-ybMWpJ4-qRmap_r1bKkmzo0qjT2P_3ADlPWjLWeeX19jy6EZdr49VH3MH-989iVO75YdPiBOPMBC9xTw; cityId=440300; provinceId=440000; city_location_id=10000004; location_id=10000005; pushToken=0bMXqJMWosq9f9vOwFEM_cENQHyO6LQIrUtAZ5SEzfEU*; labelInfo=20210901:0:0; set_info=%7B%22wmPoiId%22%3A2700545%2C%22region_id%22%3A%222000000001%22%2C%22region_version%22%3A1522822151%7D; wpush_server_url=wss://wpush.meituan.com; shopCategory=food; JSESSIONID=3fbhrtr10v2q1cvuts0ol8kkg; logan_session_token=b7t2zb1l4ruvnf5am4gs; _lxsdk_s=17be875287a-22b-c44-e8f%7C78648864%7C34"
+    const cookie =
+      "_lxsdk_cuid=17b09b195865b-00353994050c4-c501831-1fa400-17b09b19587c8; _lxsdk=17b09b195865b-00353994050c4-c501831-1fa400-17b09b19587c8; device_uuid=!4254ca0c-87b5-44aa-9855-47ebc3ccf297; uuid_update=true; acctId=78648864; token=0bMXqJMWosq9f9vOwFEM_cENQHyO6LQIrUtAZ5SEzfEU*; brandId=-1; wmPoiId=2700545; isOfflineSelfOpen=0; city_id=999999; isChain=0; existBrandPoi=false; ignore_set_router_proxy=false; region_id=2000000001; region_version=1522822151; newCategory=false; bsid=-L-xy-ybMWpJ4-qRmap_r1bKkmzo0qjT2P_3ADlPWjLWeeX19jy6EZdr49VH3MH-989iVO75YdPiBOPMBC9xTw; cityId=440300; provinceId=440000; city_location_id=10000004; location_id=10000005; pushToken=0bMXqJMWosq9f9vOwFEM_cENQHyO6LQIrUtAZ5SEzfEU*; labelInfo=20210901:0:0; set_info=%7B%22wmPoiId%22%3A2700545%2C%22region_id%22%3A%222000000001%22%2C%22region_version%22%3A1522822151%7D; wpush_server_url=wss://wpush.meituan.com; shopCategory=food; JSESSIONID=3fbhrtr10v2q1cvuts0ol8kkg; logan_session_token=b7t2zb1l4ruvnf5am4gs; _lxsdk_s=17be875287a-22b-c44-e8f%7C78648864%7C34"
 
-    let ctx = { pois: [{ id: 2700545, category: 'FOOD_CATE' }] }
+    let ctx = { pois: [{ id: 2700545, category: "FOOD_CATE" }] }
     let query = {
       poi_id: 2700545,
-      tag_name: '饮料汤羹',
-      spu_name: '肺露（听装）2'
+      tag_name: "饮料汤羹",
+      spu_name: "肺露（听装）2",
     }
     let update = {
       attrs: [],
-      skus: [{ spec: '', op: '+', price: 0.07, box_price: 0.77 }],
+      skus: [{ spec: "", op: "+", price: 0.07, box_price: 0.77 }],
       min_order_count: 2,
       single_buy: 0,
       // label_sign: 0
@@ -3132,4 +4273,3 @@ async function test_updatePlan4() {
 // test_getHighbox()
 // test_substitute()
 // test_updatePlan4()
-

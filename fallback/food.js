@@ -1,16 +1,17 @@
 // import instance, { urls } from './base.js'
-import { MTRequest, urls } from './base3.js'
-import instance2 from './base2.js'
-import sleep from 'sleep-promise'
-import dayjs from 'dayjs'
-import download from 'download'
-import xls2Json from 'xls-to-json'
-import util from 'util'
-import htmlparser2 from 'htmlparser2'
-import fs from 'fs'
-import flatten from 'flatten'
-import pLimit from 'p-limit'
-import { isSameArrayBy, combineArray, keepBy } from '../utils/util.js'
+import { MTRequest, urls } from "./base3.js"
+import instance2 from "./base2.js"
+import sleep from "sleep-promise"
+import dayjs from "dayjs"
+import download from "download"
+import xls2Json from "xls-to-json"
+import util from "util"
+import htmlparser2 from "htmlparser2"
+import fs from "fs"
+import flatten from "flatten"
+import pLimit from "p-limit"
+import { inspect } from "util"
+import { isSameArrayBy, combineArray, keepBy } from "../utils/util.js"
 
 const axls2Json = util.promisify(xls2Json)
 
@@ -35,7 +36,7 @@ export default class Food {
     this.wmPoiId = wmPoiId
     this.instance3 = new MTRequest(cookie).instance
     this.csrfToken =
-      'C2iobKssxvX9gcPZkIbkXDPP5Mls9/1Y7xe4KetV2Iw9Z7np//UnX+hQJO5D4tnEotlScBQEVGWqJ1nKFWbIeAmD6TrLkFGVtjOy2ufHno+WF9T0BAJhAlUs5WXTUF71+Syw8PmPhWqSdtV7ppIqEw=='
+      "C2iobKssxvX9gcPZkIbkXDPP5Mls9/1Y7xe4KetV2Iw9Z7np//UnX+hQJO5D4tnEotlScBQEVGWqJ1nKFWbIeAmD6TrLkFGVtjOy2ufHno+WF9T0BAJhAlUs5WXTUF71+Syw8PmPhWqSdtV7ppIqEw=="
   }
 
   async search_(name, pageNum = 1) {
@@ -44,7 +45,7 @@ export default class Food {
       name,
       pageNum,
       pageSize: 30,
-      needTagList: 0
+      needTagList: 0,
     }
     return this.instance3.get(urls.food.search, { params })
   }
@@ -72,12 +73,14 @@ export default class Food {
     }
   }
 
-  async find(name, catName) {
+  async find(name, catName, spuId) {
     try {
       const searchRes = await this.search_(name)
-      if (!searchRes || !searchRes.productList) return Promise.reject({ err: 'find failed' })
-      const product = searchRes.productList.find(v => v.name == name && v.tagName == catName)
-      if (!product) return Promise.reject({ '[搜索商品]': '商品不存在' })
+      if (!searchRes || !searchRes.productList) return Promise.reject({ err: "find failed" })
+      console.log(name, catName, spuId, searchRes.productList)
+      const product = searchRes.productList.find(v => v.id == spuId || (v.name == name && v.tagName == catName))
+      // console.log('searchRes', product)
+      if (!product) return Promise.reject({ "[搜索商品]": "商品不存在" })
       return Promise.resolve(product)
     } catch (err) {
       return Promise.reject(err)
@@ -87,9 +90,9 @@ export default class Food {
   async mfind(name) {
     try {
       const searchRes = await this.search_(name)
-      if (!searchRes || !searchRes.productList) return Promise.reject({ err: 'find failed' })
+      if (!searchRes || !searchRes.productList) return Promise.reject({ err: "find failed" })
       const products = searchRes.productList.filter(v => v.name == name)
-      if (!products) return Promise.reject({ err: 'not find' })
+      if (!products) return Promise.reject({ err: "not find" })
       return Promise.resolve(products)
     } catch (err) {
       return Promise.reject(err)
@@ -99,7 +102,7 @@ export default class Food {
   async download_() {
     const params = {
       wmPoiId: this.wmPoiId,
-      v2: 1
+      v2: 1,
     }
     return this.instance3.get(urls.download.food.down, { params })
   }
@@ -109,7 +112,7 @@ export default class Food {
       wmPoiId: this.wmPoiId,
       pageSize: 10,
       pageNum: 1,
-      type: 6
+      type: 6,
     }
     return this.instance3.get(urls.download.food.list, { params })
   }
@@ -123,11 +126,11 @@ export default class Food {
         v => dayjs.unix(v.utime).month() == dayjs().month() && dayjs.unix(v.utime).date() == dayjs().date()
       )
       if (excel) {
-        await download(excel.output, 'data')
-        const filename = new URL(excel.output).pathname.split('/')[2]
+        await download(excel.output, "data")
+        const filename = new URL(excel.output).pathname.split("/")[2]
         const res = await axls2Json({
           input: `data/${filename}`,
-          output: `data/${filename}.json`
+          output: `data/${filename}.json`,
         })
         return res
       }
@@ -145,7 +148,7 @@ export default class Food {
       pageSize: 1,
       needAllCount: true,
       needTagList: true,
-      ...config
+      ...config,
     }
     return this.instance3.get(urls.food.list, { params })
   }
@@ -165,7 +168,7 @@ export default class Food {
       queryCount: 0,
       pageNum: 1,
       pageSize: 100,
-      wmPoiId: this.wmPoiId
+      wmPoiId: this.wmPoiId,
     }
     return this.instance3.get(urls.food.listLqs, { params })
   }
@@ -173,14 +176,14 @@ export default class Food {
   async searchTag(name) {
     const tags = await this.listTags()
     const tag = tags.find(v => v.name.includes(name))
-    if (!tag) return Promise.reject({ err: 'tag1 not find' })
+    if (!tag) return Promise.reject({ err: "tag1 not find" })
     return Promise.resolve(tag)
   }
 
   async findTag(name) {
     const tags = await this.listTags()
     const tag = tags.find(v => v.name == name)
-    if (!tag) return Promise.reject({ err: 'tag not find' })
+    if (!tag) return Promise.reject({ err: "tag not find" })
     return Promise.resolve(tag)
   }
 
@@ -195,7 +198,7 @@ export default class Food {
     const tag = await this.findTag(catName)
     const foods = await this.listFoods(tag.id)
     const food = foods.find(v => v.name == name)
-    if (!food) return Promise.reject({ '[搜索商品]': '商品不存在' })
+    if (!food) return Promise.reject({ "[搜索商品]": "商品不存在" })
     return food
   }
 
@@ -213,13 +216,13 @@ export default class Food {
       if (spu == null) return Promise.reject({ message: `spu:${spuId}/${spuName} not found` })
       return spu
     }
-    return Promise.reject({ message: 'spu not found' })
+    return Promise.reject({ message: "spu not found" })
   }
 
   async delTag(tagId) {
     let data = {
       tagId,
-      wmPoiId: this.wmPoiId
+      wmPoiId: this.wmPoiId,
     }
     return this.instance3.post(urls.food.delTag, data)
   }
@@ -228,7 +231,7 @@ export default class Food {
     let data = {
       wmPoiId: this.wmPoiId,
       skuId,
-      price
+      price,
     }
     return this.instance3.post(urls.food.updatePrice, data)
   }
@@ -236,8 +239,8 @@ export default class Food {
   async batchUpdateSkus_(spuIds, skuIds, skusInfo) {
     let data = {
       wmPoiId: this.wmPoiId,
-      spuIds: spuIds.join(','),
-      skuIds: skuIds.join(','),
+      spuIds: spuIds.join(","),
+      skuIds: skuIds.join(","),
       skusInfo: JSON.stringify(skusInfo),
       unifiedPackagingFee: 2,
     }
@@ -249,7 +252,7 @@ export default class Food {
       let skusInfo = skus.map((sku, i) => ({
         ...skuT,
         spec: `${i}`,
-        ...sku
+        ...sku,
       }))
       const batchUpdateSkusRes = await this.batchUpdateSkus_(spuIds, skuIds, skusInfo)
       return Promise.resolve(batchUpdateSkusRes)
@@ -262,14 +265,28 @@ export default class Food {
     let data = {
       wmPoiId: this.wmPoiId,
       boxPrice,
-      skuIds: skuIds.join(','),
+      skuIds: skuIds.join(","),
       ladderStatus: 1,
       laderNum: 1,
       v2: 1,
       opTab: 1,
-      viewStyle: 0
+      viewStyle: 0,
     }
     return this.instance3.post(urls.food.batchUpdateBoxPrice, data)
+  }
+
+  async batchUpdateSell(skuIds, sellStatus) {
+    let data = {
+      v2: 1,
+      opTab: 0,
+      skuIds: skuIds.join(","),
+      tagCat: 1,
+      wmPoiId: this.wmPoiId,
+      isSingle: 0,
+      viewStyle: 0,
+      sellstatus: sellStatus, // 0-上架 1-下架
+    }
+    return this.instance3.post(urls.food.batchUpdateSell, data)
   }
 
   async batchUpdateSaleAttr(spuIds, newAttrs, box, stock) {
@@ -288,7 +305,7 @@ export default class Food {
     let data = {
       wmPoiId: this.wmPoiId,
       minOrderCount,
-      spuIds
+      spuIds,
     }
     return this.instance3.post(urls.food.batchUpdateMinOrder, data)
   }
@@ -302,9 +319,9 @@ export default class Food {
           wm_poi_id: this.wmPoiId,
           tag_id: tagId,
           tag_name: tagName,
-          name: foodName
+          name: foodName,
         }))
-      )
+      ),
     }
     return this.instance3.post(urls.food.save, data)
   }
@@ -312,11 +329,8 @@ export default class Food {
   async createTestFoods(spuListJson) {
     let data = {
       wmPoiId: this.wmPoiId,
-      spuListJson: JSON.stringify(
-        spuListJson
-        // [{ "id": 0, "wm_poi_id": "9947800", "isShippingTimeSyncPoi": 2, "shipping_time_x": "-", "name": "测试4", "description": "", "min_order_count": "10", "unit": "份", "tag_name": "店铺公告2", "status": 0, "labelIds": "", "picture": "", "wmProductSkus": [{ "id": 0, "price": "88", "box_num": "1", "box_price": "0", "wm_food_spu_id": "", "spec": "", "valid": 1, "stock": -1 }] }]
-      ),
-      tagInfo: null
+      spuListJson,
+      tagInfo: "",
     }
     return this.instance3.post(urls.food.batchSave, data)
   }
@@ -324,7 +338,7 @@ export default class Food {
   async uploadImg(multipart) {
     let data = {
       multipart,
-      needPicPropaganda: 1
+      needPicPropaganda: 1,
     }
     return this.instance3.post(urls.food.uploadImg, data)
   }
@@ -340,7 +354,7 @@ export default class Food {
       v2: 1,
       viewStyle: 0,
       opTab: 0,
-      tagCat: 1
+      tagCat: 1,
     }
     return this.instance3.post(urls.food.updateImg, data)
   }
@@ -348,14 +362,14 @@ export default class Food {
   async batchUpdateStock(skuIds, stock = -1) {
     let data = {
       wmPoiId: this.wmPoiId,
-      skuIds: skuIds.join(','),
+      skuIds: skuIds.join(","),
       stock,
       // maxStock: 10000,
       autoRefresh: 1,
       v2: 1,
       viewStyle: 0,
       opTab: 0,
-      tagCat: 1
+      tagCat: 1,
     }
     return this.instance3.post(urls.food.batchUpdateStock, data)
   }
@@ -368,7 +382,7 @@ export default class Food {
       tagCat: 1,
       wmPoiId: this.wmPoiId,
       spuName,
-      spuId
+      spuId,
     }
     return this.instance3.post(urls.food.updateName, data)
   }
@@ -377,7 +391,7 @@ export default class Food {
     let data = {
       wmPoiId: this.wmPoiId,
       tagId,
-      targetSeq
+      targetSeq,
     }
     return this.instance3.post(urls.food.updateFoodCatSeq, data)
   }
@@ -392,13 +406,13 @@ export default class Food {
         top_flag: tag.topFlag,
         tag_type: tag.tagType,
         time_zone: tag.timeZone,
-        sequence: tag.sequence
-      })
+        sequence: tag.sequence,
+      }),
     }
     return this.instance3.post(urls.food.updateFoodCatName, data)
   }
 
-  async updateFoodCatTop_(tag) {
+  async updateFoodCatTop_(tag, weeks) {
     let data = {
       wmPoiId: this.wmPoiId,
       tagInfo: JSON.stringify({
@@ -408,11 +422,11 @@ export default class Food {
         top_flag: 1,
         tag_type: tag.tagType,
         time_zone: {
-          '4': [{ start: '00:00', end: '23:59', time: '00:00-23:59' }],
-          '5': [{ start: '00:00', end: '23:59', time: '00:00-23:59' }]
+          "4": [{ start: "00:00", end: "23:59", time: "00:00-23:59" }],
+          "5": [{ start: "00:00", end: "23:59", time: "00:00-23:59" }],
         },
-        sequence: tag.sequence
-      })
+        sequence: tag.sequence,
+      }),
     }
     return this.instance3.post(urls.food.updateFoodCatName, data)
   }
@@ -427,8 +441,8 @@ export default class Food {
         top_flag: 0,
         tag_type: tag.tagType,
         time_zone: {},
-        sequence: tag.sequence
-      })
+        sequence: tag.sequence,
+      }),
     }
     return this.instance3.post(urls.food.updateFoodCatName, data)
   }
@@ -437,22 +451,43 @@ export default class Food {
     let data = {
       wmPoiId: this.wmPoiId,
       tagInfo: JSON.stringify({
-        id: '',
+        id: "",
         name: tagName,
-        description: '',
+        description: "",
         top_flag: 0,
         tag_type: 0,
         time_zone: {},
-        sequence: seq
-      })
+        sequence: seq,
+      }),
     }
+    return this.instance3.post(urls.food.updateFoodCatName, data)
+  }
+
+  async saveFoodCat_(tag, { name, description, topFlag, timeZone, sequence }) {
+    let data = {
+      wmPoiId: this.wmPoiId,
+      tagInfo: JSON.stringify({
+        id: tag.id,
+        name: name ?? tag.name,
+        description: description ?? tag.description,
+        top_flag: topFlag ?? tag.topFlag,
+        tag_type: tag.tagType,
+        time_zone: timeZone
+          ? timeZone
+              .map(v => ({ week: v, zone: [{ start: "00:00", end: "23:59", time: "00:00-23:59" }] }))
+              .reduce((p, v) => ({ ...p, [v.week]: v.zone }), {})
+          : tag.timeZone,
+        sequence: sequence ?? tag.sequence,
+      }),
+    }
+
     return this.instance3.post(urls.food.updateFoodCatName, data)
   }
 
   async updateFoodCatName(tagName, newTagName) {
     try {
       const tag = await this.searchTag(tagName)
-      const tagUpdatedRes = await this.updateFoodCatName(tag, newTagName)
+      const tagUpdatedRes = await this.updateFoodCatName_(tag, newTagName)
       return Promise.resolve(tagUpdatedRes)
     } catch (err) {
       return Promise.reject(err)
@@ -462,7 +497,7 @@ export default class Food {
   async updateFoodCatTime(tagName, newTagName) {
     try {
       const tag = await this.searchTag(tagName)
-      const tagUpdatedRes = await this.updateFoodCatName(tag, newTagName)
+      const tagUpdatedRes = await this.updateFoodCatName_(tag, newTagName)
       return Promise.resolve(tagUpdatedRes)
     } catch (err) {
       return Promise.reject(err)
@@ -484,9 +519,9 @@ export default class Food {
       pTab: 0,
       viewStyle: 0,
       tagId,
-      spuIds: spuIds.join(','),
+      spuIds: spuIds.join(","),
       v2: 1,
-      wmPoiId: this.wmPoiId
+      wmPoiId: this.wmPoiId,
     }
     return this.instance3.post(urls.food.batchUpdateTag, data)
   }
@@ -496,16 +531,16 @@ export default class Food {
       opTab: 0,
       tagCat: 1,
       wmPoiId: this.wmPoiId,
-      skuIds: skuIds.join(','),
+      skuIds: skuIds.join(","),
       viewStyle: 0,
-      v2: 1
+      v2: 1,
     }
     return this.instance3.post(urls.food.batchDelete, data)
   }
 
   async getHighBoxPrice() {
     let params = {
-      wmPoiId: this.wmPoiId
+      wmPoiId: this.wmPoiId,
     }
     return this.instance3.get(urls.food.highBoxPrice, { params })
   }
@@ -516,12 +551,12 @@ export default class Food {
       foodSyncParam: JSON.stringify({
         sourcePoiId: 10085676,
         targetPois: [this.wmPoiId],
-        syncType: '2',
+        syncType: "2",
         syncAll: 0,
-        opType: '1',
-        tag: [{ tagId, syncAll: true, spu: [] }]
+        opType: "1",
+        tag: [{ tagId, syncAll: true, spu: [] }],
       }),
-      csrfToken: this.csrfToken
+      csrfToken: this.csrfToken,
     }
     return this.instance3.post(urls.food.syncFood, data)
   }
@@ -532,9 +567,9 @@ export default class Food {
       foodSyncParam: JSON.stringify({
         sourcePoiId: 9383519,
         targetPois: [this.wmPoiId],
-        syncType: '3',
+        syncType: "3",
         syncAll: 0,
-        opType: '1',
+        opType: "1",
         tag: [
           { tagId: 191265115, syncAll: true, spu: [] },
           { tagId: 191265120, syncAll: true, spu: [] },
@@ -543,10 +578,10 @@ export default class Food {
           { tagId: 191715364, syncAll: true, spu: [] },
           { tagId: 189975212, syncAll: true, spu: [] },
           { tagId: 189975256, syncAll: true, spu: [] },
-          { tagId: 193964658, syncAll: true, spu: [] }
-        ]
+          { tagId: 193964658, syncAll: true, spu: [] },
+        ],
       }),
-      csrfToken: this.csrfToken
+      csrfToken: this.csrfToken,
     }
     return this.instance3.post(urls.food.syncFood, data)
   }
@@ -559,25 +594,25 @@ export default class Food {
       let canSave =
         highBoxPriceR.skuInSellOverall > highBoxPriceR.highBoxPriceCount || highBoxPriceR.highBoxPriceCount == 0
 
-      console.log('highBoxPrice', '...')
+      console.log("highBoxPrice", "...")
 
       if (!canSave) {
         console.error({
           onSell: highBoxPriceR.skuInSellOverall,
           all: highBoxPriceR.highBoxPriceCount,
-          wmPoiId: this.wmPoiId
+          wmPoiId: this.wmPoiId,
         })
         if (tagI > 6) {
-          console.error('sync maxed', tagI)
+          console.error("sync maxed", tagI)
           if (sell) {
-            console.log('waiting 10m', '...')
+            console.log("waiting 10m", "...")
             await sleep(10 * 60 * 1000)
             await this.setHighBoxPrice(tagI, false)
           } else {
             await this.syncTags()
           }
 
-          return Promise.reject({ err: 'sync maxed' })
+          return Promise.reject({ err: "sync maxed" })
         }
         await this.syncTest(tagids[tagI])
         await sleep(2 * 60 * 1000)
@@ -590,48 +625,61 @@ export default class Food {
     }
   }
 
-  async setHighBoxPrice2(boxPrice = 8, skuCnt = 1) {
+  async setHighBoxPrice2(boxPrice = 8, skuCnt = 2) {
     try {
       const highBoxPriceR = await this.getHighBoxPrice()
 
       let canSave =
-        highBoxPriceR.skuInSellOverall >= (highBoxPriceR.highBoxPriceCount + skuCnt) ||
+        highBoxPriceR.canSetHighBoxPrice == false ||
+        highBoxPriceR.skuInSellOverall >= highBoxPriceR.highBoxPriceCount + skuCnt ||
         highBoxPriceR.highBoxPriceCount == 0 ||
         boxPrice <= highBoxPriceR.normalBoxPrice
 
-      console.log('highBoxPrice', '...')
+      console.log("highBoxPrice", "...")
 
       if (!canSave) {
         console.error({
           onSell: highBoxPriceR.skuInSellOverall,
           all: highBoxPriceR.highBoxPriceCount,
-          wmPoiId: this.wmPoiId
+          wmPoiId: this.wmPoiId,
         })
-        let needCnt = (highBoxPriceR.highBoxPriceCount + skuCnt + 8 - highBoxPriceR.skuInSellOverall) / highBoxPriceR.highBoxPriceRate
+
+        let needCnt =
+          (highBoxPriceR.highBoxPriceCount + skuCnt + 3 - highBoxPriceR.skuInSellOverall) /
+          highBoxPriceR.highBoxPriceRate
         let pageSize = 500
-        let pages = Array.from(new Array(Math.ceil(needCnt / pageSize)).keys())
-          .map((v, i, a) => i == a.length - 1 ? needCnt % pageSize || pageSize : pageSize)
+        let pages = Array.from(new Array(Math.ceil(needCnt / pageSize)).keys()).map((v, i, a) =>
+          i == a.length - 1 ? needCnt % pageSize || pageSize : pageSize
+        )
 
         let tags = await this.listTags()
         let startIndex = Math.max(
           ...[
-            ...tags.filter(tag => /店铺公告\d+/.test(tag.name)).map(tag => parseInt(tag.name.replace('店铺公告', ''))),
-            1
+            ...tags.filter(tag => /店铺公告\d+/.test(tag.name)).map(tag => parseInt(tag.name.replace("店铺公告", ""))),
+            1,
           ]
         )
 
         for (let [i, p] of pages.entries()) {
           try {
             let tagName = `店铺公告${startIndex + i + 1}`
-            let spuListJson = Array.from(new Array(p).keys()).map(i => (
-              {
-                "id": 0, "wm_poi_id": this.wmPoiId, "isShippingTimeSyncPoi": 2, "shipping_time_x": "-",
-                "name": `测试${i}`,
-                "description": "说明产品，请勿下单", "min_order_count": "10", "unit": "份",
-                "tag_name": tagName, "status": 0, "labelIds": "", "picture": "http%3A%2F%2Fp0.meituan.net%2Fwmproduct%2F2ba25f68ca66b4ab234607c3b510f8ff332609.png",
-                "wmProductSkus": [{ "id": 0, "price": "88", "box_num": "1", "box_price": "0", "wm_food_spu_id": "", "spec": "", "valid": 1, "stock": -1 }]
-              }
-            ))
+            let spuListJson = Array.from(new Array(p).keys()).map(i => ({
+              id: 0,
+              wm_poi_id: this.wmPoiId,
+              isShippingTimeSyncPoi: 2,
+              shipping_time_x: "-",
+              name: `测试${i}`,
+              description: "说明产品，请勿下单",
+              min_order_count: "10",
+              unit: "份",
+              tag_name: tagName,
+              status: 0,
+              labelIds: "",
+              // picture: "http%3A%2F%2Fp0.meituan.net%2Fwmproduct%2F2ba25f68ca66b4ab234607c3b510f8ff332609.png",
+              wmProductSkus: [
+                { id: 0, price: "88", box_num: "1", box_price: "0", wm_food_spu_id: "", spec: "", valid: 1, stock: -1 },
+              ],
+            }))
             await this.createTestFoods(spuListJson)
             await sleep(2000)
           } catch (error) {
@@ -653,7 +701,7 @@ export default class Food {
     let data = {
       wmPoiId: this.wmPoiId,
       spuId,
-      minOrderCount: 2
+      minOrderCount: 2,
     }
     return this.instance3.post(urls.food.updateMinOrderCount, data)
   }
@@ -662,8 +710,8 @@ export default class Food {
     let params = {
       wmPoiId: this.wmPoiId,
       spuId,
-      from: 'new',
-      productNew: 1
+      from: "new",
+      productNew: 1,
     }
     return instance2.get(urls.food.editView, { params })
   }
@@ -673,7 +721,7 @@ export default class Food {
       spuId,
       wmPoiId: this.wmPoiId,
       clientId: 2,
-      v2: 1
+      v2: 1,
     }
     return this.instance3.get(urls.food.editView2, { params })
   }
@@ -682,7 +730,7 @@ export default class Food {
     let params = {
       tagName,
       wm_product_lib_tag_id,
-      wmPoiId: this.wmPoiId
+      wmPoiId: this.wmPoiId,
     }
     return this.instance3.get(urls.food.searchProp, { params })
   }
@@ -691,7 +739,7 @@ export default class Food {
     let params = {
       spuId,
       wmPoiId: this.wmPoiId,
-      isNew
+      isNew,
     }
     return this.instance3.get(urls.food.getTemp, { params })
   }
@@ -699,7 +747,7 @@ export default class Food {
   async getProperties(categoryId) {
     let params = {
       categoryId,
-      needAll: 1
+      needAll: 1,
     }
     return this.instance3.get(urls.food.getProperties, { params })
   }
@@ -709,18 +757,18 @@ export default class Food {
       const food = await this.find(name)
 
       const editView = await this.getEditView(food.id)
-      let pageModel = ''
+      let pageModel = ""
       const parser = new htmlparser2.Parser({
         onopentag(name, attrs) {
-          if (name == 'meta' && attrs.name == 'pageModel') {
+          if (name == "meta" && attrs.name == "pageModel") {
             pageModel = attrs.data
           }
-        }
+        },
       })
       parser.write(editView)
       parser.end()
 
-      if (pageModel == '') return this.getMinOrderCount2(name)
+      if (pageModel == "") return this.getMinOrderCount2(name)
       pageModel = JSON.parse(pageModel)
       return Promise.resolve(pageModel.wmProductSpu.min_order_count)
     } catch (e) {
@@ -728,9 +776,9 @@ export default class Food {
     }
   }
 
-  async getMinOrderCount2(name, catName) {
+  async getMinOrderCount2(name, catName, spuId) {
     try {
-      const food = await this.find(name, catName)
+      const food = await this.find(name, catName, spuId)
       let { wmProductSpu } = await this.getEditView2(food.id)
       return Promise.resolve(wmProductSpu.min_order_count)
     } catch (e) {
@@ -741,7 +789,8 @@ export default class Food {
   async save_(food) {
     let data = {
       wmPoiId: this.wmPoiId,
-      wmFoodVoJson: JSON.stringify([food])
+      entranceType: 2,
+      wmFoodVoJson: [food],
     }
     return this.instance3.post(urls.food.save, data)
   }
@@ -752,17 +801,17 @@ export default class Food {
       const food = await this.find(name)
 
       const editView = await this.getEditView(food.id)
-      let pageModel = ''
+      let pageModel = ""
       const parser = new htmlparser2.Parser({
         onopentag(name, attrs) {
-          if (name == 'meta' && attrs.name == 'pageModel') {
+          if (name == "meta" && attrs.name == "pageModel") {
             pageModel = attrs.data
           }
-        }
+        },
       })
       parser.write(editView)
       parser.end()
-      if (pageModel == '') return Promise.reject({ err: 'pageModel null' })
+      if (pageModel == "") return Promise.reject({ err: "pageModel null" })
       pageModel = JSON.parse(pageModel)
 
       pageModel.wmProductSpu.attrList = pageModel.wmProductSpu.attrList || []
@@ -775,52 +824,52 @@ export default class Food {
       if (!ok) return Promise.reject({ err: `properties required ${unreqs}` })
 
       if (mainMat) {
-        let mainMatKey = temp.propertiesKeys.find(k => k.wm_product_lib_tag_name == '主料')
-        if (!mainMatKey) return Promise.reject({ err: 'mat key not found' })
+        let mainMatKey = temp.propertiesKeys.find(k => k.wm_product_lib_tag_name == "主料")
+        if (!mainMatKey) return Promise.reject({ err: "mat key not found" })
         const { property } = await this.searchProperty(mainMat)
         let p = property.find(v => v.name == mainMat)
-        if (!p) return Promise.reject({ err: 'mainMat not found' })
+        if (!p) return Promise.reject({ err: "mainMat not found" })
         properties_values[mainMatKey.wm_product_lib_tag_id] = [
           {
-            id: '',
+            id: "",
             parent_tag_id: 0,
             wm_product_lib_tag_id: mainMatKey.wm_product_lib_tag_id,
-            wm_product_lib_tag_name: '主料',
+            wm_product_lib_tag_name: "主料",
             value: p.name,
             value_id: p.wm_product_lib_tag_id,
             level: 1,
             is_leaf: 2,
             sequence: mainMatKey.sequence,
-            propertyOpType: 3
-          }
+            propertyOpType: 3,
+          },
         ]
       }
 
       let spu = keep(pageModel.wmProductSpu, [
-        'id',
-        'wm_poi_id',
-        'tag_id',
-        'tag_name',
-        'name',
-        'description',
-        'isShippingTimeSyncPoi',
-        'shipping_time_x',
-        'wmProductSkus',
-        'labelList',
-        'specialEffectPic',
-        'min_order_count',
-        'wmProductVideo',
-        'search_terms',
-        'labelValues',
-        'customPropertiesValues',
-        'productCardDisplayContent'
+        "id",
+        "wm_poi_id",
+        "tag_id",
+        "tag_name",
+        "name",
+        "description",
+        "isShippingTimeSyncPoi",
+        "shipping_time_x",
+        "wmProductSkus",
+        "labelList",
+        "specialEffectPic",
+        "min_order_count",
+        "wmProductVideo",
+        "search_terms",
+        "labelValues",
+        "customPropertiesValues",
+        "productCardDisplayContent",
       ])
 
       spu = {
         ...spu,
         attrList:
           attrList ||
-          pageModel.wmProductSpu.attrList.map(v => keep(v, ['id', 'wm_product_spu_id', 'no', 'name', 'value'])),
+          pageModel.wmProductSpu.attrList.map(v => keep(v, ["id", "wm_product_spu_id", "no", "name", "value"])),
         labelList: spu.labelList || [],
         search_terms: spu.search_terms || [],
         labelValues: spu.labelValues || [],
@@ -832,12 +881,12 @@ export default class Food {
         wmProductSkus: spu.wmProductSkus.map(sku => ({
           ...sku,
           weight: weight || -2,
-          weight_unit: weightUnit || sku.weight_unit || '1人份',
+          weight_unit: weightUnit || sku.weight_unit || "1人份",
           wmProductStock: { ...sku.wmProductStock, ...prodStock } || {
             max_stock: 10000,
-            auto_refresh: 0
-          }
-        }))
+            auto_refresh: 0,
+          },
+        })),
       }
       // fs.writeFileSync('log/logE.json', JSON.stringify(pageModel))
       return this.save_(spu)
@@ -853,61 +902,61 @@ export default class Food {
       if (unreqs.length == 0) {
         return Promise.resolve({ ok: true, properties_values })
       } else {
-        let r = unreqs.find(k => k.wm_product_lib_tag_name == '茶底')
-        let r2 = unreqs.find(k => k.wm_product_lib_tag_name == '主料')
+        let r = unreqs.find(k => k.wm_product_lib_tag_name == "茶底")
+        let r2 = unreqs.find(k => k.wm_product_lib_tag_name == "主料")
         if (r && r2) {
-          const { property } = await that.searchProperty('奶茶')
-          let p = property.find(v => v.name == '奶茶')
-          let c = r.child.find(c => c.wm_product_lib_tag_name == '其他茶型')
+          const { property } = await that.searchProperty("奶茶")
+          let p = property.find(v => v.name == "奶茶")
+          let c = r.child.find(c => c.wm_product_lib_tag_name == "其他茶型")
 
           return isPropMatchReqs(propertiesKeys, {
             ...properties_values,
             [r.wm_product_lib_tag_id]: [
               {
-                id: '',
+                id: "",
                 parent_tag_id: 0,
                 wm_product_lib_tag_id: r.wm_product_lib_tag_id,
-                wm_product_lib_tag_name: '茶底',
+                wm_product_lib_tag_name: "茶底",
                 value: c.wm_product_lib_tag_name,
                 value_id: c.wm_product_lib_tag_id,
                 level: 2,
                 is_leaf: 1,
-                sequence: r.sequence
-              }
+                sequence: r.sequence,
+              },
             ],
             [r2.wm_product_lib_tag_id]: [
               {
-                id: '',
+                id: "",
                 parent_tag_id: 0,
                 wm_product_lib_tag_id: r2.wm_product_lib_tag_id,
-                wm_product_lib_tag_name: '主料',
+                wm_product_lib_tag_name: "主料",
                 value: p.name,
                 value_id: p.wm_product_lib_tag_id,
                 level: 1,
                 is_leaf: 2,
                 sequence: r2.sequence,
-                propertyOpType: 3
-              }
-            ]
+                propertyOpType: 3,
+              },
+            ],
           })
         }
         if (r) {
-          let c = r.child.find(c => c.wm_product_lib_tag_name == '其他茶型')
+          let c = r.child.find(c => c.wm_product_lib_tag_name == "其他茶型")
           return isPropMatchReqs(propertiesKeys, {
             ...properties_values,
             [r.wm_product_lib_tag_id]: [
               {
-                id: '',
+                id: "",
                 parent_tag_id: 0,
                 wm_product_lib_tag_id: r.wm_product_lib_tag_id,
-                wm_product_lib_tag_name: '茶底',
+                wm_product_lib_tag_name: "茶底",
                 value: c.wm_product_lib_tag_name,
                 value_id: c.wm_product_lib_tag_id,
                 level: 2,
                 is_leaf: 1,
-                sequence: r.sequence
-              }
-            ]
+                sequence: r.sequence,
+              },
+            ],
           })
         }
         return Promise.reject({ ok: false, unreqs })
@@ -915,10 +964,10 @@ export default class Food {
     }
   }
 
-  async save2(name, catName, attrs, minOrder, desc, notDeliverAlone, weight, weightUnit, labels, pvs = {}) {
+  async save2(name, catName, spuId, attrs, minOrder, desc, notDeliverAlone, weight, weightUnit, labels, pvs = {}) {
     let that = this
     try {
-      const food = await this.find(name, catName)
+      const food = await this.find(name, catName, spuId)
       let { wmProductSpu } = await this.getEditView2(food.id)
 
       const temp = await this.getTemplate(food.id, 1)
@@ -952,14 +1001,14 @@ export default class Food {
       let no = props.saleAttrs.length + 1
 
       // console.log(wmProductSpu.newSpuAttrs.map(a => a.name == '份量').concat(getNewSpuAttrs(attrs, no)))
-      let unitAttr = wmProductSpu.newSpuAttrs.findIndex(a => a.name == '份量')
+      let unitAttr = wmProductSpu.newSpuAttrs.findIndex(a => a.name == "份量")
       if (
         unitAttr != -1 &&
         wmProductSpu.newSpuAttrs[unitAttr].weight == -1 &&
-        wmProductSpu.newSpuAttrs[unitAttr].weightUnit == ''
+        wmProductSpu.newSpuAttrs[unitAttr].weightUnit == ""
       ) {
         wmProductSpu.newSpuAttrs[unitAttr].weight = -2
-        wmProductSpu.newSpuAttrs[unitAttr].weightUnit = '1人份'
+        wmProductSpu.newSpuAttrs[unitAttr].weightUnit = "1人份"
       }
 
       if (weightUnit) {
@@ -983,61 +1032,59 @@ export default class Food {
         description: desc ?? wmProductSpu.description,
         labelValues: wmProductSpu.labelValues || [],
         labelList: labels ? [...(wmProductSpu.labelList ?? []), ...labels] : wmProductSpu.labelList ?? [], //
-        newSpuAttrs: attrs
-          ? getNewSpuAttrs(wmProductSpu.newSpuAttrs, attrs)
-          : wmProductSpu.newSpuAttrs,
+        newSpuAttrs: attrs ? getNewSpuAttrs(wmProductSpu.newSpuAttrs, attrs) : wmProductSpu.newSpuAttrs,
         stockAndBoxPriceSkus: wmProductSpu.wmProductSkus.map(sku => ({
           price: sku.price,
-          unit: weightUnit || sku.unit || '1人份',
+          unit: weightUnit || sku.unit || "1人份",
           box_price: sku.box_price,
-          spec: sku.spec || `（${sku.unit || '1人份'}）`,
+          spec: sku.spec || `（${sku.unit || "1人份"}）`,
           weight: weight || sku.weight,
           wmProductLadderBoxPrice: sku.wmProductLadderBoxPrice || {
             status: 1,
             ladder_num: sku.box_num,
-            ladder_price: sku.box_price
+            ladder_price: sku.box_price,
           },
           wmProductStock: sku.wmProductStock || {
-            id: '0',
+            id: "0",
             stock: -1,
             max_stock: -1,
-            auto_refresh: 1
+            auto_refresh: 1,
           },
-          attrList: sku.attrList.find(a => a.name == '份量')
-            ? sku.attrList.find(a => a.name == '份量').value
+          attrList: sku.attrList.find(a => a.name == "份量")
+            ? sku.attrList.find(a => a.name == "份量").value
               ? sku.attrList
               : [
-                {
-                  name: '份量',
-                  name_id: 0,
-                  value: `${sku.unit || '1人份'}__默认`,
-                  value_id: 0,
-                  no: 0
-                }
-              ]
-            : sku.attrList
+                  {
+                    name: "份量",
+                    name_id: 0,
+                    value: `${sku.unit || "1人份"}__默认`,
+                    value_id: 0,
+                    no: 0,
+                  },
+                ]
+            : sku.attrList,
         })),
         unifiedPackagingFee: 2,
         wmProductLadderBoxPrice: wmProductSpu.wmProductLadderBoxPrice,
         wmProductStock: wmProductSpu.wmProductStock || {
-          id: '0',
+          id: "0",
           stock: -1,
           max_stock: -1,
-          auto_refresh: 1
+          auto_refresh: 1,
         },
-        productCardDisplayContent: wmProductSpu.productCardDisplayContent || ''
+        productCardDisplayContent: wmProductSpu.productCardDisplayContent || "",
       }
 
       // console.log(JSON.stringify(model))
       const { ok } = await this.setHighBoxPrice2(
-        Math.max(...food.wmProductSkus.map(sku => sku.boxPrice)), food.wmProductSkus.length
+        Math.max(...food.wmProductSkus.map(sku => sku.boxPrice)),
+        food.wmProductSkus.length
       )
       if (ok) {
         return this.save_(model)
       } else {
-        return Promise.reject('sync failed')
+        return Promise.reject("sync failed")
       }
-
     } catch (e) {
       return Promise.reject(e)
     }
@@ -1052,15 +1099,15 @@ export default class Food {
           specialEffectUrl: specialEffectUrl,
           content: content,
           isMaster: 1,
-          specialEffectPicBase64: ''
+          specialEffectPicBase64: "",
         }
       } else {
         specialEffectPic = {
           specialEffectEnable: 2,
-          specialEffectUrl: '',
-          content: '',
+          specialEffectUrl: "",
+          content: "",
           isMaster: 1,
-          specialEffectPicBase64: ''
+          specialEffectPicBase64: "",
         }
       }
       return specialEffectPic
@@ -1068,7 +1115,7 @@ export default class Food {
 
     function getNewSpuAttrs(oldAttrs, newAttrs) {
       // const maxNo = Math.max(...newAttrs.map(v => v.no))
-      const 份量 = oldAttrs.filter(v => v.name == '份量') // .map(v => ({ ...v, sell_status: 0 }))
+      const 份量 = oldAttrs.filter(v => v.name == "份量") // .map(v => ({ ...v, sell_status: 0 }))
       // const 其他 = oldAttrs.filter(v => v.name != '份量')
       //   .filter(v => !newAttrs.map(v => v.name).includes(v.name))
       //   .filter(v => v.name != '甜度')
@@ -1088,10 +1135,10 @@ export default class Food {
       if (unreqs.length == 0) {
         return Promise.resolve({ ok: true, properties_values })
       } else {
-        let r = unreqs.find(k => k.wm_product_lib_tag_name == '茶底')
+        let r = unreqs.find(k => k.wm_product_lib_tag_name == "茶底")
 
         if (r) {
-          let c = r.child.find(c => c.wm_product_lib_tag_name == '其他茶型')
+          let c = r.child.find(c => c.wm_product_lib_tag_name == "其他茶型")
           return isPropMatchReqs(
             propertiesKeys,
             {
@@ -1104,9 +1151,9 @@ export default class Food {
                   is_leaf: c.is_leaf,
                   value: c.wm_product_lib_tag_name,
                   value_id: c.wm_product_lib_tag_id,
-                  child: null
-                }
-              ]
+                  child: null,
+                },
+              ],
             },
             wm_product_property_template_id
           )
@@ -1152,23 +1199,23 @@ export default class Food {
       let no = props.saleAttrs.length + 1
 
       // console.log(wmProductSpu.newSpuAttrs.map(a => a.name == '份量').concat(getNewSpuAttrs(attrs, no)))
-      let unitAttr = wmProductSpu.newSpuAttrs.findIndex(a => a.name == '份量')
+      let unitAttr = wmProductSpu.newSpuAttrs.findIndex(a => a.name == "份量")
       if (
         unitAttr != -1 &&
         wmProductSpu.newSpuAttrs[unitAttr].weight == -1 &&
-        wmProductSpu.newSpuAttrs[unitAttr].weightUnit == ''
+        wmProductSpu.newSpuAttrs[unitAttr].weightUnit == ""
       ) {
         wmProductSpu.newSpuAttrs[unitAttr].weight = -2
-        wmProductSpu.newSpuAttrs[unitAttr].weightUnit = '1人份'
+        wmProductSpu.newSpuAttrs[unitAttr].weightUnit = "1人份"
       }
 
       let groupNames = Array.from(new Set(wmProductSpu.newSpuAttrs.map(v => v.name)))
       let groups = groupNames.reduce((c, v) => ({ ...c, [v]: wmProductSpu.newSpuAttrs.filter(k => k.name == v) }), {})
-      let subGroupNames = groupNames.filter(v => v.includes('口味'))
+      let subGroupNames = groupNames.filter(v => v.includes("口味"))
       for (let sgn of subGroupNames) {
         groups[sgn] = groups[sgn]
           .filter(v => !/烧烤味?粉?|甘梅味?|蒜香[酱油]?酱?|辣椒粉|酸甜酱/.test(v.value))
-          .concat(['辣椒粉', '酸甜酱'].map(k => ({ ...groups[sgn][0], value: k })))
+          .concat(["辣椒粉", "酸甜酱"].map(k => ({ ...groups[sgn][0], value: k })))
           .map((v, i) => ({ ...v, value_sequence: i + 1 }))
       }
       let newSpuAttrs = flatten(groupNames.map(name => groups[name]))
@@ -1193,44 +1240,44 @@ export default class Food {
         newSpuAttrs,
         stockAndBoxPriceSkus: wmProductSpu.wmProductSkus.map(sku => ({
           price: sku.price,
-          unit: sku.unit || '1人份',
+          unit: sku.unit || "1人份",
           box_price: sku.box_price,
-          spec: sku.spec || `（${sku.unit || '1人份'}）`,
+          spec: sku.spec || `（${sku.unit || "1人份"}）`,
           weight: sku.weight,
           wmProductLadderBoxPrice: sku.wmProductLadderBoxPrice || {
             status: 1,
             ladder_num: sku.box_num,
-            ladder_price: sku.box_price
+            ladder_price: sku.box_price,
           },
           wmProductStock: sku.wmProductStock || {
-            id: '0',
+            id: "0",
             stock: -1,
             max_stock: -1,
-            auto_refresh: 1
+            auto_refresh: 1,
           },
-          attrList: sku.attrList.find(a => a.name == '份量')
-            ? sku.attrList.find(a => a.name == '份量').value
+          attrList: sku.attrList.find(a => a.name == "份量")
+            ? sku.attrList.find(a => a.name == "份量").value
               ? sku.attrList
               : [
-                {
-                  name: '份量',
-                  name_id: 0,
-                  value: `${sku.unit || '1人份'}__默认`,
-                  value_id: 0,
-                  no: 0
-                }
-              ]
-            : sku.attrList
+                  {
+                    name: "份量",
+                    name_id: 0,
+                    value: `${sku.unit || "1人份"}__默认`,
+                    value_id: 0,
+                    no: 0,
+                  },
+                ]
+            : sku.attrList,
         })),
         unifiedPackagingFee: wmProductSpu.unifiedPackagingFee,
         wmProductLadderBoxPrice: wmProductSpu.wmProductLadderBoxPrice,
         wmProductStock: wmProductSpu.wmProductStock || {
-          id: '0',
+          id: "0",
           stock: -1,
           max_stock: -1,
-          auto_refresh: 1
+          auto_refresh: 1,
         },
-        productCardDisplayContent: wmProductSpu.productCardDisplayContent || ''
+        productCardDisplayContent: wmProductSpu.productCardDisplayContent || "",
       }
 
       return this.save_(model)
@@ -1246,10 +1293,10 @@ export default class Food {
       if (unreqs.length == 0) {
         return Promise.resolve({ ok: true, properties_values })
       } else {
-        let r = unreqs.find(k => k.wm_product_lib_tag_name == '茶底')
+        let r = unreqs.find(k => k.wm_product_lib_tag_name == "茶底")
 
         if (r) {
-          let c = r.child.find(c => c.wm_product_lib_tag_name == '其他茶型')
+          let c = r.child.find(c => c.wm_product_lib_tag_name == "其他茶型")
           return isPropMatchReqs(
             propertiesKeys,
             {
@@ -1262,9 +1309,9 @@ export default class Food {
                   is_leaf: c.is_leaf,
                   value: c.wm_product_lib_tag_name,
                   value_id: c.wm_product_lib_tag_id,
-                  child: null
-                }
-              ]
+                  child: null,
+                },
+              ],
             },
             wm_product_property_template_id
           )
@@ -1283,14 +1330,14 @@ export default class Food {
 
       let properties_values = temp.properties_values
 
-      let unitAttr = wmProductSpu.newSpuAttrs.findIndex(a => a.name == '份量')
+      let unitAttr = wmProductSpu.newSpuAttrs.findIndex(a => a.name == "份量")
       if (
         unitAttr != -1 &&
         wmProductSpu.newSpuAttrs[unitAttr].weight == -1 &&
-        wmProductSpu.newSpuAttrs[unitAttr].weightUnit == ''
+        wmProductSpu.newSpuAttrs[unitAttr].weightUnit == ""
       ) {
         wmProductSpu.newSpuAttrs[unitAttr].weight = -2
-        wmProductSpu.newSpuAttrs[unitAttr].weightUnit = '1人份'
+        wmProductSpu.newSpuAttrs[unitAttr].weightUnit = "1人份"
       }
 
       let model = {
@@ -1310,48 +1357,48 @@ export default class Food {
         labelValues: wmProductSpu.labelValues || [],
         labelList: wmProductSpu.labelList || [], //
         newSpuAttrs: attrs
-          ? wmProductSpu.newSpuAttrs.filter(a => a.name == '份量').concat(attrs)
+          ? wmProductSpu.newSpuAttrs.filter(a => a.name == "份量").concat(attrs)
           : wmProductSpu.newSpuAttrs,
         stockAndBoxPriceSkus: wmProductSpu.wmProductSkus.map(sku => ({
           price: sku.price,
-          unit: sku.unit || '1人份',
+          unit: sku.unit || "1人份",
           box_price: sku.box_price,
-          spec: sku.spec || `（${sku.unit || '1人份'}）`,
+          spec: sku.spec || `（${sku.unit || "1人份"}）`,
           weight: sku.weight,
           wmProductLadderBoxPrice: sku.wmProductLadderBoxPrice || {
             status: 1,
             ladder_num: sku.box_num,
-            ladder_price: sku.box_price
+            ladder_price: sku.box_price,
           },
           wmProductStock: sku.wmProductStock || {
-            id: '0',
+            id: "0",
             stock: -1,
             max_stock: -1,
-            auto_refresh: 1
+            auto_refresh: 1,
           },
-          attrList: sku.attrList.find(a => a.name == '份量')
-            ? sku.attrList.find(a => a.name == '份量').value
+          attrList: sku.attrList.find(a => a.name == "份量")
+            ? sku.attrList.find(a => a.name == "份量").value
               ? sku.attrList
               : [
-                {
-                  name: '份量',
-                  name_id: 0,
-                  value: `${sku.unit || '1人份'}__默认`,
-                  value_id: 0,
-                  no: 0
-                }
-              ]
-            : sku.attrList
+                  {
+                    name: "份量",
+                    name_id: 0,
+                    value: `${sku.unit || "1人份"}__默认`,
+                    value_id: 0,
+                    no: 0,
+                  },
+                ]
+            : sku.attrList,
         })),
         unifiedPackagingFee: 2,
         wmProductLadderBoxPrice: wmProductSpu.wmProductLadderBoxPrice,
         wmProductStock: wmProductSpu.wmProductStock || {
-          id: '0',
+          id: "0",
           stock: -1,
           max_stock: -1,
-          auto_refresh: 1
+          auto_refresh: 1,
         },
-        productCardDisplayContent: wmProductSpu.productCardDisplayContent || ''
+        productCardDisplayContent: wmProductSpu.productCardDisplayContent || "",
       }
 
       // console.log(JSON.stringify(model))
@@ -1362,7 +1409,7 @@ export default class Food {
   }
 
   async save5({ name, catName, food, foodEdit, foodTemp }, updates) {
-    const empty = (val) => val == null || val == ''
+    const empty = val => val == null || val == ""
 
     const basicInfo = (food, foodEdit) => {
       const { wmProductSpu } = foodEdit
@@ -1391,18 +1438,26 @@ export default class Food {
       const { wmProductSpu } = foodEdit
 
       const stockAndBoxPriceSkus = () => {
-        let g_new_spu_attrs = combineArray(Object.values(wmProductSpu.newSpuAttrs.filter(v => v.name == '份量' || v.price > 0)
-          .reduce((p, v, _, a) => ({ ...p, [v.name]: a.filter(k => k.name == v.name) }), {})))
+        let g_new_spu_attrs = combineArray(
+          Object.values(
+            wmProductSpu.newSpuAttrs
+              .filter(v => v.name == "份量" || v.price > 0)
+              .reduce((p, v, _, a) => ({ ...p, [v.name]: a.filter(k => k.name == v.name) }), {})
+          )
+        )
 
         return g_new_spu_attrs.map(v => {
-          let wa = v.find(k => k.name == '份量')
+          let wa = v.find(k => k.name == "份量")
           let unit = wa.weight == -2 ? wa.weightUnit : `${wa.weight}${wa.weightUnit}`
-          let runit = /\d+人份/.test(unit) ? unit : '约' + unit
-          let attrList = v.map(k => ({ ...k, value: k.name == '份量' && empty(k.value) ? unit : k.value }))
-            .map(k => keepBy(k, ['name', 'name_id', 'value', 'value_id'].concat(k.name == '份量' ? ['no'] : [])))
-          let spec = (empty(wa.value) ? runit : `${wa.value}（${runit}）`) + ' '
-            v.filter(k => k.name != '份量').map(k => k.value).join('·')
-          let osku = wmProductSpu.wmProductSkus.find(k => isSameArrayBy(k.attrList, v, ['name', 'value']))
+          let runit = /\d+人份/.test(unit) ? unit : "约" + unit
+          let attrList = v
+            .map(k => ({ ...k, value: k.name == "份量" && empty(k.value) ? unit : k.value }))
+            .map(k => keepBy(k, ["name", "name_id", "value", "value_id"].concat(k.name == "份量" ? ["no"] : [])))
+          let spec = (empty(wa.value) ? runit : `${wa.value}（${runit}）`) + " "
+          v.filter(k => k.name != "份量")
+            .map(k => k.value)
+            .join("·")
+          let osku = wmProductSpu.wmProductSkus.find(k => isSameArrayBy(k.attrList, v, ["name", "value"]))
 
           return {
             attrList,
@@ -1414,38 +1469,65 @@ export default class Food {
             wmProductLadderBoxPrice: {
               ladder_num: osku?.box_num ?? 1,
               ladder_price: osku?.box_price ?? 0,
-              status: 1
+              status: 1,
             },
             wmProductStock: {
               id: "0",
               stock: osku?.stock ?? "10000",
               max_stock: "-1",
-              auto_refresh: 1
-            }
+              auto_refresh: 1,
+            },
           }
         })
       }
 
-      const tStockAndBoxPrice = (stockNBoxes) => {
+      const tStockAndBoxPrice = stockNBoxes => {
         return stockNBoxes
           .map(v => ({
             ...v,
-            wmProductLadderBoxPrice: v.wmProductLadderBoxPrice ?? { ladder_num: v.box_num ?? 1, ladder_price: v.box_price ?? 0, status: 1 },
-            wmProductStock: v.wmProductStock ?? { id: '0', stock: v.stock ?? '10000', max_stock: '-1', auto_refresh: 1 }
+            wmProductLadderBoxPrice: v.wmProductLadderBoxPrice ?? {
+              ladder_num: v.box_num ?? 1,
+              ladder_price: v.box_price ?? 0,
+              status: 1,
+            },
+            wmProductStock: v.wmProductStock ?? {
+              id: "0",
+              stock: v.stock ?? "10000",
+              max_stock: "-1",
+              auto_refresh: 1,
+            },
           }))
-          .map(v => keep(v, ['attrList', 'box_price', 'price', 'spec', 'unit', 'weight', 'wmProductLadderBoxPrice', 'wmProductStock']))
+          .map(v =>
+            keep(v, [
+              "attrList",
+              "box_price",
+              "price",
+              "spec",
+              "unit",
+              "weight",
+              "wmProductLadderBoxPrice",
+              "wmProductStock",
+            ])
+          )
       }
 
       return {
-        newSpuAttrs: wmProductSpu.newSpuAttrs.map(v => ({ ...v, no: v.name == '份量' ? 0 : v.no })),
-        stockAndBoxPriceSkus: wmProductSpu.stockAndBoxPriceSkus ?
-          tStockAndBoxPrice(wmProductSpu.stockAndBoxPriceSkus) :
-          stockAndBoxPriceSkus(),
+        newSpuAttrs: wmProductSpu.newSpuAttrs.map(v => ({ ...v, no: v.name == "份量" ? 0 : v.no })),
+        stockAndBoxPriceSkus: wmProductSpu.stockAndBoxPriceSkus
+          ? tStockAndBoxPrice(wmProductSpu.stockAndBoxPriceSkus)
+          : stockAndBoxPriceSkus(),
         unifiedPackagingFee: wmProductSpu.unifiedPackagingFee,
-        wmProductLadderBoxPrice: wmProductSpu.wmProductLadderBoxPrice ??
-          { ladder_num: wmProductSpu.wmProductSkus[0].box_num ?? 1, ladder_price: wmProductSpu.wmProductSkus[0].box_price ?? 0, status: 1 },
-        wmProductStock: wmProductSpu.wmProductStock ??
-          { id: "0", stock: wmProductSpu.wmProductSkus[0].stock ?? "10000", max_stock: "-1", auto_refresh: 1 }
+        wmProductLadderBoxPrice: wmProductSpu.wmProductLadderBoxPrice ?? {
+          ladder_num: wmProductSpu.wmProductSkus[0].box_num ?? 1,
+          ladder_price: wmProductSpu.wmProductSkus[0].box_price ?? 0,
+          status: 1,
+        },
+        wmProductStock: wmProductSpu.wmProductStock ?? {
+          id: "0",
+          stock: wmProductSpu.wmProductSkus[0].stock ?? "10000",
+          max_stock: "-1",
+          auto_refresh: 1,
+        },
       }
     }
 
@@ -1458,8 +1540,11 @@ export default class Food {
         labelList: wmProductSpu.labelList ?? [],
         singleOrderNoDelivery: wmProductSpu.singleOrderNoDelivery,
         wmProductVideo: wmProductSpu.wmProductVideo,
-        productCardDisplayContent: wmProductSpu.productCardDisplayContent || '',
-        labelValues: wmProductSpu.labelValues || [{ sequence: 1, value: "" }, { sequence: 2, value: "" }],
+        productCardDisplayContent: wmProductSpu.productCardDisplayContent || "",
+        labelValues: wmProductSpu.labelValues || [
+          { sequence: 1, value: "" },
+          { sequence: 2, value: "" },
+        ],
       }
     }
 
@@ -1479,20 +1564,233 @@ export default class Food {
       ...detail,
       ...sell,
       ...advance,
-      ...updates
+      ...updates,
     }
 
-    // console.log('%o', model)
-    fs.appendFileSync('temp.json', JSON.stringify(model))
+    console.log(inspect(model, { depth: Infinity }))
+    fs.appendFileSync("temp.json", JSON.stringify(model))
 
     const { ok } = await this.setHighBoxPrice2(
-      Math.max(...food.wmProductSkus.map(sku => sku.boxPrice)), food.wmProductSkus.length
+      Math.max(...food.wmProductSkus.map(sku => sku.boxPrice)),
+      food.wmProductSkus.length
     )
 
     if (ok) {
+      console.log("ok", ok)
       return this.save_(model)
     } else {
-      return Promise.reject('sync failed')
+      return Promise.reject("sync failed")
+    }
+  }
+
+  async save6(
+    { originFood, originTemp },
+    {
+      id,
+      name,
+      description,
+      prodPics,
+      tagId,
+      tagName,
+      spuAttrs,
+      stockAndBoxPrices,
+      unifiedPackagingFee,
+      prodBox,
+      prodStock,
+      minOrderCount,
+      singleOrder,
+      labelList,
+      labelValues,
+      categoryId,
+      propsValues,
+    }
+  ) {
+    const groupBy = (arr, key) => {
+      let uniqs = [...new Set(arr.map(v => v[key]))]
+      return uniqs.map(v => ({ group: v, members: arr.filter(k => k[key] == v) }))
+    }
+
+    const weightUnits = {
+      准确重量: ["克", "千克", "两", "斤", "磅", "盎司", "毫升", "升", "寸", "厘米", "英寸"],
+      准确数量: [
+        "个",
+        "串",
+        "枚",
+        "粒",
+        "块",
+        "只",
+        "副",
+        "卷",
+        "片",
+        "贯",
+        "碗",
+        "杯",
+        "袋",
+        "瓶",
+        "盒",
+        "包",
+        "锅",
+        "罐",
+        "扎",
+        "条",
+      ],
+      适用人数: ["1人份", "2人份", "3人份", "4人份", "5人份", "6人份", "7人份", "8人份", "9人份", "10人份"],
+    }
+
+    const isWeightAttr = attr => attr.name == "份量" || attr.name == null
+
+    const getAttrSpec = (value, weight, weightUnit, oAttrVals) => {
+      let unit = weightUnit
+      if (weightUnits.适用人数.includes(weightUnit)) unit = weightUnit
+      else if (weightUnits.准确重量.includes(weightUnit)) unit = `约${weight}${weightUnit}`
+      else unit = `${weight}${weightUnit}`
+
+      if (value != "") return `${value}（${unit}） ${oAttrVals.join(" ")}`
+      return `${unit} ${oAttrVals.join(" ")}`
+    }
+
+    const getAttrUnit = (weight, weightUnit) => {
+      if (weightUnits.适用人数.includes(weightUnit)) return weightUnit
+      return `${weight}${weightUnit}`
+    }
+
+    const getAttrWeight = (weight, weightUnit) => {
+      if (weightUnits.适用人数.includes(weightUnit)) return ""
+      return weight
+    }
+
+    let model = {
+      id: id ?? originFood.id,
+      wm_poi_id: this.wmPoiId,
+      name: name ?? originFood.name,
+      description: description ?? originFood.description,
+      get wmProductPics() {
+        if (!prodPics) return originFood.wmProductPics
+
+        return prodPics.map((pic, i) => ({
+          is_quality_low: false,
+          picPropagandaList: [],
+          pic_large_url: pic,
+          pic_small_url: pic,
+          quality_score: 1,
+          sequence: i,
+          specialEffectEnable: 0,
+        }))
+      },
+      specialEffectPic: originFood.specialEffectPic,
+      tag_id: tagId ?? originFood.tag_id,
+      tag_name: tagName ?? originFood.tag_name,
+      get newSpuAttrs() {
+        if (!spuAttrs) return originFood.newSpuAttrs
+
+        return groupBy(spuAttrs, "name").flatMap((attrs, i) => {
+          let mode = attrs.members.some(v => isWeightAttr(v) || v.price > 0) ? 2 : 1
+
+          return attrs.members.map((attr, j) => {
+            let { name, value, weight, weightUnit, price, sellStatus } = attr
+            let isWeightAttr = name == "份量" || name == null
+
+            return {
+              mode,
+              name: name ?? "份量",
+              name_id: 0,
+              value: value ?? "",
+              value_id: 0,
+              weight: isWeightAttr ? weight ?? -2 : 0,
+              weightUnit: isWeightAttr ? weightUnit ?? "1人份" : null,
+              price: price ?? 0,
+              sell_status: sellStatus == "售罄" ? 1 : 0,
+              no: i,
+              value_sequence: isWeightAttr ? j : j + 1,
+              // unitType: 1
+            }
+          })
+        })
+      },
+      get stockAndBoxPriceSkus() {
+        if (!stockAndBoxPrices) {
+          if (!originFood.stockAndBoxPriceSkus) return originFood.stockAndBoxPriceSkus
+          return originFood.stockAndBoxPriceSkus.map(v => ({
+            ...v,
+            wmProductLadderBoxPrice: v.wmProductLadderBoxPrice ?? {
+              status: 1,
+              ladder_num: v.box_num ?? 1,
+              ladder_price: v.box_price ?? 0,
+            },
+            wmProductStock: v.wmProductStock ?? {
+              id: "0",
+              stock: v.stock ?? "10000",
+              max_stock: "-1",
+              auto_refresh: 1,
+            },
+          }))
+        }
+
+        let _newSpuAttrs = this.newSpuAttrs.map(v => {
+          if (isWeightAttr(v)) return { ...v, unit: getAttrUnit(v.weight, v.weightUnit) }
+          return v
+        })
+
+        return (stockAndBoxPrices ?? [])
+          .map((boxStock, i) => {
+            let { attrList, boxNum, boxPrice, stock } = boxStock
+
+            let wAttr = attrList.find(isWeightAttr)
+            let oAttrVals = attrList.filter(v => !isWeightAttr(v)).map(v => v.value)
+            let wSpuAttr = _newSpuAttrs.find(v => isWeightAttr(v) && (v.value == wAttr.value || v.unit == wAttr.value))
+            if (!wSpuAttr) return null
+
+            let { value, weight, weightUnit, unit, price } = wSpuAttr
+
+            return {
+              attrList: attrList.map(v => {
+                let base = { name: v.name ?? "份量", name_id: 0, value: v.value, value_id: 0 }
+                return isWeightAttr(v) ? { ...base, no: 0 } : base
+              }),
+              spec: getAttrSpec(value, weight, weightUnit, oAttrVals),
+              weight: getAttrWeight(weight, weightUnit),
+              unit,
+              price,
+              box_price: boxPrice ?? 0,
+              wmProductLadderBoxPrice: { status: 1, ladder_num: boxNum ?? 1, ladder_price: boxPrice ?? 0 },
+              wmProductStock: { id: "0", stock: stock ?? "10000", max_stock: "-1", auto_refresh: 1 },
+            }
+          })
+          .filter(v => v != null)
+      },
+      unifiedPackagingFee: unifiedPackagingFee ?? originFood.unifiedPackagingFee,
+      wmProductLadderBoxPrice: prodBox ?? originFood.wmProductLadderBoxPrice,
+      get wmProductStock() {
+        if (prodStock) return prodStock
+        if (originFood.wmProductStock) return originFood.wmProductStock
+        return { id: 0, stock: originFood.wmProductSkus[0].stock, max_stock: -1, auto_refresh: 1 }
+      },
+      min_order_count: minOrderCount ?? originFood.min_order_count,
+      singleOrderNoDelivery: singleOrder ?? originFood.singleOrderNoDelivery,
+      labelList: labelList ?? originFood.labelList ?? [],
+      labelValues: labelValues ??
+        originFood.labelValues ?? [
+          { sequence: 1, value: "" },
+          { sequence: 2, value: "" },
+        ],
+      category_id: categoryId ?? originTemp.categoryId,
+      properties_values: propsValues ?? originTemp.properties_values,
+      isShippingTimeSyncPoi: originFood.isShippingTimeSyncPoi || 2,
+      shipping_time_x: originFood.shipping_time_x,
+      wmProductVideo: originFood.wmProductVideo,
+      productCardDisplayContent: originFood.productCardDisplayContent ?? "",
+    }
+
+    model = { ...model }
+
+    console.log(inspect(model, { depth: Infinity }))
+    // fs.appendFileSync("temp.json", JSON.stringify(model))
+
+    const { ok } = await this.setHighBoxPrice2()
+    if (ok) {
+      return this.save_(model)
+    } else {
+      throw new Error("tests failed")
     }
   }
 }
@@ -1500,8 +1798,8 @@ export default class Food {
 async function test() {
   try {
     let attrs = [
-      { name: '底料', values: ['椰汁底'] },
-      { name: '温度', values: ['冷', '温热'] }
+      { name: "底料", values: ["椰汁底"] },
+      { name: "温度", values: ["冷", "温热"] },
     ]
   } catch (error) {
     console.error(error)
@@ -1509,64 +1807,64 @@ async function test() {
 }
 
 let skuT = {
-  weight_unit: '1人份',
+  weight_unit: "1人份",
   weight: -2,
-  price: '13.8',
-  stock: '-1',
+  price: "13.8",
+  stock: "-1",
   unifiedPackagingFee: 2,
   unifiedPackagingFeeType: 2,
   unifiedWeightFeeType: 2,
-  wmProductStock: { max_stock: '-1', auto_refresh: 1 },
-  wmProductLadderBoxPrice: { ladder_num: 1, ladder_price: '1', status: 1 }
+  wmProductStock: { max_stock: "-1", auto_refresh: 1 },
+  wmProductLadderBoxPrice: { ladder_num: 1, ladder_price: "1", status: 1 },
 }
 // test()
 let foodT = [
   {
-    description: '说明产品，请勿下单',
-    name: '测试2',
-    wm_poi_id: '10085676',
+    description: "说明产品，请勿下单",
+    name: "测试2",
+    wm_poi_id: "10085676",
     tag_id: 214055264,
-    tag_name: '店铺公告1',
+    tag_name: "店铺公告1",
     isShippingTimeSyncPoi: 2,
-    shipping_time_x: '-',
+    shipping_time_x: "-",
     min_order_count: 1,
     wmProductPics: [
       {
-        pic_large_url: 'http://p0.meituan.net/wmproduct/2ba25f68ca66b4ab234607c3b510f8ff332609.png',
-        pic_small_url: 'http://p0.meituan.net/wmproduct/2ba25f68ca66b4ab234607c3b510f8ff332609.png',
+        pic_large_url: "http://p0.meituan.net/wmproduct/2ba25f68ca66b4ab234607c3b510f8ff332609.png",
+        pic_small_url: "http://p0.meituan.net/wmproduct/2ba25f68ca66b4ab234607c3b510f8ff332609.png",
         is_quality_low: false,
         quality_score: 1,
         specialEffectEnable: 0,
         picPropagandaList: [],
-        sequence: 0
-      }
+        sequence: 0,
+      },
     ],
     specialEffectPic: null,
     category_id: 115250,
     labelList: [],
     newSpuAttrs: [
       {
-        name: '份量',
+        name: "份量",
         name_id: 0,
-        price: '88',
-        value: '',
+        price: "88",
+        value: "",
         value_id: 0,
         no: 0,
         mode: 2,
         weight: 1,
-        weightUnit: '克',
+        weightUnit: "克",
         sell_status: 0,
-        value_sequence: 0
-      }
+        value_sequence: 0,
+      },
     ],
     stockAndBoxPriceSkus: [],
     unifiedPackagingFee: 1,
     wmProductLadderBoxPrice: { status: 1, ladder_num: 1, ladder_price: 0 },
     wmProductStock: { id: 0, stock: 10000, max_stock: 10000, auto_refresh: 1 },
-    productCardDisplayContent: '',
+    productCardDisplayContent: "",
     labelValues: [
-      { sequence: 1, value: '' },
-      { sequence: 2, value: '' }
-    ]
-  }
+      { sequence: 1, value: "" },
+      { sequence: 2, value: "" },
+    ],
+  },
 ]
